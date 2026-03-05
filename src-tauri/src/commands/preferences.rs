@@ -5,12 +5,15 @@ use tauri::Manager;
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Preferences {
     pub last_opened_folder: Option<String>,
+    #[serde(default)]
+    pub aws_profile: Option<String>,
 }
 
 impl Default for Preferences {
     fn default() -> Self {
         Preferences {
             last_opened_folder: None,
+            aws_profile: None,
         }
     }
 }

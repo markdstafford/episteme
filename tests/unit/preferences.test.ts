@@ -7,7 +7,7 @@ import {
 
 describe("PreferencesSchema", () => {
   it("validates a valid preferences object", () => {
-    const data = { last_opened_folder: "/some/path" };
+    const data = { last_opened_folder: "/some/path", aws_profile: null };
     const result = PreferencesSchema.safeParse(data);
     expect(result.success).toBe(true);
     if (result.success) {
@@ -16,7 +16,7 @@ describe("PreferencesSchema", () => {
   });
 
   it("validates null last_opened_folder", () => {
-    const data = { last_opened_folder: null };
+    const data = { last_opened_folder: null, aws_profile: null };
     const result = PreferencesSchema.safeParse(data);
     expect(result.success).toBe(true);
     if (result.success) {
@@ -24,8 +24,26 @@ describe("PreferencesSchema", () => {
     }
   });
 
+  it("validates aws_profile as string", () => {
+    const data = { last_opened_folder: null, aws_profile: "my-profile" };
+    const result = PreferencesSchema.safeParse(data);
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.aws_profile).toBe("my-profile");
+    }
+  });
+
+  it("validates aws_profile as null", () => {
+    const data = { last_opened_folder: null, aws_profile: null };
+    const result = PreferencesSchema.safeParse(data);
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.aws_profile).toBeNull();
+    }
+  });
+
   it("rejects invalid data", () => {
-    const result = PreferencesSchema.safeParse({ last_opened_folder: 123 });
+    const result = PreferencesSchema.safeParse({ last_opened_folder: 123, aws_profile: null });
     expect(result.success).toBe(false);
   });
 
@@ -37,13 +55,20 @@ describe("PreferencesSchema", () => {
 
 describe("parsePreferences", () => {
   it("returns parsed data for valid input", () => {
-    const result = parsePreferences({ last_opened_folder: "/path" });
+    const result = parsePreferences({ last_opened_folder: "/path", aws_profile: null });
     expect(result.last_opened_folder).toBe("/path");
+    expect(result.aws_profile).toBeNull();
+  });
+
+  it("returns parsed data with aws_profile set", () => {
+    const result = parsePreferences({ last_opened_folder: null, aws_profile: "dev" });
+    expect(result.aws_profile).toBe("dev");
   });
 
   it("returns defaults for invalid input", () => {
     const result = parsePreferences({ bad: "data" });
     expect(result).toEqual(DEFAULT_PREFERENCES);
+    expect(result.aws_profile).toBeNull();
   });
 
   it("returns defaults for null input", () => {

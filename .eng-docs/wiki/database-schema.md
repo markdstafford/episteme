@@ -22,8 +22,8 @@ Episteme uses **markdown files in git** as the primary data store. This document
 ```typescript
 {
   theme: 'light' | 'dark',
-  aiProvider: 'anthropic' | 'openai',
-  // ... other preferences
+  last_opened_folder: string | null,
+  aws_profile: string | null,
 }
 ```
 

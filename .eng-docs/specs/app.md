@@ -71,7 +71,7 @@ The AI creates a pull request attempting to merge her branch to main. Aaron rece
 - **Document editor**: TipTap (see ADR-002)
 - **Real-time collaboration** (Phase 2): Y.js CRDT with WebSocket sync server (Hocuspocus or y-websocket)
 - **Git integration**: Shell out to git CLI (requires git in PATH)
-- **AI integration**: Multi-provider support (start with Anthropic Claude, add OpenAI/local models later)
+- **AI integration**: Claude on Bedrock via AWS SSO (add other providers later)
 - **State management**: Zustand (see ADR-003)
 - **Styling approach**: Tailwind CSS (see ADR-004)
 
@@ -83,7 +83,7 @@ The AI creates a pull request attempting to merge her branch to main. Aaron rece
 - **Local cache**:
   - Document summaries cached for hover previews
   - Other caching decisions deferred
-- **Sensitive data storage**: OS-level keychain/credential manager (AI API tokens)
+- **Sensitive data storage**: Delegated to AWS CLI for AI credentials (SSO token cache); OS keychain reserved for future needs
 - **Git credentials**: Handled by git CLI
 - **User settings/preferences**: Local JSON files in app data directory (added to .gitignore)
 - **Real-time collaboration state** (Phase 2): Y.js document state (in-memory with optional persistence - decide later)
@@ -92,7 +92,7 @@ The AI creates a pull request attempting to merge her branch to main. Aaron rece
 
 - **Authentication**: GitHub OAuth (see ADR-005)
 - **Authorization**: GitHub repository permissions and PR approval workflows (managed by GitHub, not app-level)
-- **AI API keys**: User-provided keys stored in OS keychain
+- **AI credentials**: AWS SSO via standard AWS credential chain (profile in `~/.aws/config`, `aws sso login` for auth, no app-level key storage)
 - **Data protection**: Plain text markdown in git (no encryption at rest needed)
 - **Input validation**:
   - Zod for settings/preferences validation (see ADR-006)
