@@ -22,8 +22,10 @@ export const useWorkspaceStore = create<WorkspaceStore>((set) => ({
       const path = await invoke<string | null>("open_folder");
       if (path) {
         set({ folderPath: path, isLoading: false });
+        const existingRaw = await invoke("load_preferences");
+        const existingPrefs = parsePreferences(existingRaw);
         await invoke("save_preferences", {
-          preferences: { last_opened_folder: path },
+          preferences: { ...existingPrefs, last_opened_folder: path },
         });
         useFileTreeStore.getState().loadTree(path);
       } else {

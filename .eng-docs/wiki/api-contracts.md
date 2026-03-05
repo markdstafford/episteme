@@ -59,16 +59,33 @@ interface TauriCommands {
 - List notifications
 - etc.
 
-### Anthropic API
+### AWS Bedrock (Claude)
 
-**Base URL**: `https://api.anthropic.com`
+**Service**: `bedrock-runtime` via AWS SDK for Rust
 
-**Authentication**: API key (user-provided, stored in OS keychain)
+**Authentication**: AWS SSO via default credential chain (`AWS_PROFILE` env var)
 
-**Endpoints** (to be detailed):
-- Create message
-- Stream message
-- etc.
+**Operations**:
+- `Converse` - Send messages to Claude model, get response
+
+### Tauri AI Commands
+
+```typescript
+// Check if AWS credentials are valid
+ai_check_auth(aws_profile: string): Promise<boolean>;
+
+// Trigger SSO login (opens browser)
+ai_sso_login(aws_profile: string): Promise<void>;
+
+// Send chat message, stream AI response via Channel
+ai_chat(
+  messages: { role: "user" | "assistant"; content: string }[],
+  active_file_path: string | null,
+  workspace_path: string,
+  aws_profile: string,
+  on_event: Channel  // receives Token(string), Done(string), Error(string)
+): Promise<void>;
+```
 
 ---
 

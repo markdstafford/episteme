@@ -34,7 +34,8 @@ describe("useWorkspaceStore", () => {
 
   describe("openFolder", () => {
     it("sets folderPath when folder is selected", async () => {
-      mockInvoke.mockResolvedValueOnce("/selected/path");
+      mockInvoke.mockResolvedValueOnce("/selected/path"); // open_folder
+      mockInvoke.mockResolvedValueOnce({ last_opened_folder: null, aws_profile: "my-profile" }); // load_preferences
       mockInvoke.mockResolvedValueOnce(undefined); // save_preferences
 
       await useWorkspaceStore.getState().openFolder();
@@ -42,8 +43,9 @@ describe("useWorkspaceStore", () => {
       expect(useWorkspaceStore.getState().folderPath).toBe("/selected/path");
       expect(useWorkspaceStore.getState().isLoading).toBe(false);
       expect(mockInvoke).toHaveBeenCalledWith("open_folder");
+      expect(mockInvoke).toHaveBeenCalledWith("load_preferences");
       expect(mockInvoke).toHaveBeenCalledWith("save_preferences", {
-        preferences: { last_opened_folder: "/selected/path" },
+        preferences: { last_opened_folder: "/selected/path", aws_profile: "my-profile" },
       });
     });
 
@@ -78,6 +80,7 @@ describe("useWorkspaceStore", () => {
     it("loads saved folder from preferences", async () => {
       mockInvoke.mockResolvedValueOnce({
         last_opened_folder: "/saved/path",
+        aws_profile: null,
       });
 
       await useWorkspaceStore.getState().loadSavedFolder();
@@ -88,7 +91,7 @@ describe("useWorkspaceStore", () => {
     });
 
     it("sets null folderPath when no saved folder", async () => {
-      mockInvoke.mockResolvedValueOnce({ last_opened_folder: null });
+      mockInvoke.mockResolvedValueOnce({ last_opened_folder: null, aws_profile: null });
 
       await useWorkspaceStore.getState().loadSavedFolder();
 

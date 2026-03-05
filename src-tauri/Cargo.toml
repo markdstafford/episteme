@@ -25,3 +25,7 @@ tauri = { version = "2.10.0", features = [] }
 tauri-plugin-log = "2"
 tauri-plugin-dialog = "2"
 tauri-plugin-shell = "2"
+aws-config = { version = "1", features = ["behavior-version-latest"] }
+aws-credential-types = "1"
+aws-sdk-bedrockruntime = "1"
+tokio = { version = "1", features = ["full"] }

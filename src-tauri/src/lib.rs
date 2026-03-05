@@ -1,4 +1,5 @@
 mod commands;
+mod context;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -11,6 +12,9 @@ pub fn run() {
       commands::preferences::load_preferences,
       commands::files::list_files,
       commands::files::read_file,
+      commands::ai::ai_sso_login,
+      commands::ai::ai_check_auth,
+      commands::ai::ai_chat,
     ])
     .setup(|app| {
       if cfg!(debug_assertions) {
