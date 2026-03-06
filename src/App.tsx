@@ -7,6 +7,7 @@ import { FileTree } from "@/components/FileTree";
 import { DocumentViewer } from "@/components/DocumentViewer";
 import { AiChatPanel } from "@/components/AiChatPanel";
 import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
 import { parsePreferences } from "@/lib/preferences";
 import { Loader2, MessageSquare } from "lucide-react";
 
@@ -15,6 +16,12 @@ function App() {
   const folderPath = useWorkspaceStore((s) => s.folderPath);
   const isLoading = useWorkspaceStore((s) => s.isLoading);
   const loadSavedFolder = useWorkspaceStore((s) => s.loadSavedFolder);
+  const openFolder = useWorkspaceStore((s) => s.openFolder);
+
+  useEffect(() => {
+    const unlisten = listen("menu:open-folder", () => openFolder());
+    return () => { unlisten.then((f) => f()); };
+  }, [openFolder]);
 
   useEffect(() => {
     const init = async () => {
@@ -52,7 +59,7 @@ function App() {
 
   return (
     <div className="flex h-screen bg-white dark:bg-gray-900">
-      <Sidebar>
+      <Sidebar onOpenChat={() => setChatPanelOpen(true)}>
         <FileTree />
       </Sidebar>
       <div className="flex-1 flex flex-col min-w-0">
