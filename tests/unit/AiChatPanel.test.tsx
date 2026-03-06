@@ -163,7 +163,7 @@ describe("AiChatPanel", () => {
 
     it("shows 'AI Assistant' text", () => {
       render(<AiChatPanel onClose={vi.fn()} />);
-      expect(screen.getByText("AI Assistant")).toBeInTheDocument();
+      expect(screen.getByText("AI assistant")).toBeInTheDocument();
     });
 
     it("close button calls onClose", () => {
