@@ -35,7 +35,7 @@ export function MarkdownRenderer({ content, onLinkClick }: MarkdownRendererProps
   });
 
   useEffect(() => {
-    if (editor && content) {
+    if (editor) {
       editor.commands.setContent(content);
     }
   }, [content, editor]);

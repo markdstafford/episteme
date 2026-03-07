@@ -21,7 +21,7 @@ export const useFileTreeStore = create<FileTreeStore>((set, get) => ({
   error: null,
 
   loadTree: async (folderPath: string) => {
-    set({ isLoading: true, error: null });
+    set({ isLoading: true, error: null, selectedFilePath: null });
     try {
       const nodes = await invoke<FileNode[]>("list_files", {
         folderPath,
