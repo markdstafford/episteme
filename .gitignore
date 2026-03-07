@@ -23,6 +23,12 @@ coverage/
 .DS_Store
 Thumbs.db
 
+# Worktrees
+.worktrees/
+
+# Implementation plans
+.superpowers-plans/
+
 # Environment
 .env
 .env.local
