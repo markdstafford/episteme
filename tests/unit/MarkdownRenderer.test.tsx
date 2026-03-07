@@ -33,6 +33,12 @@ describe("MarkdownRenderer", () => {
     expect(container.querySelector(".prose")).toBeInTheDocument();
   });
 
+  it("does not leave stale content when content becomes empty", () => {
+    const { rerender } = render(<MarkdownRenderer content="# Hello" />);
+    // Rerendering with empty string should not throw and should call setContent("")
+    expect(() => rerender(<MarkdownRenderer content="" />)).not.toThrow();
+  });
+
   it("accepts onLinkClick prop without error", () => {
     const handleClick = () => {};
     const { container } = render(

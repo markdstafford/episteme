@@ -179,7 +179,7 @@ export function AiChatPanel({ onClose }: AiChatPanelProps) {
         <div className="flex items-center gap-2">
           <MessageSquare className="w-4 h-4 text-gray-600 dark:text-gray-400" />
           <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-            AI Assistant
+            AI assistant
           </span>
         </div>
         <div className="flex items-center gap-1">
