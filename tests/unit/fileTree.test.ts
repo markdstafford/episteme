@@ -47,6 +47,15 @@ describe("useFileTreeStore", () => {
       });
     });
 
+    it("clears selectedFilePath when loading a new tree", async () => {
+      useFileTreeStore.setState({ selectedFilePath: "/docs/old.md" });
+      mockInvoke.mockResolvedValueOnce(mockTree);
+
+      await useFileTreeStore.getState().loadTree("/new-docs");
+
+      expect(useFileTreeStore.getState().selectedFilePath).toBeNull();
+    });
+
     it("sets error on failure", async () => {
       mockInvoke.mockRejectedValueOnce(new Error("Permission denied"));
 
