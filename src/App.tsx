@@ -76,7 +76,7 @@ function App() {
           </button>
         </div>
         {/* Document viewer fills remaining space */}
-        <div className="flex-1 overflow-hidden">
+        <div className="flex-1 flex flex-col overflow-hidden">
           <DocumentViewer />
         </div>
       </div>
