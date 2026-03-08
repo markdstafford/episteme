@@ -20,6 +20,7 @@ pub enum StreamEvent {
     Token(String),
     Done(String),
     Error(String),
+    DocumentUpdated(String), // absolute file path
 }
 
 fn validate_aws_profile(aws_profile: &str) -> Result<(), String> {
@@ -31,6 +32,38 @@ fn validate_aws_profile(aws_profile: &str) -> Result<(), String> {
         return Err("Invalid AWS profile name. Only alphanumeric characters, hyphens, underscores, and dots are allowed.".to_string());
     }
     Ok(())
+}
+
+pub fn execute_write_file(
+    workspace_path: &str,
+    file_path: &str,
+    content: &str,
+) -> Result<String, String> {
+    let file_path_obj = std::path::Path::new(file_path);
+
+    if file_path_obj.is_absolute() {
+        return Err("file_path must be a relative path".to_string());
+    }
+
+    for component in file_path_obj.components() {
+        if component == std::path::Component::ParentDir {
+            return Err("file_path must not contain '..' (path traversal not allowed)".to_string());
+        }
+    }
+
+    let canonical_workspace = std::fs::canonicalize(workspace_path)
+        .map_err(|e| format!("Invalid workspace path: {}", e))?;
+    let full_path = canonical_workspace.join(file_path);
+
+    if let Some(parent) = full_path.parent() {
+        std::fs::create_dir_all(parent)
+            .map_err(|e| format!("Failed to create directories: {}", e))?;
+    }
+
+    std::fs::write(&full_path, content)
+        .map_err(|e| format!("Failed to write file: {}", e))?;
+
+    Ok(full_path.to_string_lossy().to_string())
 }
 
 #[tauri::command]
@@ -170,4 +203,77 @@ pub async fn ai_chat(
 
     let _ = on_event.send(StreamEvent::Done(full_response));
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use tempfile::tempdir;
+
+    #[test]
+    fn test_execute_write_file_creates_file() {
+        let dir = tempdir().unwrap();
+        let result = execute_write_file(
+            dir.path().to_str().unwrap(),
+            "new-doc.md",
+            "# Hello\n",
+        );
+        assert!(result.is_ok());
+        let abs_path = result.unwrap();
+        assert!(std::path::Path::new(&abs_path).exists());
+        assert_eq!(std::fs::read_to_string(&abs_path).unwrap(), "# Hello\n");
+    }
+
+    #[test]
+    fn test_execute_write_file_overwrites() {
+        let dir = tempdir().unwrap();
+        execute_write_file(dir.path().to_str().unwrap(), "doc.md", "v1").unwrap();
+        execute_write_file(dir.path().to_str().unwrap(), "doc.md", "v2").unwrap();
+        let path = dir.path().join("doc.md");
+        assert_eq!(std::fs::read_to_string(path).unwrap(), "v2");
+    }
+
+    #[test]
+    fn test_execute_write_file_creates_parent_dirs() {
+        let dir = tempdir().unwrap();
+        let result = execute_write_file(
+            dir.path().to_str().unwrap(),
+            "specs/nested/doc.md",
+            "content",
+        );
+        assert!(result.is_ok());
+        assert!(dir.path().join("specs/nested/doc.md").exists());
+    }
+
+    #[test]
+    fn test_execute_write_file_rejects_absolute_path() {
+        let dir = tempdir().unwrap();
+        let result = execute_write_file(
+            dir.path().to_str().unwrap(),
+            "/etc/passwd",
+            "bad",
+        );
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("relative"));
+    }
+
+    #[test]
+    fn test_execute_write_file_rejects_path_traversal() {
+        let dir = tempdir().unwrap();
+        let result = execute_write_file(
+            dir.path().to_str().unwrap(),
+            "../outside.md",
+            "bad",
+        );
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("traversal"));
+    }
+
+    #[test]
+    fn test_document_updated_serializes_correctly() {
+        let event = StreamEvent::DocumentUpdated("/workspace/doc.md".to_string());
+        let json = serde_json::to_string(&event).unwrap();
+        assert!(json.contains("\"type\":\"DocumentUpdated\""));
+        assert!(json.contains("/workspace/doc.md"));
+    }
 }
