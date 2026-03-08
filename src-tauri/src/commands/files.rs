@@ -16,10 +16,6 @@ fn is_markdown_file(name: &str) -> bool {
     lower.ends_with(".md") || lower.ends_with(".markdown")
 }
 
-fn is_hidden(name: &str) -> bool {
-    name.starts_with('.')
-}
-
 fn build_tree(dir: &Path) -> Vec<FileNode> {
     let entries = match fs::read_dir(dir) {
         Ok(entries) => entries,
@@ -31,10 +27,6 @@ fn build_tree(dir: &Path) -> Vec<FileNode> {
 
     for entry in entries.flatten() {
         let name = entry.file_name().to_string_lossy().to_string();
-
-        if is_hidden(&name) {
-            continue;
-        }
 
         let path = entry.path();
 
@@ -110,4 +102,28 @@ pub async fn read_file(file_path: String, workspace_path: String) -> Result<Stri
     }
 
     fs::read_to_string(path).map_err(|e| format!("Failed to read file: {}", e))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::fs;
+    use tempfile::TempDir;
+
+    #[test]
+    fn test_build_tree_includes_dot_prefixed_folders() {
+        let tmp = TempDir::new().unwrap();
+        let dot_dir = tmp.path().join(".eng-docs");
+        fs::create_dir(&dot_dir).unwrap();
+        fs::write(dot_dir.join("readme.md"), "# Hello").unwrap();
+
+        let tree = build_tree(tmp.path());
+
+        let names: Vec<&str> = tree.iter().map(|n| n.name.as_str()).collect();
+        assert!(
+            names.contains(&".eng-docs"),
+            "Expected .eng-docs in tree, got: {:?}",
+            names
+        );
+    }
 }
