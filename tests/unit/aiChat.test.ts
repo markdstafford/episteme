@@ -188,6 +188,8 @@ describe("useAiChatStore", () => {
         activeFilePath: "/workspace/doc.md",
         workspacePath: "/workspace",
         awsProfile: "my-profile",
+        authoringMode: false,
+        activeSkill: null,
         onEvent: expect.any(Object),
       });
     });

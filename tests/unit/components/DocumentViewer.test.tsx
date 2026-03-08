@@ -24,6 +24,12 @@ vi.mock("@/stores/workspace", () => ({
   ),
 }));
 
+vi.mock("@/stores/aiChat", () => ({
+  useAiChatStore: vi.fn((selector: any) =>
+    selector({ documentReloadCounter: 0 })
+  ),
+}));
+
 afterEach(() => {
   vi.mocked(invoke).mockResolvedValue("");
   vi.mocked(useFileTreeStore).mockImplementation((selector: any) =>
