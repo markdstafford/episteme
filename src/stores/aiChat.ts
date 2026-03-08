@@ -17,12 +17,17 @@ interface AiChatStore {
   authChecked: boolean;
   awsProfile: string | null;
   error: string | null;
+  authoringMode: boolean;
+  authoringFilePath: string | null;
+  activeSkill: string | null;
+  documentReloadCounter: number;
 
   checkAuth: () => Promise<void>;
   login: () => Promise<void>;
   sendMessage: (content: string) => Promise<void>;
   setAwsProfile: (profile: string) => Promise<void>;
   clearConversation: () => void;
+  startAuthoring: () => void;
 }
 
 export const useAiChatStore = create<AiChatStore>((set, get) => ({
@@ -33,6 +38,10 @@ export const useAiChatStore = create<AiChatStore>((set, get) => ({
   authChecked: false,
   awsProfile: null,
   error: null,
+  authoringMode: false,
+  authoringFilePath: null,
+  activeSkill: null,
+  documentReloadCounter: 0,
 
   checkAuth: async () => {
     const { awsProfile } = get();
@@ -77,9 +86,11 @@ export const useAiChatStore = create<AiChatStore>((set, get) => ({
       error: null,
     }));
 
-    const activeFilePath = useFileTreeStore.getState().selectedFilePath;
+    const { authoringMode, authoringFilePath, activeSkill, awsProfile } = get();
+    const activeFilePath = authoringMode
+      ? authoringFilePath
+      : useFileTreeStore.getState().selectedFilePath;
     const workspacePath = useWorkspaceStore.getState().folderPath;
-    const { awsProfile } = get();
     const currentMessages = get().messages;
 
     const onEvent = new Channel<{ type: string; data: string }>();
@@ -112,6 +123,8 @@ export const useAiChatStore = create<AiChatStore>((set, get) => ({
         activeFilePath,
         workspacePath,
         awsProfile,
+        authoringMode,
+        activeSkill,
         onEvent,
       });
     } catch (e) {
@@ -140,6 +153,27 @@ export const useAiChatStore = create<AiChatStore>((set, get) => ({
   },
 
   clearConversation: () => {
-    set({ messages: [], isStreaming: false, streamingContent: "", error: null });
+    set({
+      messages: [],
+      isStreaming: false,
+      streamingContent: "",
+      error: null,
+      authoringMode: false,
+      authoringFilePath: null,
+      activeSkill: null,
+      documentReloadCounter: 0,
+    });
+  },
+
+  startAuthoring: () => {
+    set({
+      authoringMode: true,
+      authoringFilePath: null,
+      activeSkill: null,
+      messages: [],
+      isStreaming: false,
+      streamingContent: "",
+      error: null,
+    });
   },
 }));
