@@ -3,6 +3,7 @@ use aws_credential_types::provider::ProvideCredentials;
 use aws_sdk_bedrockruntime::Client as BedrockClient;
 use aws_sdk_bedrockruntime::types::{
     ContentBlock, ConversationRole, ConverseStreamOutput, Message, SystemContentBlock,
+    ToolResultBlock, ToolResultContentBlock, ToolUseBlock,
 };
 use aws_smithy_types::Document;
 use serde::{Deserialize, Serialize};
@@ -226,15 +227,29 @@ pub async fn ai_chat(
         );
     }
 
-    // 6. Call ConverseStream
-    let mut stream_output = client
-        .converse_stream()
-        .model_id("us.anthropic.claude-sonnet-4-6")
-        .system(SystemContentBlock::Text(system_prompt))
-        .set_messages(Some(bedrock_messages))
-        .send()
-        .await
-        .map_err(|e| {
+    // 6. Build tool config for authoring mode
+    let tool_config = if authoring_mode {
+        Some(build_write_file_tool_config()?)
+    } else {
+        None
+    };
+
+    // 7. Tool use loop — may run multiple ConverseStream calls when tools are invoked
+    let mut loop_messages = bedrock_messages;
+    let mut full_response = String::new();
+
+    'outer: loop {
+        let mut builder = client
+            .converse_stream()
+            .model_id("us.anthropic.claude-sonnet-4-6")
+            .system(SystemContentBlock::Text(system_prompt.clone()))
+            .set_messages(Some(loop_messages.clone()));
+
+        if let Some(ref tc) = tool_config {
+            builder = builder.tool_config(tc.clone());
+        }
+
+        let mut stream_output = builder.send().await.map_err(|e| {
             let err_msg = format!("{:?}", e);
             log::error!("Bedrock ConverseStream error: {}", err_msg);
             if err_msg.contains("expired")
@@ -247,38 +262,199 @@ pub async fn ai_chat(
             }
         })?;
 
-    // 7-9. Process stream
-    let mut full_response = String::new();
-    loop {
-        let event = stream_output.stream.recv().await;
-        match event {
-            Ok(Some(output)) => match output {
-                ConverseStreamOutput::ContentBlockDelta(delta) => {
-                    if let Some(content_delta) = delta.delta {
-                        if let aws_sdk_bedrockruntime::types::ContentBlockDelta::Text(text) =
-                            content_delta
-                        {
-                            full_response.push_str(&text);
-                            let _ = on_event.send(StreamEvent::Token(text));
+        struct ToolCallAcc {
+            tool_use_id: String,
+            name: String,
+            input_json: String,
+        }
+        let mut pending_tool_calls: Vec<ToolCallAcc> = Vec::new();
+        let mut current_tool_call: Option<ToolCallAcc> = None;
+        let mut assistant_text = String::new();
+        let mut got_tool_use = false;
+
+        loop {
+            match stream_output.stream.recv().await {
+                Ok(Some(output)) => match output {
+                    ConverseStreamOutput::ContentBlockStart(e) => {
+                        if let Some(cb) = e.start {
+                            use aws_sdk_bedrockruntime::types::ContentBlockStart;
+                            if let ContentBlockStart::ToolUse(tus) = cb {
+                                got_tool_use = true;
+                                current_tool_call = Some(ToolCallAcc {
+                                    tool_use_id: tus.tool_use_id().to_string(),
+                                    name: tus.name().to_string(),
+                                    input_json: String::new(),
+                                });
+                            }
                         }
                     }
+                    ConverseStreamOutput::ContentBlockDelta(delta) => {
+                        if let Some(d) = delta.delta {
+                            use aws_sdk_bedrockruntime::types::ContentBlockDelta;
+                            match d {
+                                ContentBlockDelta::Text(text) => {
+                                    assistant_text.push_str(&text);
+                                    full_response.push_str(&text);
+                                    let _ = on_event.send(StreamEvent::Token(text));
+                                }
+                                ContentBlockDelta::ToolUse(tud) => {
+                                    if let Some(ref mut acc) = current_tool_call {
+                                        acc.input_json.push_str(tud.input());
+                                    }
+                                }
+                                _ => {}
+                            }
+                        }
+                    }
+                    ConverseStreamOutput::ContentBlockStop(_) => {
+                        if let Some(acc) = current_tool_call.take() {
+                            pending_tool_calls.push(acc);
+                        }
+                    }
+                    ConverseStreamOutput::MessageStop(_) => {
+                        if got_tool_use {
+                            let mut assistant_blocks: Vec<ContentBlock> = Vec::new();
+                            if !assistant_text.is_empty() {
+                                assistant_blocks
+                                    .push(ContentBlock::Text(assistant_text.clone()));
+                            }
+
+                            let mut tool_result_blocks: Vec<ContentBlock> = Vec::new();
+
+                            for call in &pending_tool_calls {
+                                let input_doc: Document =
+                                    serde_json::from_str::<serde_json::Value>(&call.input_json)
+                                        .ok()
+                                        .map(json_value_to_document)
+                                        .unwrap_or(Document::Null);
+
+                                let tool_use_block = ToolUseBlock::builder()
+                                    .tool_use_id(&call.tool_use_id)
+                                    .name(&call.name)
+                                    .input(input_doc)
+                                    .build()
+                                    .map_err(|e| format!("Build ToolUseBlock: {}", e))?;
+                                assistant_blocks
+                                    .push(ContentBlock::ToolUse(tool_use_block));
+
+                                let tool_result_text = if call.name == "write_file" {
+                                    let file_path =
+                                        extract_str_field(&call.input_json, "file_path");
+                                    let content =
+                                        extract_str_field(&call.input_json, "content");
+                                    match (file_path, content) {
+                                        (Some(fp), Some(ct)) => {
+                                            match execute_write_file(
+                                                &workspace_path,
+                                                &fp,
+                                                &ct,
+                                            ) {
+                                                Ok(abs_path) => {
+                                                    log::info!(
+                                                        "write_file: wrote {}",
+                                                        abs_path
+                                                    );
+                                                    let _ = on_event.send(
+                                                        StreamEvent::DocumentUpdated(
+                                                            abs_path.clone(),
+                                                        ),
+                                                    );
+                                                    format!("success: wrote {}", abs_path)
+                                                }
+                                                Err(e) => {
+                                                    log::error!(
+                                                        "write_file error: {}",
+                                                        e
+                                                    );
+                                                    format!("error: {}", e)
+                                                }
+                                            }
+                                        }
+                                        _ => "error: missing file_path or content"
+                                            .to_string(),
+                                    }
+                                } else {
+                                    format!("error: unknown tool '{}'", call.name)
+                                };
+
+                                let result_block = ToolResultBlock::builder()
+                                    .tool_use_id(&call.tool_use_id)
+                                    .content(ToolResultContentBlock::Text(tool_result_text))
+                                    .build()
+                                    .map_err(|e| format!("Build ToolResultBlock: {}", e))?;
+                                tool_result_blocks
+                                    .push(ContentBlock::ToolResult(result_block));
+                            }
+
+                            let assistant_msg = Message::builder()
+                                .role(ConversationRole::Assistant)
+                                .set_content(Some(assistant_blocks))
+                                .build()
+                                .map_err(|e| format!("Build assistant msg: {}", e))?;
+                            loop_messages.push(assistant_msg);
+
+                            let user_tool_msg = Message::builder()
+                                .role(ConversationRole::User)
+                                .set_content(Some(tool_result_blocks))
+                                .build()
+                                .map_err(|e| format!("Build tool result msg: {}", e))?;
+                            loop_messages.push(user_tool_msg);
+
+                            continue 'outer;
+                        } else {
+                            break;
+                        }
+                    }
+                    _ => {}
+                },
+                Ok(None) => break,
+                Err(e) => {
+                    let err_msg = format!("{}", e);
+                    let _ = on_event.send(StreamEvent::Error(err_msg));
+                    return Err("Stream error".to_string());
                 }
-                ConverseStreamOutput::MessageStop(_) => {
-                    break;
-                }
-                _ => {}
-            },
-            Ok(None) => break,
-            Err(e) => {
-                let err_msg = format!("{}", e);
-                let _ = on_event.send(StreamEvent::Error(err_msg));
-                return Err("Stream error".to_string());
             }
         }
+
+        // end_turn — done
+        break;
     }
 
     let _ = on_event.send(StreamEvent::Done(full_response));
     Ok(())
+}
+
+fn extract_str_field(json: &str, field: &str) -> Option<String> {
+    serde_json::from_str::<serde_json::Value>(json)
+        .ok()
+        .and_then(|v| v.get(field).and_then(|f| f.as_str()).map(|s| s.to_string()))
+}
+
+fn json_value_to_document(value: serde_json::Value) -> Document {
+    match value {
+        serde_json::Value::Null => Document::Null,
+        serde_json::Value::Bool(b) => Document::Bool(b),
+        serde_json::Value::Number(n) => {
+            if let Some(u) = n.as_u64() {
+                Document::Number(aws_smithy_types::Number::PosInt(u))
+            } else if let Some(i) = n.as_i64() {
+                Document::Number(aws_smithy_types::Number::NegInt(i))
+            } else if let Some(f) = n.as_f64() {
+                Document::Number(aws_smithy_types::Number::Float(f))
+            } else {
+                Document::Null
+            }
+        }
+        serde_json::Value::String(s) => Document::String(s),
+        serde_json::Value::Array(arr) => {
+            Document::Array(arr.into_iter().map(json_value_to_document).collect())
+        }
+        serde_json::Value::Object(map) => Document::Object(
+            map.into_iter()
+                .map(|(k, v)| (k, json_value_to_document(v)))
+                .collect(),
+        ),
+    }
 }
 
 #[cfg(test)]
