@@ -1,13 +1,36 @@
 import { ReactNode } from "react";
+import { useWorkspaceStore } from "@/stores/workspace";
 
 interface SidebarProps {
   children: ReactNode;
 }
 
 export function Sidebar({ children }: SidebarProps) {
+  const folderPath = useWorkspaceStore((s) => s.folderPath);
+  const openFolder = useWorkspaceStore((s) => s.openFolder);
+
+  const folderName = folderPath
+    ? folderPath.split(/[/\\]/).pop() ?? folderPath
+    : null;
+
   return (
-    <aside className="w-64 h-screen border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 overflow-y-auto py-2 shrink-0">
-      {children}
+    <aside className="w-64 h-screen border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 overflow-y-auto shrink-0 flex flex-col">
+      {folderName && (
+        <div
+          data-testid="folder-header"
+          className="px-3 py-2 flex items-center justify-between border-b border-gray-200 dark:border-gray-700 shrink-0"
+        >
+          <span
+            className="text-sm font-medium text-gray-700 dark:text-gray-300 truncate min-w-0 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 rounded"
+            onClick={() => openFolder()}
+          >
+            {folderName}
+          </span>
+        </div>
+      )}
+      <div className="flex-1 overflow-y-auto py-2">
+        {children}
+      </div>
     </aside>
   );
 }
