@@ -10,7 +10,7 @@ export function Sidebar({ children }: SidebarProps) {
   const openFolder = useWorkspaceStore((s) => s.openFolder);
 
   const folderName = folderPath
-    ? folderPath.split(/[/\\]/).pop() ?? folderPath
+    ? folderPath.replace(/[/\\]+$/, "").split(/[/\\]/).pop() ?? folderPath
     : null;
 
   return (
