@@ -4,6 +4,7 @@ use aws_sdk_bedrockruntime::Client as BedrockClient;
 use aws_sdk_bedrockruntime::types::{
     ContentBlock, ConversationRole, ConverseStreamOutput, Message, SystemContentBlock,
 };
+use aws_smithy_types::Document;
 use serde::{Deserialize, Serialize};
 use tauri::ipc::Channel;
 use tokio::process::Command;
@@ -66,6 +67,60 @@ pub fn execute_write_file(
     Ok(full_path.to_string_lossy().to_string())
 }
 
+fn build_write_file_tool_config(
+) -> Result<aws_sdk_bedrockruntime::types::ToolConfiguration, String> {
+    use aws_sdk_bedrockruntime::types::{Tool, ToolConfiguration, ToolInputSchema, ToolSpecification};
+    use std::collections::HashMap;
+
+    let mut file_path_prop: HashMap<String, Document> = HashMap::new();
+    file_path_prop.insert("type".to_string(), Document::String("string".to_string()));
+    file_path_prop.insert(
+        "description".to_string(),
+        Document::String(
+            "Relative path within the workspace (e.g., 'specs/notification-system.md')"
+                .to_string(),
+        ),
+    );
+
+    let mut content_prop: HashMap<String, Document> = HashMap::new();
+    content_prop.insert("type".to_string(), Document::String("string".to_string()));
+    content_prop.insert(
+        "description".to_string(),
+        Document::String("The complete file content to write".to_string()),
+    );
+
+    let mut properties: HashMap<String, Document> = HashMap::new();
+    properties.insert("file_path".to_string(), Document::Object(file_path_prop));
+    properties.insert("content".to_string(), Document::Object(content_prop));
+
+    let mut schema_map: HashMap<String, Document> = HashMap::new();
+    schema_map.insert("type".to_string(), Document::String("object".to_string()));
+    schema_map.insert("properties".to_string(), Document::Object(properties));
+    schema_map.insert(
+        "required".to_string(),
+        Document::Array(vec![
+            Document::String("file_path".to_string()),
+            Document::String("content".to_string()),
+        ]),
+    );
+
+    let tool_spec = ToolSpecification::builder()
+        .name("write_file")
+        .description(
+            "Write content to a file in the workspace. Creates the file if it doesn't exist, \
+             or overwrites it if it does. Use this to create and update the document being authored. \
+             Always write the complete file content.",
+        )
+        .input_schema(ToolInputSchema::Json(Document::Object(schema_map)))
+        .build()
+        .map_err(|e| format!("Failed to build tool spec: {}", e))?;
+
+    ToolConfiguration::builder()
+        .tools(Tool::ToolSpec(tool_spec))
+        .build()
+        .map_err(|e| format!("Failed to build tool config: {}", e))
+}
+
 #[tauri::command]
 pub async fn ai_sso_login(aws_profile: String) -> Result<(), String> {
     validate_aws_profile(&aws_profile)?;
@@ -112,16 +167,37 @@ pub async fn ai_chat(
     active_file_path: Option<String>,
     workspace_path: String,
     aws_profile: String,
+    authoring_mode: bool,
+    active_skill: Option<String>,
     on_event: Channel<StreamEvent>,
 ) -> Result<(), String> {
     // 1. Validate profile
     validate_aws_profile(&aws_profile)?;
 
     // 2. Build system prompt
+    // Load skill content if in authoring mode with an active skill
+    let skill_content = if authoring_mode {
+        if let Some(ref skill_name) = active_skill {
+            match crate::skill_loader::load_skill(&workspace_path, skill_name) {
+                Ok(content) => Some(content),
+                Err(e) => {
+                    log::warn!("Failed to load skill '{}': {}", skill_name, e);
+                    None
+                }
+            }
+        } else {
+            None
+        }
+    } else {
+        None
+    };
+
     let system_prompt = crate::context::build_system_prompt(
         active_file_path.as_deref(),
         &[],
         &workspace_path,
+        authoring_mode,
+        skill_content.as_deref(),
     )?;
 
     // 3. Load AWS config using profile name
@@ -275,5 +351,11 @@ mod tests {
         let json = serde_json::to_string(&event).unwrap();
         assert!(json.contains("\"type\":\"DocumentUpdated\""));
         assert!(json.contains("/workspace/doc.md"));
+    }
+
+    #[test]
+    fn test_build_write_file_tool_compiles() {
+        let config = build_write_file_tool_config();
+        assert!(config.is_ok());
     }
 }
