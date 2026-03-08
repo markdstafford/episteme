@@ -114,6 +114,13 @@ export const useAiChatStore = create<AiChatStore>((set, get) => ({
           error: event.data,
           ...(isAuthError ? { isAuthenticated: false } : {}),
         });
+      } else if (event.type === "DocumentUpdated") {
+        const filePath = event.data;
+        set((s) => ({
+          authoringFilePath: filePath,
+          documentReloadCounter: s.documentReloadCounter + 1,
+        }));
+        useFileTreeStore.getState().selectFile(filePath);
       }
     };
 
