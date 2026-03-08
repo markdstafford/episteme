@@ -128,14 +128,15 @@ fn collect_markdown_entries(dir: &Path, workspace_root: &Path) -> Vec<FileEntry>
 
 pub fn build_system_prompt(
     active_file_path: Option<&str>,
-    _open_file_paths: &[String], // TODO: populate when multi-doc support is added
+    _open_file_paths: &[String],
     workspace_path: &str,
+    authoring_mode: bool,
+    skill_content: Option<&str>,
 ) -> Result<String, String> {
     let workspace = Path::new(workspace_path);
     let canonical_workspace = fs::canonicalize(workspace)
         .map_err(|e| format!("Invalid workspace path: {}", e))?;
 
-    // Primary context: read the active file if provided
     let active_document_section = if let Some(file_path) = active_file_path {
         let path = Path::new(file_path);
         if !path.exists() {
@@ -152,16 +153,47 @@ pub fn build_system_prompt(
         "No document is currently open.".to_string()
     };
 
-    // Tertiary context: workspace structure
     let entries = collect_markdown_entries(&canonical_workspace, &canonical_workspace);
     let tree_listing: String = entries
         .iter()
         .map(|e| format!("- {}: \"{}\"", e.relative_path, e.title))
         .collect::<Vec<_>>()
         .join("\n");
+    let tree_section = if tree_listing.is_empty() {
+        "No markdown files found.".to_string()
+    } else {
+        tree_listing
+    };
 
-    let prompt = format!(
-        "You are an AI assistant for a document repository called Episteme. \
+    let prompt = if authoring_mode {
+        let skill_section = match skill_content {
+            Some(content) => format!("\n## Skill\n\n{}\n", content),
+            None => String::new(),
+        };
+        format!(
+            "You are an AI assistant for Episteme, a document authoring application.\n\
+             You are currently helping the user create a new document.\n\
+             \n\
+             ## Authoring instructions\n\
+             \n\
+             - Use the `write_file` tool to write the document — always write the complete file content\n\
+             - Keep your chat messages concise — ask questions and give brief status updates\n\
+             - Do NOT include section content in your chat messages; write it to the document using write_file\n\
+             - Follow the skill process below to guide the user through each section\n\
+             - After each write, the user sees the updated document in their viewer\n\
+             {}\n\
+             ## Active document\n\
+             {}\n\
+             \n\
+             ## Repository structure\n\
+             {}",
+            skill_section,
+            active_document_section,
+            tree_section
+        )
+    } else {
+        format!(
+            "You are an AI assistant for a document repository called Episteme. \
 You help users understand, navigate, and work with their documentation.\n\
 \n\
 ## Active document\n\
@@ -173,13 +205,10 @@ You help users understand, navigate, and work with their documentation.\n\
 When the user asks about a specific document, use the repository structure to identify the right file. \
 If they ask about a file you haven't seen the full contents of, let them know you can see the file exists \
 but would need them to open it for full context.",
-        active_document_section,
-        if tree_listing.is_empty() {
-            "No markdown files found.".to_string()
-        } else {
-            tree_listing
-        }
-    );
+            active_document_section,
+            tree_section
+        )
+    };
 
     Ok(prompt)
 }
@@ -233,5 +262,46 @@ mod tests {
     fn test_is_hidden() {
         assert!(is_hidden(".git"));
         assert!(!is_hidden("readme.md"));
+    }
+
+    #[test]
+    fn test_authoring_prompt_includes_skill_and_instructions() {
+        use tempfile::TempDir;
+        let dir = tempfile::tempdir().unwrap();
+        // Create a dummy markdown file so the workspace has content
+        std::fs::write(dir.path().join("readme.md"), "# Readme").unwrap();
+
+        let prompt = build_system_prompt(
+            None,
+            &[],
+            dir.path().to_str().unwrap(),
+            true,
+            Some("## My Skill\nDo things"),
+        )
+        .unwrap();
+
+        assert!(prompt.contains("Authoring instructions"));
+        assert!(prompt.contains("write_file"));
+        assert!(prompt.contains("## Skill"));
+        assert!(prompt.contains("## My Skill"));
+        assert!(prompt.contains("Repository structure"));
+    }
+
+    #[test]
+    fn test_non_authoring_prompt_unchanged() {
+        let dir = tempfile::tempdir().unwrap();
+        std::fs::write(dir.path().join("doc.md"), "# Doc").unwrap();
+
+        let prompt = build_system_prompt(
+            None,
+            &[],
+            dir.path().to_str().unwrap(),
+            false,
+            None,
+        )
+        .unwrap();
+
+        assert!(prompt.contains("Episteme"));
+        assert!(!prompt.contains("Authoring instructions"));
     }
 }
