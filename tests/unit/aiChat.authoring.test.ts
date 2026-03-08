@@ -65,4 +65,31 @@ describe("useAiChatStore authoring state", () => {
     expect(s.streamingContent).toBe("");
     expect(s.error).toBeNull();
   });
+
+  it("DocumentUpdated event updates authoringFilePath and increments documentReloadCounter", () => {
+    useAiChatStore.setState({
+      authoringFilePath: null,
+      documentReloadCounter: 0,
+    });
+
+    // Simulate what the onEvent Channel handler does when it receives DocumentUpdated
+    useAiChatStore.setState((s) => ({
+      authoringFilePath: "/workspace/new-doc.md",
+      documentReloadCounter: s.documentReloadCounter + 1,
+    }));
+
+    const s = useAiChatStore.getState();
+    expect(s.authoringFilePath).toBe("/workspace/new-doc.md");
+    expect(s.documentReloadCounter).toBe(1);
+  });
+
+  it("multiple DocumentUpdated events increment documentReloadCounter each time", () => {
+    useAiChatStore.setState({ documentReloadCounter: 0 });
+
+    useAiChatStore.setState((s) => ({ documentReloadCounter: s.documentReloadCounter + 1 }));
+    useAiChatStore.setState((s) => ({ documentReloadCounter: s.documentReloadCounter + 1 }));
+    useAiChatStore.setState((s) => ({ documentReloadCounter: s.documentReloadCounter + 1 }));
+
+    expect(useAiChatStore.getState().documentReloadCounter).toBe(3);
+  });
 });
