@@ -3,6 +3,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { DocumentViewer } from "@/components/DocumentViewer";
 import { useFileTreeStore } from "@/stores/fileTree";
 import { useWorkspaceStore } from "@/stores/workspace";
+import { useAiChatStore } from "@/stores/aiChat";
 
 vi.mock("@tauri-apps/api/core", () => ({
   invoke: vi.fn(),
@@ -26,6 +27,7 @@ describe("DocumentViewer", () => {
       isLoading: false,
       error: null,
     });
+    useAiChatStore.setState({ documentReloadCounter: 0 } as any);
   });
 
   it("shows empty state when no file selected", () => {
