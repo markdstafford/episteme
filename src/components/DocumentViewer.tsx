@@ -3,6 +3,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-shell";
 import { useFileTreeStore } from "@/stores/fileTree";
 import { useWorkspaceStore } from "@/stores/workspace";
+import { useAiChatStore } from "@/stores/aiChat";
 import { parseDocument, resolveInternalLink } from "@/lib/markdown";
 import { MarkdownRenderer } from "@/components/MarkdownRenderer";
 import { FrontmatterBar } from "@/components/FrontmatterBar";
@@ -12,6 +13,7 @@ export function DocumentViewer() {
   const selectedFilePath = useFileTreeStore((s) => s.selectedFilePath);
   const selectFile = useFileTreeStore((s) => s.selectFile);
   const workspacePath = useWorkspaceStore((s) => s.folderPath);
+  const documentReloadCounter = useAiChatStore((s) => s.documentReloadCounter);
 
   const [content, setContent] = useState<string | null>(null);
   const [frontmatter, setFrontmatter] = useState<Record<
@@ -56,7 +58,7 @@ export function DocumentViewer() {
     return () => {
       cancelled = true;
     };
-  }, [selectedFilePath]);
+  }, [selectedFilePath, documentReloadCounter]);
 
   const handleLinkClick = useCallback(
     (href: string) => {

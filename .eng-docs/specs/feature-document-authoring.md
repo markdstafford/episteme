@@ -462,142 +462,142 @@ You are currently helping the user create a new document.
 
 ## Task list
 
-- [ ] **Story: Skill loader (Rust backend)**
-  - [ ] **Task: Implement `load_skill` function**
+- [x] **Story: Skill loader (Rust backend)**
+  - [x] **Task: Implement `load_skill` function**
     - **Description**: Create `src-tauri/src/skill_loader.rs` with a function that reads a skill from `.claude/skills/<skill_name>/` within the workspace. Read `SKILL.md` (required), scan `references/` for `.md` files (optional), concatenate them with reference filenames as headings, and return the combined string.
     - **Acceptance criteria**:
-      - [ ] Reads `SKILL.md` from `.claude/skills/<name>/SKILL.md`
-      - [ ] Reads all `.md` files from `references/` subdirectory
-      - [ ] Concatenates skill content with reference files prefixed by filename headings
-      - [ ] Returns error if `SKILL.md` doesn't exist
-      - [ ] Returns successfully if `references/` directory is missing (optional)
-      - [ ] Validates skill path is within workspace (no path traversal)
-      - [ ] Unit tests cover: valid skill, skill without references, missing skill, path traversal attempt
+      - [x] Reads `SKILL.md` from `.claude/skills/<name>/SKILL.md`
+      - [x] Reads all `.md` files from `references/` subdirectory
+      - [x] Concatenates skill content with reference files prefixed by filename headings
+      - [x] Returns error if `SKILL.md` doesn't exist
+      - [x] Returns successfully if `references/` directory is missing (optional)
+      - [x] Validates skill path is within workspace (no path traversal)
+      - [x] Unit tests cover: valid skill, skill without references, missing skill, path traversal attempt
     - **Dependencies**: None
-  - [ ] **Task: Implement `list_skills` function**
+  - [x] **Task: Implement `list_skills` function**
     - **Description**: Add a function to `skill_loader.rs` that scans `.claude/skills/` directories in the workspace and returns a list of available skills with name and description (parsed from YAML frontmatter in each `SKILL.md`).
     - **Acceptance criteria**:
-      - [ ] Scans `.claude/skills/` for subdirectories containing `SKILL.md`
-      - [ ] Parses YAML frontmatter to extract `name` and `description` fields
-      - [ ] Returns `Vec<SkillInfo>` with name and description for each skill
-      - [ ] Returns empty list if `.claude/skills/` doesn't exist
-      - [ ] Unit tests cover: multiple skills, no skills directory, skill with missing frontmatter
+      - [x] Scans `.claude/skills/` for subdirectories containing `SKILL.md`
+      - [x] Parses YAML frontmatter to extract `name` and `description` fields
+      - [x] Returns `Vec<SkillInfo>` with name and description for each skill
+      - [x] Returns empty list if `.claude/skills/` doesn't exist
+      - [x] Unit tests cover: multiple skills, no skills directory, skill with missing frontmatter
     - **Dependencies**: None
 
-- [ ] **Story: Tool use support in Bedrock integration (Rust backend)**
-  - [ ] **Task: Define `write_file` tool schema**
+- [x] **Story: Tool use support in Bedrock integration (Rust backend)**
+  - [x] **Task: Define `write_file` tool schema**
     - **Description**: In `commands/ai.rs`, define the `write_file` tool configuration that gets passed to Bedrock's ConverseStream API. The tool accepts `file_path` (relative) and `content` (complete file content). Use the `aws_sdk_bedrockruntime::types::Tool` and `ToolInputSchema` types to build the definition.
     - **Acceptance criteria**:
-      - [ ] Tool definition matches the JSON schema in the tech spec
-      - [ ] Tool is passed to `converse_stream().tool_config()` when authoring mode is active
-      - [ ] Tool is NOT included when authoring mode is inactive (regular chat)
-      - [ ] Project compiles with new tool configuration types
+      - [x] Tool definition matches the JSON schema in the tech spec
+      - [x] Tool is passed to `converse_stream().tool_config()` when authoring mode is active
+      - [x] Tool is NOT included when authoring mode is inactive (regular chat)
+      - [x] Project compiles with new tool configuration types
     - **Dependencies**: None
-  - [ ] **Task: Implement `write_file` tool execution**
+  - [x] **Task: Implement `write_file` tool execution**
     - **Description**: Add a function that executes the `write_file` tool: validates the file path is within the workspace (reuse existing canonicalization pattern from `read_file`), creates parent directories if needed, writes the full content to disk, and returns a success/failure result for the tool response.
     - **Acceptance criteria**:
-      - [ ] Creates file if it doesn't exist
-      - [ ] Overwrites file if it does exist
-      - [ ] Creates parent directories as needed
-      - [ ] Rejects paths outside the workspace (path traversal prevention)
-      - [ ] Rejects absolute paths and paths containing `..`
-      - [ ] Returns descriptive error on write failure
-      - [ ] Unit tests cover: create, overwrite, path traversal rejection, parent directory creation
+      - [x] Creates file if it doesn't exist
+      - [x] Overwrites file if it does exist
+      - [x] Creates parent directories as needed
+      - [x] Rejects paths outside the workspace (path traversal prevention)
+      - [x] Rejects absolute paths and paths containing `..`
+      - [x] Returns descriptive error on write failure
+      - [x] Unit tests cover: create, overwrite, path traversal rejection, parent directory creation
     - **Dependencies**: None
-  - [ ] **Task: Implement tool use loop in `ai_chat`**
+  - [x] **Task: Implement tool use loop in `ai_chat`**
     - **Description**: Extend the existing stream processing loop in `ai_chat` to handle Bedrock tool use. Accumulate `ToolUse` input from stream events, execute tools on `MessageStop` with `stop_reason: "tool_use"`, send `ToolResult` back to Bedrock, and continue streaming. Send `DocumentUpdated` event to frontend after each file write. Add `DocumentUpdated` variant to `StreamEvent` enum.
     - **Acceptance criteria**:
-      - [ ] `StreamEvent` enum extended with `DocumentUpdated(String)` variant
-      - [ ] `ToolUse` content blocks accumulated from stream deltas
-      - [ ] Tool input JSON parsed when content block completes
-      - [ ] `write_file` executed and `DocumentUpdated` event sent to frontend on tool use
-      - [ ] `ToolResult` message sent back to Bedrock with tool outcome
-      - [ ] New `ConverseStream` call initiated after tool result to continue the conversation
-      - [ ] Loop terminates on `stop_reason: "end_turn"` as before
-      - [ ] Existing non-authoring chat flow (no tool use) continues to work unchanged
-      - [ ] Auth errors during tool use loop handled correctly
+      - [x] `StreamEvent` enum extended with `DocumentUpdated(String)` variant
+      - [x] `ToolUse` content blocks accumulated from stream deltas
+      - [x] Tool input JSON parsed when content block completes
+      - [x] `write_file` executed and `DocumentUpdated` event sent to frontend on tool use
+      - [x] `ToolResult` message sent back to Bedrock with tool outcome
+      - [x] New `ConverseStream` call initiated after tool result to continue the conversation
+      - [x] Loop terminates on `stop_reason: "end_turn"` as before
+      - [x] Existing non-authoring chat flow (no tool use) continues to work unchanged
+      - [x] Auth errors during tool use loop handled correctly
     - **Dependencies**: "Task: Define `write_file` tool schema", "Task: Implement `write_file` tool execution"
 
-- [ ] **Story: Authoring system prompt (Rust backend)**
-  - [ ] **Task: Extend `ai_chat` command to accept authoring parameters**
+- [x] **Story: Authoring system prompt (Rust backend)**
+  - [x] **Task: Extend `ai_chat` command to accept authoring parameters**
     - **Description**: Modify the `ai_chat` Tauri command signature to accept `authoring_mode: bool` and `active_skill: Option<String>`. When `authoring_mode` is true, include tool definitions in the Bedrock call. When `active_skill` is set, load the skill and include its content in the system prompt.
     - **Acceptance criteria**:
-      - [ ] `ai_chat` accepts `authoring_mode` and `active_skill` parameters
-      - [ ] Tool definitions included only when `authoring_mode` is true
-      - [ ] Skill content loaded and injected into system prompt when `active_skill` is provided
-      - [ ] Authoring instructions block added to system prompt in authoring mode
-      - [ ] Regular chat (authoring_mode: false) works exactly as before
+      - [x] `ai_chat` accepts `authoring_mode` and `active_skill` parameters
+      - [x] Tool definitions included only when `authoring_mode` is true
+      - [x] Skill content loaded and injected into system prompt when `active_skill` is provided
+      - [x] Authoring instructions block added to system prompt in authoring mode
+      - [x] Regular chat (authoring_mode: false) works exactly as before
     - **Dependencies**: "Task: Implement `load_skill` function", "Task: Implement tool use loop in `ai_chat`"
-  - [ ] **Task: Build authoring system prompt in `context.rs`**
+  - [x] **Task: Build authoring system prompt in `context.rs`**
     - **Description**: Extend `build_system_prompt` in `context.rs` to support authoring mode. When authoring, prepend authoring instructions (use `write_file`, keep chat concise, follow skill process), include skill content, and include the active document content and repository structure.
     - **Acceptance criteria**:
-      - [ ] Authoring instructions section added when authoring mode is active
-      - [ ] Skill content (SKILL.md + references) included under `## Skill: <name>` heading
-      - [ ] Active document content included under `## Active document` heading
-      - [ ] Repository structure listing included (existing behavior)
-      - [ ] Non-authoring prompt unchanged
-      - [ ] Unit tests verify authoring prompt structure
+      - [x] Authoring instructions section added when authoring mode is active
+      - [x] Skill content (SKILL.md + references) included under `## Skill: <name>` heading
+      - [x] Active document content included under `## Active document` heading
+      - [x] Repository structure listing included (existing behavior)
+      - [x] Non-authoring prompt unchanged
+      - [x] Unit tests verify authoring prompt structure
     - **Dependencies**: "Task: Implement `load_skill` function"
 
-- [ ] **Story: Frontend authoring state and events**
-  - [ ] **Task: Add authoring state to `useAiChatStore`**
+- [x] **Story: Frontend authoring state and events**
+  - [x] **Task: Add authoring state to `useAiChatStore`**
     - **Description**: Extend `useAiChatStore` with `authoringMode`, `authoringFilePath`, and `activeSkill` fields. Add `startAuthoring()` action that sets `authoringMode = true`, clears the conversation, and resets authoring fields. Update `sendMessage` to pass `authoringMode` and `activeSkill` to the `ai_chat` Tauri command. Update `clearConversation` to also reset authoring state.
     - **Acceptance criteria**:
-      - [ ] New fields added: `authoringMode`, `authoringFilePath`, `activeSkill`
-      - [ ] `startAuthoring()` action sets mode, clears messages, resets fields
-      - [ ] `sendMessage` passes `authoringMode` and `activeSkill` to Tauri command
-      - [ ] `clearConversation` resets authoring state
-      - [ ] Unit tests cover authoring state transitions
+      - [x] New fields added: `authoringMode`, `authoringFilePath`, `activeSkill`
+      - [x] `startAuthoring()` action sets mode, clears messages, resets fields
+      - [x] `sendMessage` passes `authoringMode` and `activeSkill` to Tauri command
+      - [x] `clearConversation` resets authoring state
+      - [x] Unit tests cover authoring state transitions
     - **Dependencies**: None
-  - [ ] **Task: Handle `DocumentUpdated` stream event**
+  - [x] **Task: Handle `DocumentUpdated` stream event**
     - **Description**: In `useAiChatStore`, extend the `onEvent` Channel handler to process `DocumentUpdated` events. When received, update `authoringFilePath`, trigger `useFileTreeStore` to select the file (so it appears selected in the sidebar), and trigger document viewer to reload by updating a reactive signal.
     - **Acceptance criteria**:
-      - [ ] `DocumentUpdated` event type handled in Channel onmessage
-      - [ ] `authoringFilePath` updated with the file path from the event
-      - [ ] `useFileTreeStore.selectFile()` called with the file path
-      - [ ] Document viewer reloads content when `DocumentUpdated` is received
-      - [ ] Multiple `DocumentUpdated` events in a single turn handled correctly (each triggers a reload)
-      - [ ] Unit tests cover event handling and state updates
+      - [x] `DocumentUpdated` event type handled in Channel onmessage
+      - [x] `authoringFilePath` updated with the file path from the event
+      - [x] `useFileTreeStore.selectFile()` called with the file path
+      - [x] Document viewer reloads content when `DocumentUpdated` is received
+      - [x] Multiple `DocumentUpdated` events in a single turn handled correctly (each triggers a reload)
+      - [x] Unit tests cover event handling and state updates
     - **Dependencies**: "Task: Add authoring state to `useAiChatStore`"
 
-- [ ] **Story: Frontend UI changes**
-  - [ ] **Task: Add "New document" button to sidebar**
+- [x] **Story: Frontend UI changes**
+  - [x] **Task: Add "New document" button to sidebar**
     - **Description**: Add a button above the file tree in `Sidebar.tsx` with a `Plus` icon and "New document" label. Clicking it calls `useAiChatStore.startAuthoring()` and opens the chat panel (communicate via a callback prop or by setting a shared state).
     - **Acceptance criteria**:
-      - [ ] Button visible above file tree when a folder is open
-      - [ ] Ghost button style matching design spec
-      - [ ] `Plus` icon from Lucide with "New document" label
-      - [ ] Click calls `startAuthoring()` on the chat store
-      - [ ] Chat panel opens if not already open
+      - [x] Button visible above file tree when a folder is open
+      - [x] Ghost button style matching design spec
+      - [x] `Plus` icon from Lucide with "New document" label
+      - [x] Click calls `startAuthoring()` on the chat store
+      - [x] Chat panel opens if not already open
       - [ ] Button disabled during active streaming
     - **Dependencies**: "Task: Add authoring state to `useAiChatStore`"
-  - [ ] **Task: Wire DocumentViewer to reload on `DocumentUpdated`**
+  - [x] **Task: Wire DocumentViewer to reload on `DocumentUpdated`**
     - **Description**: Modify `DocumentViewer.tsx` to subscribe to `authoringFilePath` from `useAiChatStore`. When the file path changes or a `DocumentUpdated` event triggers a reload, re-invoke `read_file` to refresh the displayed content. Use a counter or timestamp to force re-render even when the path hasn't changed (same file, new content).
     - **Acceptance criteria**:
-      - [ ] Document viewer reloads when `authoringFilePath` is set or updated
-      - [ ] Content refreshes on each `DocumentUpdated` event (not just on path change)
-      - [ ] Existing file selection from sidebar continues to work
-      - [ ] No flicker or scroll position loss during reload
+      - [x] Document viewer reloads when `authoringFilePath` is set or updated
+      - [x] Content refreshes on each `DocumentUpdated` event (not just on path change)
+      - [x] Existing file selection from sidebar continues to work
+      - [x] No flicker or scroll position loss during reload
     - **Dependencies**: "Task: Handle `DocumentUpdated` stream event"
 
-- [ ] **Story: Starter skills**
-  - [ ] **Task: Create product description skill**
+- [x] **Story: Starter skills**
+  - [x] **Task: Create product description skill**
     - **Description**: Create `.claude/skills/product-description/SKILL.md` and `.claude/skills/product-description/references/template.md`. The `SKILL.md` defines the process for guiding a user through creating a product description (What, Why, Personas, Narratives, User Stories, Goals/Non-goals). The template shows the expected section structure. Base the process on the planning-reference skill patterns already used in this project.
     - **Acceptance criteria**:
-      - [ ] `SKILL.md` has valid YAML frontmatter with name and description
-      - [ ] Process covers all PD sections in order: What, Why, Personas, Narratives, User Stories, Goals, Non-goals
-      - [ ] Each section has guidance on what questions to ask and how to draft
-      - [ ] `references/template.md` shows the expected document structure
-      - [ ] Skill is loadable by `load_skill` function
+      - [x] `SKILL.md` has valid YAML frontmatter with name and description
+      - [x] Process covers all PD sections in order: What, Why, Personas, Narratives, User Stories, Goals, Non-goals
+      - [x] Each section has guidance on what questions to ask and how to draft
+      - [x] `references/template.md` shows the expected document structure
+      - [x] Skill is loadable by `load_skill` function
     - **Dependencies**: "Task: Implement `load_skill` function"
-  - [ ] **Task: Create tech design skill**
+  - [x] **Task: Create tech design skill**
     - **Description**: Create `.claude/skills/tech-design/SKILL.md` and references. Defines the process for guiding a user through creating a technical design (Introduction, System Design, Detailed Design, Security, Observability, Testing, Alternatives, Risks).
     - **Acceptance criteria**:
-      - [ ] `SKILL.md` has valid YAML frontmatter with name and description
-      - [ ] Process covers all tech design sections in order
-      - [ ] Guidance on referencing existing ADRs and related documents
-      - [ ] `references/template.md` shows expected document structure
-      - [ ] Skill is loadable by `load_skill` function
+      - [x] `SKILL.md` has valid YAML frontmatter with name and description
+      - [x] Process covers all tech design sections in order
+      - [x] Guidance on referencing existing ADRs and related documents
+      - [x] `references/template.md` shows expected document structure
+      - [x] Skill is loadable by `load_skill` function
     - **Dependencies**: "Task: Implement `load_skill` function"
 
 - [ ] **Story: End-to-end integration and testing**
@@ -613,28 +613,28 @@ You are currently helping the user create a new document.
       - [ ] Chat messages stay concise (no section content in chat)
       - [ ] Complete document is structurally correct
     - **Dependencies**: All previous tasks
-  - [ ] **Task: Unit tests for skill loader and tool execution**
+  - [x] **Task: Unit tests for skill loader and tool execution**
     - **Description**: Write Rust unit tests for `skill_loader.rs` functions and `write_file` tool execution. Use temp directories with test skill files and test documents.
     - **Acceptance criteria**:
-      - [ ] Tests for `load_skill`: valid skill, missing skill, skill without references, path traversal
-      - [ ] Tests for `list_skills`: multiple skills, empty directory, missing directory
-      - [ ] Tests for `write_file` execution: create, overwrite, path validation, parent directory creation
-      - [ ] All tests pass with `cargo test`
+      - [x] Tests for `load_skill`: valid skill, missing skill, skill without references, path traversal
+      - [x] Tests for `list_skills`: multiple skills, empty directory, missing directory
+      - [x] Tests for `write_file` execution: create, overwrite, path validation, parent directory creation
+      - [x] All tests pass with `cargo test`
     - **Dependencies**: "Task: Implement `load_skill` function", "Task: Implement `list_skills` function", "Task: Implement `write_file` tool execution"
-  - [ ] **Task: Unit tests for frontend authoring state**
+  - [x] **Task: Unit tests for frontend authoring state**
     - **Description**: Write Vitest unit tests for the authoring-related changes in `useAiChatStore`. Test `startAuthoring`, `DocumentUpdated` event handling, authoring state transitions, and interaction with file tree store.
     - **Acceptance criteria**:
-      - [ ] Tests for `startAuthoring()` state transitions
-      - [ ] Tests for `DocumentUpdated` event handling
-      - [ ] Tests for `sendMessage` passing authoring parameters
-      - [ ] Tests for `clearConversation` resetting authoring state
-      - [ ] All tests pass with `npm run test:unit`
+      - [x] Tests for `startAuthoring()` state transitions
+      - [x] Tests for `DocumentUpdated` event handling
+      - [x] Tests for `sendMessage` passing authoring parameters
+      - [x] Tests for `clearConversation` resetting authoring state
+      - [x] All tests pass with `npm run test:unit`
     - **Dependencies**: "Task: Add authoring state to `useAiChatStore`", "Task: Handle `DocumentUpdated` stream event"
-  - [ ] **Task: E2E tests with mocked backend**
+  - [x] **Task: E2E tests with mocked backend**
     - **Description**: Write Playwright E2E tests covering the authoring user flow with mocked Tauri commands. Test "New document" button, chat panel opening, document viewer updating on `DocumentUpdated` events.
     - **Acceptance criteria**:
-      - [ ] Test: "New document" button opens chat panel
-      - [ ] Test: document viewer updates when `DocumentUpdated` event received
-      - [ ] Test: authoring mode clears previous conversation
-      - [ ] All tests pass with `npm run test:e2e`
+      - [x] Test: "New document" button opens chat panel
+      - [x] Test: document viewer updates when `DocumentUpdated` event received
+      - [x] Test: authoring mode clears previous conversation
+      - [x] All tests pass with `npm run test:e2e`
     - **Dependencies**: "Task: Add 'New document' button to sidebar", "Task: Wire DocumentViewer to reload on `DocumentUpdated`"

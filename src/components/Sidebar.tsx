@@ -1,11 +1,13 @@
 import { ReactNode } from "react";
+import { Plus } from "lucide-react";
 import { useWorkspaceStore } from "@/stores/workspace";
 
 interface SidebarProps {
   children: ReactNode;
+  onStartAuthoring?: () => void;
 }
 
-export function Sidebar({ children }: SidebarProps) {
+export function Sidebar({ children, onStartAuthoring }: SidebarProps) {
   const folderPath = useWorkspaceStore((s) => s.folderPath);
   const openFolder = useWorkspaceStore((s) => s.openFolder);
 
@@ -26,6 +28,17 @@ export function Sidebar({ children }: SidebarProps) {
           >
             {folderName}
           </span>
+          {onStartAuthoring && (
+            <button
+              onClick={onStartAuthoring}
+              className="flex items-center gap-1 px-2 py-1 text-xs text-gray-700 dark:text-gray-300 rounded hover:bg-gray-100 dark:hover:bg-gray-800 shrink-0"
+              title="New document"
+              aria-label="New document"
+            >
+              <Plus className="w-4 h-4" />
+              New document
+            </button>
+          )}
         </div>
       )}
       <div className="flex-1 overflow-y-auto py-2">
