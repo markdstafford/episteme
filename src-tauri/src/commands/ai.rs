@@ -62,6 +62,15 @@ pub fn execute_write_file(
             .map_err(|e| format!("Failed to create directories: {}", e))?;
     }
 
+    // Verify the resolved parent is still within the workspace (guards against symlink escapes)
+    if let Some(parent) = full_path.parent() {
+        let canonical_parent = std::fs::canonicalize(parent)
+            .map_err(|e| format!("Failed to resolve path: {}", e))?;
+        if !canonical_parent.starts_with(&canonical_workspace) {
+            return Err("Access denied: resolved path is outside workspace".to_string());
+        }
+    }
+
     std::fs::write(&full_path, content)
         .map_err(|e| format!("Failed to write file: {}", e))?;
 
@@ -533,5 +542,25 @@ mod tests {
     fn test_build_write_file_tool_compiles() {
         let config = build_write_file_tool_config();
         assert!(config.is_ok());
+    }
+
+    #[test]
+    fn test_execute_write_file_rejects_symlink_escape() {
+        use std::os::unix::fs::symlink;
+        let dir = tempdir().unwrap();
+        let outside = tempdir().unwrap();
+
+        // Create a symlink inside the workspace that points outside
+        let link_path = dir.path().join("escape-link");
+        symlink(outside.path(), &link_path).unwrap();
+
+        // Attempting to write through the symlink should fail
+        let result = execute_write_file(
+            dir.path().to_str().unwrap(),
+            "escape-link/secret.md",
+            "bad content",
+        );
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("outside workspace"));
     }
 }
