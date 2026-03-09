@@ -25,6 +25,22 @@ function App() {
   }, [openFolder]);
 
   useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.metaKey && e.key === ",") {
+        e.preventDefault();
+        invoke("open_settings_window").catch(console.error);
+      }
+    };
+    document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
+  }, []);
+
+  useEffect(() => {
+    const unlisten = listen("menu:open-settings", () => invoke("open_settings_window").catch(console.error));
+    return () => { unlisten.then((f) => f()); };
+  }, []);
+
+  useEffect(() => {
     const init = async () => {
       await loadSavedFolder();
       // Load AWS profile from preferences
@@ -89,6 +105,7 @@ function App() {
       {chatPanelOpen && (
         <AiChatPanel onClose={() => setChatPanelOpen(false)} />
       )}
+
     </div>
   );
 }

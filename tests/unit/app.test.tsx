@@ -75,14 +75,15 @@ describe("App", () => {
     expect(openFolder).toHaveBeenCalledOnce();
   });
 
-  it("cleans up menu:open-folder listener on unmount", async () => {
+  it("cleans up menu event listeners on unmount", async () => {
     const mockUnlisten = vi.fn();
     vi.mocked(listen).mockResolvedValue(mockUnlisten);
 
     const { unmount } = render(<App />);
     await waitFor(() => expect(listen).toHaveBeenCalledWith("menu:open-folder", expect.any(Function)));
+    await waitFor(() => expect(listen).toHaveBeenCalledWith("menu:open-settings", expect.any(Function)));
 
     unmount();
-    await waitFor(() => expect(mockUnlisten).toHaveBeenCalledOnce());
+    await waitFor(() => expect(mockUnlisten).toHaveBeenCalledTimes(2));
   });
 });
