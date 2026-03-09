@@ -6,6 +6,7 @@ import { Sidebar } from "@/components/Sidebar";
 import { FileTree } from "@/components/FileTree";
 import { DocumentViewer } from "@/components/DocumentViewer";
 import { AiChatPanel } from "@/components/AiChatPanel";
+import { SettingsDialog } from "@/components/SettingsDialog";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { parsePreferences } from "@/lib/preferences";
@@ -13,6 +14,7 @@ import { Loader2, MessageSquare } from "lucide-react";
 
 function App() {
   const [chatPanelOpen, setChatPanelOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const folderPath = useWorkspaceStore((s) => s.folderPath);
   const isLoading = useWorkspaceStore((s) => s.isLoading);
   const loadSavedFolder = useWorkspaceStore((s) => s.loadSavedFolder);
@@ -23,6 +25,22 @@ function App() {
     const unlisten = listen("menu:open-folder", () => openFolder());
     return () => { unlisten.then((f) => f()); };
   }, [openFolder]);
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.metaKey && e.key === ",") {
+        e.preventDefault();
+        setSettingsOpen(true);
+      }
+    };
+    document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
+  }, []);
+
+  useEffect(() => {
+    const unlisten = listen("menu:open-settings", () => setSettingsOpen(true));
+    return () => { unlisten.then((f) => f()); };
+  }, []);
 
   useEffect(() => {
     const init = async () => {
@@ -88,6 +106,9 @@ function App() {
       </div>
       {chatPanelOpen && (
         <AiChatPanel onClose={() => setChatPanelOpen(false)} />
+      )}
+      {settingsOpen && (
+        <SettingsDialog onClose={() => setSettingsOpen(false)} />
       )}
     </div>
   );
