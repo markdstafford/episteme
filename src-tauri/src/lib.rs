@@ -41,7 +41,9 @@ pub fn run() {
           let _ = app.emit("menu:open-folder", ());
         }
         if event.id() == "settings" {
-          let _ = commands::window::open_settings_window(app.clone());
+          if let Err(e) = commands::window::open_settings_window(app.clone()) {
+            log::error!("Failed to open settings window: {}", e);
+          }
         }
       });
 
