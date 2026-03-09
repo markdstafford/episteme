@@ -19,6 +19,7 @@ pub fn run() {
       commands::ai::ai_sso_login,
       commands::ai::ai_check_auth,
       commands::ai::ai_chat,
+      commands::window::open_settings_window,
     ])
     .setup(|app| {
       if cfg!(debug_assertions) {
@@ -40,7 +41,7 @@ pub fn run() {
           let _ = app.emit("menu:open-folder", ());
         }
         if event.id() == "settings" {
-          let _ = app.emit("menu:open-settings", ());
+          let _ = commands::window::open_settings_window(app.clone());
         }
       });
 
