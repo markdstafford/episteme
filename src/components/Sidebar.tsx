@@ -36,7 +36,6 @@ export function Sidebar({ children, onStartAuthoring }: SidebarProps) {
               aria-label="New document"
             >
               <Plus className="w-4 h-4" />
-              New document
             </button>
           )}
         </div>
