@@ -117,4 +117,22 @@ describe("SettingsView", () => {
     // save_preferences should NOT have been called during the pre-load change
     expect(invoke).not.toHaveBeenCalledWith("save_preferences", expect.anything());
   });
+
+  it("persists valid value with dot in profile name", async () => {
+    render(<SettingsView />);
+    await waitFor(() => screen.getByDisplayValue("my-profile"));
+
+    fireEvent.change(screen.getByLabelText("AWS Profile"), {
+      target: { value: "team.dev" },
+    });
+
+    await waitFor(() => {
+      expect(invoke).toHaveBeenCalledWith("save_preferences", {
+        preferences: {
+          aws_profile: "team.dev",
+          last_opened_folder: "/Users/me/docs",
+        },
+      });
+    });
+  });
 });

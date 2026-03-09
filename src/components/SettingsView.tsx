@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { useAiChatStore } from "@/stores/aiChat";
 
-const AWS_PROFILE_REGEX = /^[A-Za-z0-9_-]{1,64}$/;
+const AWS_PROFILE_REGEX = /^[A-Za-z0-9_.-]{1,64}$/;
 
 interface Preferences {
   aws_profile?: string | null;
