@@ -28,7 +28,7 @@ function App() {
     const handler = (e: KeyboardEvent) => {
       if (e.metaKey && e.key === ",") {
         e.preventDefault();
-        invoke("open_settings_window");
+        invoke("open_settings_window").catch(console.error);
       }
     };
     document.addEventListener("keydown", handler);
@@ -36,7 +36,7 @@ function App() {
   }, []);
 
   useEffect(() => {
-    const unlisten = listen("menu:open-settings", () => invoke("open_settings_window"));
+    const unlisten = listen("menu:open-settings", () => invoke("open_settings_window").catch(console.error));
     return () => { unlisten.then((f) => f()); };
   }, []);
 
