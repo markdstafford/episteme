@@ -55,7 +55,6 @@ export function SettingsView() {
             type="text"
             value={awsProfile}
             onChange={(e) => handleAwsProfileChange(e.target.value)}
-            aria-label="AWS Profile"
             className="w-full border border-gray-200 dark:border-gray-700 rounded-md px-3 py-2 text-sm bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus-visible:ring-2 ring-blue-500 outline-none"
             placeholder="e.g. default"
           />
