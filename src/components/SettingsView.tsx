@@ -12,6 +12,7 @@ interface Preferences {
 export function SettingsView() {
   const [awsProfile, setAwsProfile] = useState("");
   const [fullPrefs, setFullPrefs] = useState<Preferences>({});
+  const [prefsLoaded, setPrefsLoaded] = useState(false);
   const setStoreAwsProfile = useAiChatStore((s) => s.setAwsProfile);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -20,6 +21,7 @@ export function SettingsView() {
       .then((prefs) => {
         setFullPrefs(prefs);
         setAwsProfile(prefs.aws_profile ?? "");
+        setPrefsLoaded(true);
       })
       .catch(() => {});
   }, []);
@@ -29,6 +31,7 @@ export function SettingsView() {
   }, []);
 
   const handleAwsProfileChange = (value: string) => {
+    if (!prefsLoaded) return;
     setAwsProfile(value);
     if (!AWS_PROFILE_REGEX.test(value)) return;
     const merged = { ...fullPrefs, aws_profile: value };

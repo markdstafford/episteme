@@ -105,4 +105,16 @@ describe("SettingsView", () => {
 
     expect(invoke).not.toHaveBeenCalledWith("save_preferences", expect.anything());
   });
+
+  it("does not persist before preferences are loaded", async () => {
+    render(<SettingsView />);
+    // Fire change BEFORE awaiting load_preferences resolution
+    fireEvent.change(screen.getByLabelText("AWS Profile"), {
+      target: { value: "early-input" },
+    });
+    // Wait for load to complete
+    await waitFor(() => screen.getByDisplayValue("my-profile"));
+    // save_preferences should NOT have been called during the pre-load change
+    expect(invoke).not.toHaveBeenCalledWith("save_preferences", expect.anything());
+  });
 });
