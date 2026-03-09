@@ -19,6 +19,7 @@ pub fn run() {
       commands::ai::ai_sso_login,
       commands::ai::ai_check_auth,
       commands::ai::ai_chat,
+      commands::window::open_settings_window,
     ])
     .setup(|app| {
       if cfg!(debug_assertions) {
@@ -30,13 +31,19 @@ pub fn run() {
       }
 
       let open_folder_item = MenuItem::with_id(app, "open_folder", "Open Folder...", true, Some("CmdOrCtrl+O"))?;
-      let file_menu = Submenu::with_items(app, "File", true, &[&open_folder_item])?;
+      let settings_item = MenuItem::with_id(app, "settings", "Settings...", true, Some("CmdOrCtrl+,"))?;
+      let file_menu = Submenu::with_items(app, "File", true, &[&open_folder_item, &settings_item])?;
       let menu = Menu::with_items(app, &[&file_menu])?;
       app.set_menu(menu)?;
 
       app.on_menu_event(|app, event| {
         if event.id() == "open_folder" {
           let _ = app.emit("menu:open-folder", ());
+        }
+        if event.id() == "settings" {
+          if let Err(e) = commands::window::open_settings_window(app.clone()) {
+            log::error!("Failed to open settings window: {}", e);
+          }
         }
       });
 
