@@ -81,3 +81,40 @@ describe("parsePreferences", () => {
     expect(result).toEqual(DEFAULT_PREFERENCES);
   });
 });
+
+describe("recently_used_skill_types", () => {
+  it("defaults to empty array when field is missing", () => {
+    const result = parsePreferences({ last_opened_folder: null, aws_profile: null });
+    expect(result.recently_used_skill_types).toEqual([]);
+  });
+
+  it("parses a valid array of skill type strings", () => {
+    const result = parsePreferences({
+      last_opened_folder: null,
+      aws_profile: null,
+      recently_used_skill_types: ["product-description", "tech-design"],
+    });
+    expect(result.recently_used_skill_types).toEqual(["product-description", "tech-design"]);
+  });
+
+  it("round-trips through schema correctly", () => {
+    const data = {
+      last_opened_folder: null,
+      aws_profile: null,
+      recently_used_skill_types: ["tech-design"],
+    };
+    const parsed = PreferencesSchema.safeParse(data);
+    expect(parsed.success).toBe(true);
+    if (parsed.success) {
+      expect(parsed.data.recently_used_skill_types).toEqual(["tech-design"]);
+    }
+  });
+
+  it("defaults to empty array when field is explicitly missing from old preferences file", () => {
+    const result = PreferencesSchema.safeParse({ last_opened_folder: "/path", aws_profile: null });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.recently_used_skill_types).toEqual([]);
+    }
+  });
+});

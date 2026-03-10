@@ -7,6 +7,8 @@ pub struct Preferences {
     pub last_opened_folder: Option<String>,
     #[serde(default)]
     pub aws_profile: Option<String>,
+    #[serde(default)]
+    pub recently_used_skill_types: Vec<String>,
 }
 
 impl Default for Preferences {
@@ -14,6 +16,7 @@ impl Default for Preferences {
         Preferences {
             last_opened_folder: None,
             aws_profile: None,
+            recently_used_skill_types: Vec::new(),
         }
     }
 }
