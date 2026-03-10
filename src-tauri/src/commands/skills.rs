@@ -41,7 +41,10 @@ fn count_in_dir(dir: &Path, counts: &mut HashMap<String, u32>) {
             if !should_skip_dir(&dir_name) {
                 count_in_dir(&path, counts);
             }
-        } else if path.extension().map_or(false, |ext| ext == "md" || ext == "markdown") {
+        } else if path.extension().map_or(false, |ext| {
+            let lower = ext.to_string_lossy().to_lowercase();
+            lower == "md" || lower == "markdown"
+        }) {
             if let Some(doc_type) = extract_type_from_file(&path) {
                 *counts.entry(doc_type).or_insert(0) += 1;
             }
