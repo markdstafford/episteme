@@ -21,6 +21,10 @@ fn count_documents_by_type_impl(workspace_path: &str) -> HashMap<String, u32> {
     counts
 }
 
+fn should_skip_dir(name: &str) -> bool {
+    matches!(name, ".git" | "node_modules" | "target" | ".worktrees")
+}
+
 fn count_in_dir(dir: &Path, counts: &mut HashMap<String, u32>) {
     let entries = match fs::read_dir(dir) {
         Ok(e) => e,
@@ -33,7 +37,10 @@ fn count_in_dir(dir: &Path, counts: &mut HashMap<String, u32>) {
             continue;
         }
         if path.is_dir() {
-            count_in_dir(&path, counts);
+            let dir_name = entry.file_name().to_string_lossy().into_owned();
+            if !should_skip_dir(&dir_name) {
+                count_in_dir(&path, counts);
+            }
         } else if path.extension().map_or(false, |ext| ext == "md" || ext == "markdown") {
             if let Some(doc_type) = extract_type_from_file(&path) {
                 *counts.entry(doc_type).or_insert(0) += 1;
@@ -145,6 +152,20 @@ mod tests {
 
         let counts = count_documents_by_type_impl(dir.path().to_str().unwrap());
         assert_eq!(counts.get("tech-design"), Some(&2u32));
+    }
+
+    #[test]
+    fn test_count_documents_by_type_skips_node_modules() {
+        let dir = tempdir().unwrap();
+        let node_modules = dir.path().join("node_modules");
+        fs::create_dir(&node_modules).unwrap();
+        write_file_with_frontmatter(&node_modules, "ignored.md", "product-description");
+        write_file_with_frontmatter(dir.path(), "counted.md", "tech-design");
+
+        let counts = count_documents_by_type_impl(dir.path().to_str().unwrap());
+        assert_eq!(counts.len(), 1);
+        assert_eq!(counts.get("tech-design"), Some(&1u32));
+        assert!(counts.get("product-description").is_none());
     }
 
     #[test]

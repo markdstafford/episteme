@@ -131,7 +131,7 @@ export function CreateNewDialog({ workspacePath, onSelect, onClose }: CreateNewD
         ) : (
           options.map((opt, i) => (
             <button
-              key={opt.label}
+              key={opt.skillName ?? "other"}
               data-option="true"
               onClick={() => handleSelect(opt)}
               className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer text-left"
