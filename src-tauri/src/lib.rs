@@ -20,6 +20,7 @@ pub fn run() {
       commands::ai::ai_check_auth,
       commands::ai::ai_chat,
       commands::window::open_settings_window,
+      commands::skills::list_skills,
     ])
     .setup(|app| {
       if cfg!(debug_assertions) {
