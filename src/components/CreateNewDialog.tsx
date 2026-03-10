@@ -4,7 +4,8 @@ import { FileText, Wrench, HelpCircle } from "lucide-react";
 import { parsePreferences } from "@/lib/preferences";
 
 interface SkillInfo {
-  name: string;
+  id: string;       // directory name — passed to load_skill
+  name: string;     // display name
   description: string;
 }
 
@@ -22,26 +23,31 @@ interface CreateNewDialogProps {
 function buildOptionList(
   skills: SkillInfo[],
   counts: Record<string, number>,
-  mru: string[]
+  mru: string[]   // mru stores ids
 ): Option[] {
-  const skillNames = new Set(skills.map((s) => s.name));
-  const validMru = mru.filter((n) => skillNames.has(n));
+  const skillIds = new Set(skills.map((s) => s.id));
+  const validMru = mru.filter((id) => skillIds.has(id));
 
-  const slots: string[] = validMru.slice(0, 3);
+  const slots: string[] = validMru.slice(0, 3);  // slots holds ids
   const slotsSet = new Set(slots);
 
   const remaining = skills
-    .filter((s) => !slotsSet.has(s.name))
+    .filter((s) => !slotsSet.has(s.id))
     .sort((a, b) => {
-      const diff = (counts[b.name] ?? 0) - (counts[a.name] ?? 0);
-      return diff !== 0 ? diff : a.name.localeCompare(b.name);
+      const diff = (counts[b.id] ?? 0) - (counts[a.id] ?? 0);
+      return diff !== 0 ? diff : a.id.localeCompare(b.id);
     });
 
   while (slots.length < 3 && remaining.length > 0) {
-    slots.push(remaining.shift()!.name);
+    slots.push(remaining.shift()!.id);
   }
 
-  const options: Option[] = slots.map((n) => ({ label: n, skillName: n }));
+  // Build display options: label = skill.name, skillName = skill.id
+  const idToSkill = new Map(skills.map((s) => [s.id, s]));
+  const options: Option[] = slots.map((id) => {
+    const skill = idToSkill.get(id)!;
+    return { label: skill.name, skillName: skill.id };
+  });
   options.push({ label: "Other", skillName: null });
   return options;
 }
@@ -67,7 +73,7 @@ export function CreateNewDialog({ workspacePath, onSelect, onClose }: CreateNewD
         const prefs = parsePreferences(prefsRaw);
         setOptions(buildOptionList(skills, counts, prefs.recently_used_skill_types));
       } catch {
-        if (!cancelled) setOptions([]);
+        if (!cancelled) setOptions(buildOptionList([], {}, []));
       }
     }
     load();

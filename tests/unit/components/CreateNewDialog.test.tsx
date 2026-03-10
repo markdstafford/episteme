@@ -10,7 +10,7 @@ vi.mock("@tauri-apps/api/core", () => ({
 const mockInvoke = vi.mocked(invoke);
 
 function makeSkills(names: string[]) {
-  return names.map((n) => ({ name: n, description: "" }));
+  return names.map((n) => ({ id: n, name: n, description: "" }));
 }
 
 describe("CreateNewDialog option list computation", () => {
