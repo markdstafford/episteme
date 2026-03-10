@@ -77,9 +77,9 @@ function App() {
   return (
     <div className="flex h-screen bg-white dark:bg-gray-900">
       <Sidebar
-        onStartAuthoring={() => {
+        onStartAuthoring={(skillName) => {
           setChatPanelOpen(true);
-          startAuthoring();
+          startAuthoring(skillName);
         }}
       >
         <FileTree />

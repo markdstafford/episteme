@@ -12,6 +12,25 @@ vi.mock("@tauri-apps/api/core", () => ({
   },
 }));
 
+// Mock CreateNewDialog so tests can control selection without full dialog mount
+vi.mock("@/components/CreateNewDialog", () => ({
+  CreateNewDialog: ({
+    onSelect,
+    onClose,
+  }: {
+    onSelect: (skillName: string | null) => void;
+    onClose: () => void;
+  }) => (
+    <div data-testid="create-new-dialog">
+      <button onClick={() => onSelect(null)}>Select no skill</button>
+      <button onClick={() => onSelect("product-description")}>
+        Select skill
+      </button>
+      <button onClick={onClose}>Close dialog</button>
+    </div>
+  ),
+}));
+
 describe("Document authoring flow", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -50,27 +69,39 @@ describe("Document authoring flow", () => {
     ).toBeInTheDocument();
   });
 
-  it("clicking New document opens the chat panel", () => {
+  it("clicking New document opens the dialog", () => {
+    render(<App />);
+
+    expect(screen.queryByTestId("create-new-dialog")).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /new document/i }));
+
+    expect(screen.getByTestId("create-new-dialog")).toBeInTheDocument();
+  });
+
+  it("selecting from the dialog opens the chat panel", () => {
     render(<App />);
 
     // Chat panel should not be visible initially
     expect(screen.queryByText("AI assistant")).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: /new document/i }));
+    fireEvent.click(screen.getByText("Select no skill"));
 
     // AiChatPanel header should now be visible
     expect(screen.getByText("AI assistant")).toBeInTheDocument();
   });
 
-  it("clicking New document calls startAuthoring and sets authoringMode", () => {
+  it("selecting from the dialog calls startAuthoring and sets authoringMode", () => {
     render(<App />);
 
     fireEvent.click(screen.getByRole("button", { name: /new document/i }));
+    fireEvent.click(screen.getByText("Select no skill"));
 
     expect(useAiChatStore.getState().authoringMode).toBe(true);
   });
 
-  it("clicking New document clears any previous messages", () => {
+  it("selecting from the dialog clears any previous messages", () => {
     useAiChatStore.setState({
       messages: [
         { role: "user", content: "previous message" },
@@ -81,23 +112,48 @@ describe("Document authoring flow", () => {
     render(<App />);
 
     fireEvent.click(screen.getByRole("button", { name: /new document/i }));
+    fireEvent.click(screen.getByText("Select no skill"));
 
     expect(useAiChatStore.getState().messages).toHaveLength(0);
   });
 
-  it("clicking New document a second time resets authoring state again", () => {
+  it("selecting a skill sets activeSkill in the store", () => {
     render(<App />);
 
-    // First click — simulates a session that has progressed
     fireEvent.click(screen.getByRole("button", { name: /new document/i }));
+    fireEvent.click(screen.getByText("Select skill"));
+
+    expect(useAiChatStore.getState().activeSkill).toBe("product-description");
+  });
+
+  it("closing the dialog without selecting does not open the chat panel", () => {
+    render(<App />);
+
+    // Chat panel should not be visible initially
+    expect(screen.queryByText("AI assistant")).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /new document/i }));
+    fireEvent.click(screen.getByText("Close dialog"));
+
+    // Chat panel should still not be open
+    expect(screen.queryByText("AI assistant")).not.toBeInTheDocument();
+  });
+
+  it("opening the dialog a second time resets authoring state again on select", () => {
+    render(<App />);
+
+    // First selection — simulates a session that has progressed
+    fireEvent.click(screen.getByRole("button", { name: /new document/i }));
+    fireEvent.click(screen.getByText("Select no skill"));
     useAiChatStore.setState({
       authoringFilePath: "/workspace/docs/draft.md",
       activeSkill: "product-description",
       messages: [{ role: "user", content: "write a doc" }],
     });
 
-    // Second click — startAuthoring should clear messages and reset per-session fields
+    // Second click then select — startAuthoring should clear messages and reset per-session fields
     fireEvent.click(screen.getByRole("button", { name: /new document/i }));
+    fireEvent.click(screen.getByText("Select no skill"));
 
     const s = useAiChatStore.getState();
     expect(s.authoringMode).toBe(true);

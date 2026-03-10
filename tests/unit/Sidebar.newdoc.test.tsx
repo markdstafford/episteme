@@ -4,7 +4,16 @@ import { Sidebar } from "@/components/Sidebar";
 import { useWorkspaceStore } from "@/stores/workspace";
 
 vi.mock("@tauri-apps/api/core", () => ({
-  invoke: vi.fn(),
+  invoke: vi.fn().mockResolvedValue([]),
+}));
+
+// Mock CreateNewDialog to avoid full mount complexity in Sidebar tests
+vi.mock("@/components/CreateNewDialog", () => ({
+  CreateNewDialog: ({ onClose }: { onClose: () => void }) => (
+    <div data-testid="create-new-dialog">
+      <button onClick={onClose}>Close</button>
+    </div>
+  ),
 }));
 
 describe("Sidebar New document button", () => {
@@ -37,7 +46,18 @@ describe("Sidebar New document button", () => {
     expect(screen.queryByRole("button", { name: /new document/i })).toBeNull();
   });
 
-  it("calls onStartAuthoring when button is clicked", () => {
+  it("clicking the button opens the dialog", () => {
+    render(
+      <Sidebar onStartAuthoring={vi.fn()}>
+        <div />
+      </Sidebar>
+    );
+    expect(screen.queryByTestId("create-new-dialog")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: /new document/i }));
+    expect(screen.getByTestId("create-new-dialog")).toBeTruthy();
+  });
+
+  it("closing the dialog without selecting does not call onStartAuthoring", () => {
     const onStartAuthoring = vi.fn();
     render(
       <Sidebar onStartAuthoring={onStartAuthoring}>
@@ -45,6 +65,7 @@ describe("Sidebar New document button", () => {
       </Sidebar>
     );
     fireEvent.click(screen.getByRole("button", { name: /new document/i }));
-    expect(onStartAuthoring).toHaveBeenCalledOnce();
+    fireEvent.click(screen.getByText("Close"));
+    expect(onStartAuthoring).not.toHaveBeenCalled();
   });
 });

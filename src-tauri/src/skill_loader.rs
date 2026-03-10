@@ -3,7 +3,8 @@ use std::path::PathBuf;
 
 #[derive(Clone, serde::Serialize)]
 pub struct SkillInfo {
-    pub name: String,
+    pub id: String,       // directory name — used to load the skill
+    pub name: String,     // display name from frontmatter (falls back to id)
     pub description: String,
 }
 
@@ -78,13 +79,13 @@ pub fn list_skills(workspace_path: &str) -> Vec<SkillInfo> {
 
         let (name, description) = match fs::read_to_string(&skill_md) {
             Ok(content) => parse_frontmatter(&content, &dir_name),
-            Err(_) => (dir_name, String::new()),
+            Err(_) => (dir_name.clone(), String::new()),
         };
 
-        skills.push(SkillInfo { name, description });
+        skills.push(SkillInfo { id: dir_name.clone(), name, description });
     }
 
-    skills.sort_by(|a, b| a.name.cmp(&b.name));
+    skills.sort_by(|a, b| a.id.cmp(&b.id));
     skills
 }
 
@@ -204,8 +205,10 @@ mod tests {
 
         let skills = list_skills(dir.path().to_str().unwrap());
         assert_eq!(skills.len(), 2);
+        assert_eq!(skills[0].id, "alpha");
         assert_eq!(skills[0].name, "Alpha Skill");
         assert_eq!(skills[0].description, "First skill");
+        assert_eq!(skills[1].id, "beta");
         assert_eq!(skills[1].name, "Beta Skill");
         assert_eq!(skills[1].description, "Second skill");
     }
@@ -224,6 +227,7 @@ mod tests {
 
         let skills = list_skills(dir.path().to_str().unwrap());
         assert_eq!(skills.len(), 1);
+        assert_eq!(skills[0].id, "bare-skill");
         assert_eq!(skills[0].name, "bare-skill");
         assert_eq!(skills[0].description, "");
     }

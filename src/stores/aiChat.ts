@@ -27,7 +27,7 @@ interface AiChatStore {
   sendMessage: (content: string) => Promise<void>;
   setAwsProfile: (profile: string) => Promise<void>;
   clearConversation: () => void;
-  startAuthoring: () => void;
+  startAuthoring: (skillName?: string | null) => void;
 }
 
 export const useAiChatStore = create<AiChatStore>((set, get) => ({
@@ -172,11 +172,11 @@ export const useAiChatStore = create<AiChatStore>((set, get) => ({
     });
   },
 
-  startAuthoring: () => {
+  startAuthoring: (skillName?: string | null) => {
     set({
       authoringMode: true,
       authoringFilePath: null,
-      activeSkill: null,
+      activeSkill: skillName ?? null,
       messages: [],
       isStreaming: false,
       streamingContent: "",
