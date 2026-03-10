@@ -1,6 +1,7 @@
 use crate::skill_loader::{self, SkillInfo};
 use std::collections::HashMap;
 use std::fs;
+use std::io::{BufRead, BufReader};
 use std::path::Path;
 
 #[tauri::command]
@@ -42,9 +43,14 @@ fn count_in_dir(dir: &Path, counts: &mut HashMap<String, u32>) {
 }
 
 fn extract_type_from_file(path: &Path) -> Option<String> {
-    let content = fs::read_to_string(path).ok()?;
-    // Read only the first ~20 lines for performance
-    let head: String = content.lines().take(20).collect::<Vec<_>>().join("\n");
+    let file = fs::File::open(path).ok()?;
+    let reader = BufReader::new(file);
+    let head: String = reader
+        .lines()
+        .take(20)
+        .filter_map(|l| l.ok())
+        .collect::<Vec<_>>()
+        .join("\n");
 
     let trimmed = head.trim_start();
     if !trimmed.starts_with("---") {
@@ -127,6 +133,18 @@ mod tests {
         let counts = count_documents_by_type_impl(dir.path().to_str().unwrap());
         assert_eq!(counts.len(), 1);
         assert_eq!(counts.get("tech-design"), Some(&1u32));
+    }
+
+    #[test]
+    fn test_count_documents_by_type_counts_nested_documents() {
+        let dir = tempdir().unwrap();
+        let subdir = dir.path().join("subdir");
+        fs::create_dir(&subdir).unwrap();
+        write_file_with_frontmatter(&subdir, "nested.md", "tech-design");
+        write_file_with_frontmatter(dir.path(), "root.md", "tech-design");
+
+        let counts = count_documents_by_type_impl(dir.path().to_str().unwrap());
+        assert_eq!(counts.get("tech-design"), Some(&2u32));
     }
 
     #[test]
