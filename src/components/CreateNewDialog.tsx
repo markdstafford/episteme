@@ -57,14 +57,18 @@ export function CreateNewDialog({ workspacePath, onSelect, onClose }: CreateNewD
   useEffect(() => {
     let cancelled = false;
     async function load() {
-      const [skills, counts, prefsRaw] = await Promise.all([
-        invoke<SkillInfo[]>("list_skills", { workspacePath }),
-        invoke<Record<string, number>>("count_documents_by_type", { workspacePath }),
-        invoke("load_preferences"),
-      ]);
-      if (cancelled) return;
-      const prefs = parsePreferences(prefsRaw);
-      setOptions(buildOptionList(skills, counts, prefs.recently_used_skill_types));
+      try {
+        const [skills, counts, prefsRaw] = await Promise.all([
+          invoke<SkillInfo[]>("list_skills", { workspacePath }),
+          invoke<Record<string, number>>("count_documents_by_type", { workspacePath }),
+          invoke("load_preferences"),
+        ]);
+        if (cancelled) return;
+        const prefs = parsePreferences(prefsRaw);
+        setOptions(buildOptionList(skills, counts, prefs.recently_used_skill_types));
+      } catch {
+        if (!cancelled) setOptions([]);
+      }
     }
     load();
     return () => { cancelled = true; };
@@ -101,8 +105,8 @@ export function CreateNewDialog({ workspacePath, onSelect, onClose }: CreateNewD
         return;
       }
       const n = parseInt(e.key, 10);
-      if (!isNaN(n) && n >= 1 && n <= options!.length) {
-        handleSelect(options![n - 1]);
+      if (!isNaN(n) && n >= 1 && n <= options.length) {
+        handleSelect(options[n - 1]);
       }
     }
     document.addEventListener("keydown", handleKey);
