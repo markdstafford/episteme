@@ -126,6 +126,19 @@ describe("Document authoring flow", () => {
     expect(useAiChatStore.getState().activeSkill).toBe("product-description");
   });
 
+  it("closing the dialog without selecting does not open the chat panel", () => {
+    render(<App />);
+
+    // Chat panel should not be visible initially
+    expect(screen.queryByText("AI assistant")).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /new document/i }));
+    fireEvent.click(screen.getByText("Close dialog"));
+
+    // Chat panel should still not be open
+    expect(screen.queryByText("AI assistant")).not.toBeInTheDocument();
+  });
+
   it("opening the dialog a second time resets authoring state again on select", () => {
     render(<App />);
 
