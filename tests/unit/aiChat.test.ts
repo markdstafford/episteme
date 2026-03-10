@@ -282,6 +282,7 @@ describe("useAiChatStore", () => {
         preferences: {
           last_opened_folder: "/workspace",
           aws_profile: "new-profile",
+          recently_used_skill_types: [],
         },
       });
     });
