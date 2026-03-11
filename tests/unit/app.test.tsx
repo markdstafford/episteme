@@ -81,10 +81,9 @@ describe("App", () => {
 
     const { unmount } = render(<App />);
     await waitFor(() => expect(listen).toHaveBeenCalledWith("menu:open-folder", expect.any(Function)));
-    await waitFor(() => expect(listen).toHaveBeenCalledWith("menu:open-settings", expect.any(Function)));
 
     unmount();
-    await waitFor(() => expect(mockUnlisten).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(mockUnlisten).toHaveBeenCalledTimes(1));
   });
 
   it("does not show DesignKitchen on initial render", () => {
