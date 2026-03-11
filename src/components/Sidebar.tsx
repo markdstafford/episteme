@@ -1,17 +1,13 @@
-import { useState, ReactNode } from "react";
-import { Plus } from "lucide-react";
+import { ReactNode } from "react";
 import { useWorkspaceStore } from "@/stores/workspace";
-import { CreateNewDialog } from "@/components/CreateNewDialog";
 
 interface SidebarProps {
   children: ReactNode;
-  onStartAuthoring?: (skillName: string | null) => void;
 }
 
-export function Sidebar({ children, onStartAuthoring }: SidebarProps) {
+export function Sidebar({ children }: SidebarProps) {
   const folderPath = useWorkspaceStore((s) => s.folderPath);
   const openFolder = useWorkspaceStore((s) => s.openFolder);
-  const [dialogOpen, setDialogOpen] = useState(false);
 
   const folderName = folderPath
     ? folderPath.replace(/[/\\]+$/, "").split(/[/\\]/).pop() ?? folderPath
@@ -31,30 +27,10 @@ export function Sidebar({ children, onStartAuthoring }: SidebarProps) {
             >
               {folderName}
             </span>
-            {onStartAuthoring && (
-              <button
-                onClick={() => setDialogOpen(true)}
-                className="flex items-center gap-1 px-2 py-1 text-xs text-gray-700 dark:text-gray-300 rounded hover:bg-gray-100 dark:hover:bg-gray-800 shrink-0"
-                title="New document"
-                aria-label="New document"
-              >
-                <Plus className="w-4 h-4" />
-              </button>
-            )}
           </div>
         )}
         {children}
       </div>
-      {dialogOpen && folderPath && (
-        <CreateNewDialog
-          workspacePath={folderPath}
-          onSelect={(skillName) => {
-            onStartAuthoring?.(skillName);
-            setDialogOpen(false);
-          }}
-          onClose={() => setDialogOpen(false)}
-        />
-      )}
     </aside>
   );
 }
