@@ -88,7 +88,60 @@ export function DesignKitchen({ onClose }: DesignKitchenProps) {
             { name: "--color-state-success-subtle", dark: "oklch(65% 0.05 155)", light: "oklch(65% 0.05 155)" },
           ]} />
         </Section>
-        <Section title="Typography">{/* Task 4 */}</Section>
+        <Section title="Typography">
+          <div style={{ marginBottom: "24px" }}>
+            <div style={{ fontSize: "var(--font-size-ui-xs)", color: "var(--color-text-quaternary)", marginBottom: "12px", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+              Font Families
+            </div>
+            {[
+              { name: "--font-ui",   value: '"Inter Variable", -apple-system, sans-serif', sample: "The quick brown fox jumps over the lazy dog" },
+              { name: "--font-mono", value: '"JetBrains Mono", monospace',                 sample: "const x = oklch(62% 0.175 230);" },
+            ].map(({ name, value, sample }) => (
+              <div key={name} style={{ marginBottom: "16px" }}>
+                <div style={{ fontSize: "var(--font-size-ui-xs)", color: "var(--color-text-tertiary)", fontFamily: "var(--font-mono)", marginBottom: "4px" }}>{name}</div>
+                <div style={{ fontFamily: value, fontSize: "16px", color: "var(--color-text-primary)" }}>{sample}</div>
+              </div>
+            ))}
+          </div>
+
+          <div style={{ marginBottom: "24px" }}>
+            <div style={{ fontSize: "var(--font-size-ui-xs)", color: "var(--color-text-quaternary)", marginBottom: "12px", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+              UI Scale
+            </div>
+            {[
+              { name: "--font-size-ui-xs",   size: "11px", weight: 400, label: "11px / 400 — labels, timestamps, keyboard shortcuts" },
+              { name: "--font-size-ui-sm",   size: "12px", weight: 400, label: "12px / 400 — secondary text, captions" },
+              { name: "--font-size-ui-base", size: "13px", weight: 400, label: "13px / 400 — controls, menus, dialog content" },
+              { name: "--font-size-ui-md",   size: "14px", weight: 500, label: "14px / 500 — dialog titles, section headers" },
+              { name: "--font-size-ui-lg",   size: "16px", weight: 400, label: "16px / 400 — sidebar nav items" },
+            ].map(({ name, size, weight, label }) => (
+              <div key={name} style={{ display: "flex", alignItems: "baseline", gap: "16px", marginBottom: "8px" }}>
+                <div style={{ width: "200px", fontSize: "var(--font-size-ui-xs)", color: "var(--color-text-tertiary)", fontFamily: "var(--font-mono)", flexShrink: 0 }}>{name}</div>
+                <div style={{ fontSize: size, fontWeight: weight, color: "var(--color-text-primary)" }}>{label}</div>
+              </div>
+            ))}
+          </div>
+
+          <div>
+            <div style={{ fontSize: "var(--font-size-ui-xs)", color: "var(--color-text-quaternary)", marginBottom: "12px", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+              Document Scale
+            </div>
+            {[
+              { name: "--font-size-doc-xs",   size: "12px", weight: 400 },
+              { name: "--font-size-doc-sm",   size: "14px", weight: 400 },
+              { name: "--font-size-doc-base", size: "16px", weight: 400 },
+              { name: "--font-size-doc-h4",   size: "16px", weight: 600 },
+              { name: "--font-size-doc-h3",   size: "18px", weight: 600 },
+              { name: "--font-size-doc-h2",   size: "22px", weight: 600 },
+              { name: "--font-size-doc-h1",   size: "28px", weight: 700 },
+            ].map(({ name, size, weight }) => (
+              <div key={name} style={{ display: "flex", alignItems: "baseline", gap: "16px", marginBottom: "8px" }}>
+                <div style={{ width: "200px", fontSize: "var(--font-size-ui-xs)", color: "var(--color-text-tertiary)", fontFamily: "var(--font-mono)", flexShrink: 0 }}>{name}</div>
+                <div style={{ fontSize: size, fontWeight: weight, color: "var(--color-text-primary)" }}>The quick brown fox — {size}/{weight}</div>
+              </div>
+            ))}
+          </div>
+        </Section>
         <Section title="Spacing">{/* Task 5 */}</Section>
         <Section title="Border Radius">{/* Task 5 */}</Section>
         <Section title="Shadows">{/* Task 5 */}</Section>

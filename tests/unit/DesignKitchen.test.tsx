@@ -34,4 +34,12 @@ describe("DesignKitchen", () => {
     expect(screen.getByText("--color-accent")).toBeInTheDocument();
     expect(screen.getByText("--color-state-danger")).toBeInTheDocument();
   });
+
+  it("renders typography token samples", () => {
+    render(<DesignKitchen onClose={vi.fn()} />);
+    expect(screen.getByText("--font-size-ui-xs")).toBeInTheDocument();
+    expect(screen.getByText("--font-size-doc-base")).toBeInTheDocument();
+    expect(screen.getByText("--font-ui")).toBeInTheDocument();
+    expect(screen.getByText("--font-mono")).toBeInTheDocument();
+  });
 });
