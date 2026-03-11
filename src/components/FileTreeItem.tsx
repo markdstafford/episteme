@@ -35,14 +35,16 @@ export function FileTreeItem({
   };
 
   const selectedStyles = isSelected
-    ? "bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300"
+    ? "bg-(--color-bg-hover) text-(--color-text-primary)"
     : "";
 
-  const focusStyles = isFocused ? "ring-2 ring-blue-500 ring-inset" : "";
+  const focusStyles = isFocused
+    ? "outline-2 outline-(--color-accent) outline-offset-2"
+    : "";
 
   return (
     <button
-      className={`flex items-center gap-1.5 w-full text-left px-3 py-1 text-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 ${selectedStyles} ${focusStyles}`}
+      className={`group flex items-center gap-2 w-full text-left h-(--height-nav-item) px-[var(--space-2)] text-[length:var(--font-size-ui-lg)] rounded-(--radius-md) cursor-pointer text-(--color-text-secondary) hover:bg-(--color-bg-subtle) hover:text-(--color-text-primary) transition-colors duration-(--duration-fast) ease-(--ease-default) ${selectedStyles} ${focusStyles}`}
       style={{ paddingLeft }}
       onClick={handleClick}
       role="treeitem"
@@ -54,18 +56,18 @@ export function FileTreeItem({
       {node.is_dir ? (
         <>
           <ChevronRight
-            className={`w-4 h-4 text-gray-400 transition-transform ${isExpanded ? "rotate-90" : ""}`}
+            className={`shrink-0 size-3 transition-[transform,color] duration-(--duration-fast) ease-(--ease-default) text-(--color-text-tertiary) group-hover:text-(--color-text-secondary) group-[[aria-selected=true]]:text-(--color-text-secondary) ${isExpanded ? "rotate-90" : ""}`}
           />
-          <Folder className="w-4 h-4 text-gray-400" />
-          <span className="text-gray-700 dark:text-gray-300 font-medium truncate">
+          <Folder className="shrink-0 size-4 text-(--color-text-tertiary) group-hover:text-(--color-text-secondary) group-[[aria-selected=true]]:text-(--color-text-secondary)" />
+          <span className="font-medium truncate">
             {node.name}
           </span>
         </>
       ) : (
         <>
-          <span className="w-4" />
-          <FileText className="w-4 h-4 text-gray-400" />
-          <span className="text-gray-600 dark:text-gray-400 truncate">
+          <span className="shrink-0 w-3" />
+          <FileText className="shrink-0 size-4 text-(--color-text-tertiary) group-hover:text-(--color-text-secondary) group-[[aria-selected=true]]:text-(--color-text-secondary)" />
+          <span className="truncate">
             {displayName(node.name)}
           </span>
         </>
