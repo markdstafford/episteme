@@ -44,7 +44,7 @@ export function FileTreeItem({
 
   return (
     <button
-      className={`flex items-center gap-1.5 w-full text-left h-(--height-nav-item) px-[var(--space-2)] text-(--font-size-ui-lg) rounded-(--radius-md) cursor-pointer text-(--color-text-secondary) hover:bg-(--color-bg-subtle) hover:text-(--color-text-primary) transition-colors duration-(--duration-fast) ${selectedStyles} ${focusStyles}`}
+      className={`group flex items-center gap-2 w-full text-left h-(--height-nav-item) px-[var(--space-2)] text-(--font-size-ui-lg) rounded-(--radius-md) cursor-pointer text-(--color-text-secondary) hover:bg-(--color-bg-subtle) hover:text-(--color-text-primary) transition-colors duration-(--duration-fast) ease-(--ease-default) ${selectedStyles} ${focusStyles}`}
       style={{ paddingLeft }}
       onClick={handleClick}
       role="treeitem"
@@ -56,17 +56,17 @@ export function FileTreeItem({
       {node.is_dir ? (
         <>
           <ChevronRight
-            className={`w-4 h-4 transition-transform ${isExpanded ? "rotate-90" : ""}`}
+            className={`shrink-0 size-3 transition-transform duration-(--duration-fast) ease-(--ease-default) text-(--color-text-tertiary) group-hover:text-(--color-text-secondary) group-[[aria-selected=true]]:text-(--color-text-secondary) ${isExpanded ? "rotate-90" : ""}`}
           />
-          <Folder className="w-4 h-4" />
+          <Folder className="shrink-0 size-4 text-(--color-text-tertiary) group-hover:text-(--color-text-secondary) group-[[aria-selected=true]]:text-(--color-text-secondary)" />
           <span className="font-medium truncate">
             {node.name}
           </span>
         </>
       ) : (
         <>
-          <span className="w-4" />
-          <FileText className="w-4 h-4" />
+          <span className="shrink-0 w-3" />
+          <FileText className="shrink-0 size-4 text-(--color-text-tertiary) group-hover:text-(--color-text-secondary) group-[[aria-selected=true]]:text-(--color-text-secondary)" />
           <span className="truncate">
             {displayName(node.name)}
           </span>
