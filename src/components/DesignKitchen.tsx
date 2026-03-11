@@ -99,7 +99,8 @@ export function DesignKitchen({ onClose }: DesignKitchenProps) {
             ].map(({ name, value, sample }) => (
               <div key={name} style={{ marginBottom: "16px" }}>
                 <div style={{ fontSize: "var(--font-size-ui-xs)", color: "var(--color-text-tertiary)", fontFamily: "var(--font-mono)", marginBottom: "4px" }}>{name}</div>
-                <div style={{ fontFamily: value, fontSize: "16px", color: "var(--color-text-primary)" }}>{sample}</div>
+                <div style={{ fontFamily: `var(${name})`, fontSize: "16px", color: "var(--color-text-primary)", marginBottom: "2px" }}>{sample}</div>
+                <div style={{ fontSize: "var(--font-size-ui-xs)", color: "var(--color-text-quaternary)", fontFamily: "var(--font-mono)" }}>{value}</div>
               </div>
             ))}
           </div>
