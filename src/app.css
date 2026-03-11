@@ -130,6 +130,8 @@
   }
 }
 
-.titlebar-btn:hover:not(:disabled) {
-  background: var(--color-bg-hover);
+@layer components {
+  .titlebar-btn:hover:not(:disabled) {
+    background: var(--color-bg-hover);
+  }
 }
