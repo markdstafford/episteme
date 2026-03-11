@@ -55,3 +55,8 @@ The component renders static examples — no interactivity beyond triggering sta
 
 - [x] Add `showKitchenSink` state and Cmd+Shift+K `useEffect` to `App.tsx`, guarded by `import.meta.env.DEV`
 - [x] Create stub `DesignKitchen.tsx` and add conditional render in `App.tsx`; write and pass tests
+- [x] Render DesignKitchen conditionally in App.tsx
+
+### Story: Kitchen sink scaffold
+
+- [x] Create DesignKitchen.tsx with section layout
