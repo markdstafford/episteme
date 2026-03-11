@@ -74,4 +74,20 @@ describe("DesignKitchen", () => {
     expect(screen.getAllByText("Ghost").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Destructive").length).toBeGreaterThan(0);
   });
+
+  it("renders input states", () => {
+    render(<DesignKitchen onClose={vi.fn()} />);
+    expect(screen.getByPlaceholderText("Default input")).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("Error input")).toBeInTheDocument();
+  });
+
+  it("renders all badge variants", () => {
+    render(<DesignKitchen onClose={vi.fn()} />);
+    expect(screen.getByText("Neutral")).toBeInTheDocument();
+    // "Accent" also appears as a color group label, so assert at least one match
+    expect(screen.getAllByText("Accent").length).toBeGreaterThan(0);
+    expect(screen.getByText("Danger")).toBeInTheDocument();
+    expect(screen.getByText("Warning")).toBeInTheDocument();
+    expect(screen.getByText("Success")).toBeInTheDocument();
+  });
 });

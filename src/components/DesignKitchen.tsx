@@ -294,7 +294,72 @@ export function DesignKitchen({ onClose }: DesignKitchenProps) {
               </div>
             ))}
           </div>
-          {/* Tasks 7–8 will add more here */}
+          {/* Inputs */}
+          <div style={{ marginBottom: "48px" }}>
+            <div style={{ fontSize: "var(--font-size-ui-xs)", color: "var(--color-text-quaternary)", marginBottom: "16px", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+              Inputs
+            </div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "12px", alignItems: "flex-start" }}>
+              {[
+                { label: "Default",  placeholder: "Default input",  extraStyle: {} as React.CSSProperties },
+                { label: "Focus",    placeholder: "Focus input",    extraStyle: { borderColor: "var(--color-accent)", boxShadow: "0 0 0 2px var(--color-accent-subtle)", outline: "none" } as React.CSSProperties },
+                { label: "Error",    placeholder: "Error input",    extraStyle: { borderColor: "var(--color-state-danger)", boxShadow: "0 0 0 2px var(--color-state-danger-subtle)" } as React.CSSProperties },
+                { label: "Disabled", placeholder: "Disabled input", extraStyle: { opacity: 0.4, cursor: "not-allowed" } as React.CSSProperties, disabled: true },
+              ].map(({ label, placeholder, extraStyle, disabled }) => (
+                <div key={label} style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                  <div style={{ fontSize: "var(--font-size-ui-xs)", color: "var(--color-text-tertiary)" }}>{label}</div>
+                  <input
+                    placeholder={placeholder}
+                    disabled={disabled}
+                    readOnly={disabled}
+                    style={{
+                      height: "28px",
+                      padding: "0 10px",
+                      fontSize: "var(--font-size-ui-base)",
+                      fontFamily: "var(--font-ui)",
+                      background: "var(--color-bg-subtle)",
+                      border: "1px solid var(--color-border-default)",
+                      borderRadius: "var(--radius-base)",
+                      color: "var(--color-text-primary)",
+                      ...extraStyle,
+                    }}
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Badges */}
+          <div style={{ marginBottom: "48px" }}>
+            <div style={{ fontSize: "var(--font-size-ui-xs)", color: "var(--color-text-quaternary)", marginBottom: "16px", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+              Badges
+            </div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+              {[
+                { label: "Neutral",  bg: "var(--color-bg-hover)",             color: "var(--color-text-secondary)" },
+                { label: "Accent",   bg: "var(--color-accent-subtle)",        color: "var(--color-accent)" },
+                { label: "Danger",   bg: "var(--color-state-danger-subtle)",  color: "var(--color-state-danger)" },
+                { label: "Warning",  bg: "var(--color-state-warning-subtle)", color: "var(--color-state-warning)" },
+                { label: "Success",  bg: "var(--color-state-success-subtle)", color: "var(--color-state-success)" },
+              ].map(({ label, bg, color }) => (
+                <span key={label} style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  height: "24px",
+                  padding: "0 8px",
+                  fontSize: "var(--font-size-ui-xs)",
+                  fontWeight: 500,
+                  borderRadius: "var(--radius-sm)",
+                  background: bg,
+                  color,
+                }}>
+                  {label}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          {/* Task 8 will add more here */}
         </Section>
       </div>
     </div>
