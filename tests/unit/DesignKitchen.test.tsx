@@ -42,4 +42,28 @@ describe("DesignKitchen", () => {
     expect(screen.getByText("--font-ui")).toBeInTheDocument();
     expect(screen.getByText("--font-mono")).toBeInTheDocument();
   });
+
+  it("renders spacing tokens", () => {
+    render(<DesignKitchen onClose={vi.fn()} />);
+    expect(screen.getByText("--space-1")).toBeInTheDocument();
+    expect(screen.getByText("--space-32")).toBeInTheDocument();
+  });
+
+  it("renders radius tokens", () => {
+    render(<DesignKitchen onClose={vi.fn()} />);
+    expect(screen.getByText("--radius-base")).toBeInTheDocument();
+    expect(screen.getByText("--radius-full")).toBeInTheDocument();
+  });
+
+  it("renders shadow tokens", () => {
+    render(<DesignKitchen onClose={vi.fn()} />);
+    expect(screen.getByText("--shadow-sm")).toBeInTheDocument();
+    expect(screen.getByText("--shadow-lg")).toBeInTheDocument();
+  });
+
+  it("renders motion tokens", () => {
+    render(<DesignKitchen onClose={vi.fn()} />);
+    expect(screen.getByText("--duration-instant")).toBeInTheDocument();
+    expect(screen.getByText("--duration-slow")).toBeInTheDocument();
+  });
 });

@@ -143,10 +143,100 @@ export function DesignKitchen({ onClose }: DesignKitchenProps) {
             ))}
           </div>
         </Section>
-        <Section title="Spacing">{/* Task 5 */}</Section>
-        <Section title="Border Radius">{/* Task 5 */}</Section>
-        <Section title="Shadows">{/* Task 5 */}</Section>
-        <Section title="Motion">{/* Task 5 */}</Section>
+        <Section title="Spacing">
+          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+            {[
+              { name: "--space-1",  px: 4 },
+              { name: "--space-2",  px: 8 },
+              { name: "--space-3",  px: 12 },
+              { name: "--space-4",  px: 16 },
+              { name: "--space-5",  px: 20 },
+              { name: "--space-6",  px: 24 },
+              { name: "--space-8",  px: 32 },
+              { name: "--space-10", px: 40 },
+              { name: "--space-14", px: 56 },
+              { name: "--space-20", px: 80 },
+              { name: "--space-32", px: 128 },
+            ].map(({ name, px }) => (
+              <div key={name} style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+                <div style={{ width: "180px", fontSize: "var(--font-size-ui-xs)", color: "var(--color-text-tertiary)", fontFamily: "var(--font-mono)", flexShrink: 0 }}>
+                  <span>{name}</span> — {px}px
+                </div>
+                <div style={{ height: "8px", width: `${px}px`, background: "var(--color-accent)", borderRadius: "2px" }} />
+              </div>
+            ))}
+          </div>
+        </Section>
+        <Section title="Border Radius">
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "16px" }}>
+            {[
+              { name: "--radius-sm",   px: "3px" },
+              { name: "--radius-base", px: "4px" },
+              { name: "--radius-md",   px: "6px" },
+              { name: "--radius-lg",   px: "8px" },
+              { name: "--radius-xl",   px: "12px" },
+              { name: "--radius-2xl",  px: "16px" },
+              { name: "--radius-full", px: "9999px" },
+            ].map(({ name, px }) => (
+              <div key={name} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "8px" }}>
+                <div style={{ width: "64px", height: "64px", background: "var(--color-bg-hover)", border: "1px solid var(--color-border-default)", borderRadius: px }} />
+                <div style={{ fontSize: "var(--font-size-ui-xs)", color: "var(--color-text-tertiary)", fontFamily: "var(--font-mono)", textAlign: "center" }}>
+                  <span>{name}</span><br />{px}
+                </div>
+              </div>
+            ))}
+          </div>
+        </Section>
+        <Section title="Shadows">
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "24px" }}>
+            {[
+              { name: "--shadow-sm",           value: "0 1px 2px oklch(0% 0 0 / 0.08)" },
+              { name: "--shadow-base",         value: "0 2px 8px oklch(0% 0 0 / 0.12)" },
+              { name: "--shadow-lg",           value: "0 8px 24px oklch(0% 0 0 / 0.16)" },
+              { name: "--shadow-inset-border", value: "inset 0 0 0 1px var(--color-border-default)" },
+            ].map(({ name, value }) => (
+              <div key={name} style={{ display: "flex", flexDirection: "column", gap: "8px", alignItems: "center" }}>
+                <div style={{
+                  width: "80px", height: "80px",
+                  background: "var(--color-bg-elevated)",
+                  borderRadius: "var(--radius-lg)",
+                  boxShadow: value,
+                }} />
+                <div style={{ fontSize: "var(--font-size-ui-xs)", color: "var(--color-text-tertiary)", fontFamily: "var(--font-mono)", textAlign: "center", maxWidth: "120px" }}>
+                  {name}
+                </div>
+              </div>
+            ))}
+          </div>
+        </Section>
+        <Section title="Motion">
+          <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+            {[
+              { name: "--duration-instant", ms: "0ms" },
+              { name: "--duration-fast",    ms: "100ms" },
+              { name: "--duration-normal",  ms: "150ms" },
+              { name: "--duration-slow",    ms: "250ms" },
+            ].map(({ name, ms }) => (
+              <div key={name} style={{ display: "flex", alignItems: "center", gap: "24px" }}>
+                <div style={{ width: "200px", fontSize: "var(--font-size-ui-xs)", color: "var(--color-text-tertiary)", fontFamily: "var(--font-mono)", flexShrink: 0 }}>
+                  <span>{name}</span> — {ms}
+                </div>
+                <div
+                  style={{
+                    width: "32px", height: "32px",
+                    background: "var(--color-accent)",
+                    borderRadius: "var(--radius-base)",
+                    transition: `transform ${ms} var(--ease-default)`,
+                    cursor: "pointer",
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.5)")}
+                  onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
+                  title={`Hover to animate at ${ms}`}
+                />
+              </div>
+            ))}
+          </div>
+        </Section>
         <Section title="Components">{/* Tasks 6–8 */}</Section>
       </div>
     </div>
