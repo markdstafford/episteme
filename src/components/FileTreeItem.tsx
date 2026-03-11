@@ -42,7 +42,7 @@ export function FileTreeItem({
 
   return (
     <button
-      className={`flex items-center gap-1.5 w-full text-left px-3 py-1 text-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 ${selectedStyles} ${focusStyles}`}
+      className={`flex items-center gap-1.5 w-full text-left h-(--height-nav-item) px-2 text-(--font-size-ui-lg) rounded-(--radius-md) cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 ${selectedStyles} ${focusStyles}`}
       style={{ paddingLeft }}
       onClick={handleClick}
       role="treeitem"
