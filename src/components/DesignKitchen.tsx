@@ -256,24 +256,41 @@ export function DesignKitchen({ onClose }: DesignKitchenProps) {
               {
                 label: "Primary",
                 style: { background: "var(--color-accent)", color: "white", border: "none" } as React.CSSProperties,
+                hoverStyle: { background: "var(--color-accent-hover)", outline: "2px solid var(--color-accent)", outlineOffset: "2px" } as React.CSSProperties,
               },
               {
                 label: "Secondary",
                 style: { background: "var(--color-bg-elevated)", color: "var(--color-text-primary)", border: "1px solid var(--color-border-default)" } as React.CSSProperties,
+                hoverStyle: { background: "var(--color-bg-hover)", outline: "2px solid var(--color-accent)", outlineOffset: "2px" } as React.CSSProperties,
               },
               {
                 label: "Ghost",
                 style: { background: "transparent", color: "var(--color-text-secondary)", border: "none" } as React.CSSProperties,
+                hoverStyle: { background: "var(--color-bg-hover)", outline: "2px solid var(--color-accent)", outlineOffset: "2px" } as React.CSSProperties,
               },
               {
                 label: "Destructive",
                 style: { background: "var(--color-state-danger)", color: "white", border: "none" } as React.CSSProperties,
+                hoverStyle: { background: "var(--color-state-danger)", filter: "brightness(1.15)", outline: "2px solid var(--color-state-danger)", outlineOffset: "2px" } as React.CSSProperties,
               },
-            ].map(({ label, style }) => (
+            ].map(({ label, style, hoverStyle }) => (
               <div key={label} style={{ display: "flex", alignItems: "center", gap: "16px", marginBottom: "12px" }}>
                 <div style={{ width: "100px", fontSize: "var(--font-size-ui-xs)", color: "var(--color-text-tertiary)" }}>{label}</div>
-                <button style={{ ...buttonBase, ...style }}>{label}</button>
-                <button style={{ ...buttonBase, ...style, opacity: 0.4, cursor: "not-allowed" } as React.CSSProperties} disabled>{label} (disabled)</button>
+                <button
+                  style={{ ...buttonBase, ...style }}
+                  onMouseEnter={(e) => Object.assign(e.currentTarget.style, hoverStyle)}
+                  onMouseLeave={(e) => Object.assign(e.currentTarget.style, style, { filter: "", outline: "", outlineOffset: "" })}
+                  onFocus={(e) => Object.assign(e.currentTarget.style, hoverStyle)}
+                  onBlur={(e) => Object.assign(e.currentTarget.style, style, { filter: "", outline: "", outlineOffset: "" })}
+                >
+                  {label}
+                </button>
+                <button
+                  style={{ ...buttonBase, ...style, opacity: 0.4, cursor: "not-allowed" }}
+                  disabled
+                >
+                  {label} (disabled)
+                </button>
               </div>
             ))}
           </div>
