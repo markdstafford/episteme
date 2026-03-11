@@ -56,7 +56,7 @@ export function FileTreeItem({
       {node.is_dir ? (
         <>
           <ChevronRight
-            className={`shrink-0 size-3 transition-transform duration-(--duration-fast) ease-(--ease-default) text-(--color-text-tertiary) group-hover:text-(--color-text-secondary) group-[[aria-selected=true]]:text-(--color-text-secondary) ${isExpanded ? "rotate-90" : ""}`}
+            className={`shrink-0 size-3 transition-[transform,color] duration-(--duration-fast) ease-(--ease-default) text-(--color-text-tertiary) group-hover:text-(--color-text-secondary) group-[[aria-selected=true]]:text-(--color-text-secondary) ${isExpanded ? "rotate-90" : ""}`}
           />
           <Folder className="shrink-0 size-4 text-(--color-text-tertiary) group-hover:text-(--color-text-secondary) group-[[aria-selected=true]]:text-(--color-text-secondary)" />
           <span className="font-medium truncate">
