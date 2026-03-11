@@ -49,4 +49,9 @@ The component renders static examples — no interactivity beyond triggering sta
 
 ## Task list
 
-*(To be completed after `enhancement-encode-design-tokens.md` is implemented — the kitchen sink depends on the token layer being in place to render meaningfully.)*
+### Story: App integration
+
+#### Task: Register dev-only keyboard shortcut
+
+- [x] Add `showKitchenSink` state and Cmd+Shift+K `useEffect` to `App.tsx`, guarded by `import.meta.env.DEV`
+- [x] Create stub `DesignKitchen.tsx` and add conditional render in `App.tsx`; write and pass tests
