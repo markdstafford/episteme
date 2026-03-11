@@ -29,6 +29,9 @@ Thumbs.db
 # Implementation plans
 .superpowers-plans/
 
+# Friction logs
+.eng-docs/.friction-logs/
+
 # Environment
 .env
 .env.local
