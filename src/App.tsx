@@ -45,7 +45,7 @@ function App() {
   useEffect(() => {
     if (!import.meta.env.DEV) return;
     const handler = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === "K") {
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.code === "KeyK") {
         e.preventDefault();
         setShowKitchenSink((v) => !v);
       }
@@ -70,6 +70,10 @@ function App() {
     };
     init();
   }, [loadSavedFolder]);
+
+  if (import.meta.env.DEV && showKitchenSink) {
+    return <DesignKitchen onClose={() => setShowKitchenSink(false)} />;
+  }
 
   if (isLoading && !folderPath) {
     return (
@@ -118,9 +122,6 @@ function App() {
       </div>
       {chatPanelOpen && (
         <AiChatPanel onClose={() => setChatPanelOpen(false)} />
-      )}
-      {import.meta.env.DEV && showKitchenSink && (
-        <DesignKitchen onClose={() => setShowKitchenSink(false)} />
       )}
     </div>
   );

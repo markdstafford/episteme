@@ -99,7 +99,7 @@ describe("App", () => {
 
     expect(screen.queryByText("Design Kitchen")).not.toBeInTheDocument();
 
-    fireEvent.keyDown(document, { key: "K", metaKey: true, shiftKey: true });
+    fireEvent.keyDown(document, { code: "KeyK", metaKey: true, shiftKey: true });
 
     expect(screen.getByText("Design Kitchen")).toBeInTheDocument();
   });
@@ -108,10 +108,10 @@ describe("App", () => {
     useWorkspaceStore.setState({ folderPath: "/some/path" });
     render(<App />);
 
-    fireEvent.keyDown(document, { key: "K", metaKey: true, shiftKey: true });
+    fireEvent.keyDown(document, { code: "KeyK", metaKey: true, shiftKey: true });
     expect(screen.getByText("Design Kitchen")).toBeInTheDocument();
 
-    fireEvent.keyDown(document, { key: "K", metaKey: true, shiftKey: true });
+    fireEvent.keyDown(document, { code: "KeyK", metaKey: true, shiftKey: true });
     expect(screen.queryByText("Design Kitchen")).not.toBeInTheDocument();
   });
 });
