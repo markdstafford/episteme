@@ -75,7 +75,7 @@ describe("App", () => {
     expect(openFolder).toHaveBeenCalledOnce();
   });
 
-  it("cleans up menu event listeners on unmount", async () => {
+  it("cleans up the menu:open-folder listener on unmount", async () => {
     const mockUnlisten = vi.fn();
     vi.mocked(listen).mockResolvedValue(mockUnlisten);
 
