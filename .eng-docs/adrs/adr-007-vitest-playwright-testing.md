@@ -1,3 +1,11 @@
+---
+created: 2026-03-04
+last_updated: 2026-03-04
+status: accepted
+decided_by: markdstafford
+superseded_by: null
+---
+
 # ADR 007: Vitest and Playwright testing strategy
 
 ## Status

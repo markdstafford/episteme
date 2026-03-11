@@ -1,3 +1,13 @@
+---
+created: 2026-03-04
+last_updated: 2026-03-08
+status: implementing
+issue: 13
+specced_by: markdstafford
+implemented_by: null
+superseded_by: null
+---
+
 # Document Authoring with AI
 
 ## What

@@ -1,3 +1,11 @@
+---
+created: 2026-03-10
+last_updated: 2026-03-10
+status: accepted
+decided_by: markdstafford
+superseded_by: null
+---
+
 # ADR-009: Keyboard shortcuts strategy
 
 ## Status

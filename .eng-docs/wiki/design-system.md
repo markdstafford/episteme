@@ -1,3 +1,9 @@
+---
+created: 2026-03-04
+last_updated: 2026-03-10
+status: active
+---
+
 # Design System
 
 Episteme's canonical design reference. Every color, spacing value, type size, radius, shadow, and motion token is defined here. Every core component pattern is fully specified. An engineer implementing a new component should be able to do so using only this document, with no follow-up questions.

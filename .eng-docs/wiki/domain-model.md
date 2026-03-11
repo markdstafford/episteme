@@ -1,3 +1,9 @@
+---
+created: 2026-03-04
+last_updated: 2026-03-04
+status: active
+---
+
 # Domain Model
 
 This document defines the core domain entities, their relationships, and business rules for Episteme.
