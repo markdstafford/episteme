@@ -60,3 +60,10 @@ The component renders static examples — no interactivity beyond triggering sta
 ### Story: Kitchen sink scaffold
 
 - [x] Create DesignKitchen.tsx with section layout
+- [x] Task: Colors section
+- [x] Task: Typography section
+- [x] Task: Spacing, radius, shadow, and motion section
+- [x] Task: Buttons sub-section
+- [x] Task: Inputs sub-section
+- [x] Task: Badges sub-section
+- [x] Task: Sample sidebar, dialog, and context menu
