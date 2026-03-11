@@ -44,6 +44,7 @@ export function TitleBar({ folderPath }: TitleBarProps) {
           display: "flex",
           alignItems: "center",
           justifyContent: "flex-end",
+          gap: "var(--space-1)",
           flexShrink: 0,
         }}
       >
