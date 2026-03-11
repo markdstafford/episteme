@@ -25,4 +25,13 @@ describe("DesignKitchen", () => {
     render(<DesignKitchen onClose={vi.fn()} />);
     expect(screen.getByText("Design Kitchen")).toBeInTheDocument();
   });
+
+  it("renders color token groups", () => {
+    render(<DesignKitchen onClose={vi.fn()} />);
+    expect(screen.getByText("--color-bg-app")).toBeInTheDocument();
+    expect(screen.getByText("--color-text-primary")).toBeInTheDocument();
+    expect(screen.getByText("--color-border-subtle")).toBeInTheDocument();
+    expect(screen.getByText("--color-accent")).toBeInTheDocument();
+    expect(screen.getByText("--color-state-danger")).toBeInTheDocument();
+  });
 });
