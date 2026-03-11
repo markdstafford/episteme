@@ -1,10 +1,10 @@
 ---
 created: 2026-03-10
 last_updated: 2026-03-11
-status: implementing
+status: complete
 issue: 33
 specced_by: markdstafford
-implemented_by: null
+implemented_by: markdstafford
 superseded_by: null
 ---
 
