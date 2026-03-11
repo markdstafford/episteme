@@ -1,3 +1,8 @@
+---
+created: 2026-03-04
+last_updated: 2026-03-10
+---
+
 # Episteme
 
 ## What

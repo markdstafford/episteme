@@ -1,3 +1,13 @@
+---
+created: 2026-03-08
+last_updated: 2026-03-08
+status: complete
+issue: 7
+specced_by: markdstafford
+implemented_by: markdstafford
+superseded_by: null
+---
+
 # Enhancement: Sidebar Folder Name
 
 ## Goals

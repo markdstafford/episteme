@@ -1,3 +1,13 @@
+---
+created: 2026-03-10
+last_updated: 2026-03-10
+status: draft
+issue: 35
+specced_by: markdstafford
+implemented_by: null
+superseded_by: null
+---
+
 # Enhancement: Migrate toolbar to design system
 
 ## Parent feature
