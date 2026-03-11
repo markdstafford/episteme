@@ -2,14 +2,12 @@ import { CSSProperties, useState } from "react";
 import { ChevronLeft, ChevronRight, Share2, Plus, Aperture } from "lucide-react";
 import { CreateNewDialog } from "@/components/CreateNewDialog";
 
-type TauriStyle = CSSProperties & { WebkitAppRegion?: "drag" | "no-drag" };
-
 interface TitleBarProps {
   folderPath: string | null;
   onStartAuthoring: (skillName: string | null) => void;
 }
 
-const iconBtnBase: TauriStyle = {
+const iconBtnBase: CSSProperties = {
   width: 28,
   height: 28,
   display: "flex",
@@ -22,7 +20,6 @@ const iconBtnBase: TauriStyle = {
   cursor: "pointer",
   padding: 0,
   flexShrink: 0,
-  WebkitAppRegion: "no-drag",
 };
 
 export function TitleBar({ folderPath, onStartAuthoring }: TitleBarProps) {
@@ -31,6 +28,7 @@ export function TitleBar({ folderPath, onStartAuthoring }: TitleBarProps) {
   return (
     <>
       <div
+        className="titlebar-drag"
         style={{
           height: "var(--height-titlebar)",
           background: "var(--color-bg-app)",
@@ -38,8 +36,7 @@ export function TitleBar({ folderPath, onStartAuthoring }: TitleBarProps) {
           display: "flex",
           alignItems: "center",
           flexShrink: 0,
-          WebkitAppRegion: "drag",
-        } as TauriStyle}
+        }}
       >
         {/* Section 1: sidebar — width tracks --width-sidebar via CSS variable */}
         <div
@@ -55,12 +52,8 @@ export function TitleBar({ folderPath, onStartAuthoring }: TitleBarProps) {
         >
           {/* Traffic lights no-drag zone (~70px, per design-system.md) */}
           <div
-            style={{
-              width: 70,
-              height: "100%",
-              flexShrink: 0,
-              WebkitAppRegion: "no-drag",
-            } as TauriStyle}
+            className="titlebar-no-drag"
+            style={{ width: 70, height: "100%", flexShrink: 0 }}
           />
           <button
             className="titlebar-btn"
@@ -104,14 +97,14 @@ export function TitleBar({ folderPath, onStartAuthoring }: TitleBarProps) {
 
         {/* Section 3: actions — right-aligned, no-drag */}
         <div
+          className="titlebar-no-drag"
           style={{
             height: "100%",
             display: "flex",
             alignItems: "center",
             paddingRight: "var(--space-2)",
             flexShrink: 0,
-            WebkitAppRegion: "no-drag",
-          } as TauriStyle}
+          }}
         >
           <button
             className="titlebar-btn"
