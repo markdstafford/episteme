@@ -44,7 +44,7 @@ export function FileTreeItem({
 
   return (
     <button
-      className={`group flex items-center gap-2 w-full text-left h-(--height-nav-item) px-[var(--space-2)] text-(--font-size-ui-lg) rounded-(--radius-md) cursor-pointer text-(--color-text-secondary) hover:bg-(--color-bg-subtle) hover:text-(--color-text-primary) transition-colors duration-(--duration-fast) ease-(--ease-default) ${selectedStyles} ${focusStyles}`}
+      className={`group flex items-center gap-2 w-full text-left h-(--height-nav-item) px-[var(--space-2)] text-[length:var(--font-size-ui-lg)] rounded-(--radius-md) cursor-pointer text-(--color-text-secondary) hover:bg-(--color-bg-subtle) hover:text-(--color-text-primary) transition-colors duration-(--duration-fast) ease-(--ease-default) ${selectedStyles} ${focusStyles}`}
       style={{ paddingLeft }}
       onClick={handleClick}
       role="treeitem"
