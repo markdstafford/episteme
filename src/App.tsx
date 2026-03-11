@@ -10,9 +10,11 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { parsePreferences } from "@/lib/preferences";
 import { Loader2, MessageSquare } from "lucide-react";
+import { DesignKitchen } from "@/components/DesignKitchen";
 
 function App() {
   const [chatPanelOpen, setChatPanelOpen] = useState(false);
+  const [showKitchenSink, setShowKitchenSink] = useState(false);
   const folderPath = useWorkspaceStore((s) => s.folderPath);
   const isLoading = useWorkspaceStore((s) => s.isLoading);
   const loadSavedFolder = useWorkspaceStore((s) => s.loadSavedFolder);
@@ -38,6 +40,18 @@ function App() {
   useEffect(() => {
     const unlisten = listen("menu:open-settings", () => invoke("open_settings_window").catch(console.error));
     return () => { unlisten.then((f) => f()); };
+  }, []);
+
+  useEffect(() => {
+    if (!import.meta.env.DEV) return;
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === "K") {
+        e.preventDefault();
+        setShowKitchenSink((v) => !v);
+      }
+    };
+    document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
   }, []);
 
   useEffect(() => {
@@ -105,7 +119,9 @@ function App() {
       {chatPanelOpen && (
         <AiChatPanel onClose={() => setChatPanelOpen(false)} />
       )}
-
+      {import.meta.env.DEV && showKitchenSink && (
+        <DesignKitchen onClose={() => setShowKitchenSink(false)} />
+      )}
     </div>
   );
 }
