@@ -66,4 +66,12 @@ describe("DesignKitchen", () => {
     expect(screen.getByText("--duration-instant")).toBeInTheDocument();
     expect(screen.getByText("--duration-slow")).toBeInTheDocument();
   });
+
+  it("renders all button variants", () => {
+    render(<DesignKitchen onClose={vi.fn()} />);
+    expect(screen.getAllByText("Primary").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Secondary").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Ghost").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Destructive").length).toBeGreaterThan(0);
+  });
 });

@@ -1,5 +1,14 @@
 import React from "react";
 
+const buttonBase: React.CSSProperties = {
+  height: "28px",
+  padding: "0 12px",
+  fontSize: "var(--font-size-ui-base)",
+  borderRadius: "var(--radius-base)",
+  cursor: "pointer",
+  fontFamily: "var(--font-ui)",
+};
+
 interface DesignKitchenProps {
   onClose: () => void;
 }
@@ -237,7 +246,39 @@ export function DesignKitchen({ onClose }: DesignKitchenProps) {
             ))}
           </div>
         </Section>
-        <Section title="Components">{/* Tasks 6–8 */}</Section>
+        <Section title="Components">
+          {/* Buttons */}
+          <div style={{ marginBottom: "48px" }}>
+            <div style={{ fontSize: "var(--font-size-ui-xs)", color: "var(--color-text-quaternary)", marginBottom: "16px", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+              Buttons
+            </div>
+            {[
+              {
+                label: "Primary",
+                style: { background: "var(--color-accent)", color: "white", border: "none" } as React.CSSProperties,
+              },
+              {
+                label: "Secondary",
+                style: { background: "var(--color-bg-elevated)", color: "var(--color-text-primary)", border: "1px solid var(--color-border-default)" } as React.CSSProperties,
+              },
+              {
+                label: "Ghost",
+                style: { background: "transparent", color: "var(--color-text-secondary)", border: "none" } as React.CSSProperties,
+              },
+              {
+                label: "Destructive",
+                style: { background: "var(--color-state-danger)", color: "white", border: "none" } as React.CSSProperties,
+              },
+            ].map(({ label, style }) => (
+              <div key={label} style={{ display: "flex", alignItems: "center", gap: "16px", marginBottom: "12px" }}>
+                <div style={{ width: "100px", fontSize: "var(--font-size-ui-xs)", color: "var(--color-text-tertiary)" }}>{label}</div>
+                <button style={{ ...buttonBase, ...style }}>{label}</button>
+                <button style={{ ...buttonBase, ...style, opacity: 0.4, cursor: "not-allowed" } as React.CSSProperties} disabled>{label} (disabled)</button>
+              </div>
+            ))}
+          </div>
+          {/* Tasks 7–8 will add more here */}
+        </Section>
       </div>
     </div>
   );
