@@ -128,13 +128,13 @@ Props: `folderPath: string | null` (for disabling the New Document button when n
 
 ## Task list
 
-- [ ] **Story: Update design token**
-  - [ ] **Task: Reduce `--height-titlebar` to 40px in `app.css` and `design-system.md`**
+- [x] **Story: Update design token**
+  - [x] **Task: Reduce `--height-titlebar` to 40px in `app.css` and `design-system.md`**
     - **Description**: Change `--height-titlebar` from `52px` to `40px` in two places: (1) the `@theme {}` block in `src/app.css`, and (2) the control dimensions table in `.eng-docs/wiki/design-system.md`. Also update the macOS title bar pattern section in `design-system.md` to replace the single-section description with the three-section layout (sidebar section, title section, actions section) as specified in this enhancement spec.
     - **Acceptance criteria**:
-      - [ ] `--height-titlebar: 40px` in `src/app.css`
-      - [ ] `--height-titlebar` row updated to 40px in `design-system.md` control dimensions table
-      - [ ] macOS title bar pattern section in `design-system.md` describes the three-section layout
+      - [x] `--height-titlebar: 40px` in `src/app.css`
+      - [x] `--height-titlebar` row updated to 40px in `design-system.md` control dimensions table
+      - [x] macOS title bar pattern section in `design-system.md` describes the three-section layout
     - **Dependencies**: None
 
 - [ ] **Story: Rebuild TitleBar component**

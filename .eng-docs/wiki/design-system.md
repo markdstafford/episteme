@@ -183,7 +183,7 @@ Base unit: 4px. Named steps match Linear's confirmed spacer set. Gaps in the seq
 | `--height-control-lg` | 32px | Larger inputs, prominent controls |
 | `--height-nav-item` | 28px | Sidebar nav items |
 | `--height-toolbar` | 39px | Toolbar |
-| `--height-titlebar` | 52px | Title bar / traffic lights zone |
+| `--height-titlebar` | 40px | Title bar / traffic lights zone |
 | `--width-sidebar` | 244px | Sidebar (fixed, not resizable) |
 | `--doc-content-width` | 680px | Document reading column max-width |
 
@@ -257,12 +257,20 @@ Bias: fewer, faster transitions. A focused desktop tool should feel instant, not
 
 Implemented via Tauri `titleBarStyle: "Overlay"`. Web content fills the full window including the title bar area. The system title bar background is removed; native traffic lights remain.
 
-- **Title bar zone**: top 52px (`--height-titlebar`) of the sidebar
-- **Traffic lights position**: `13px` from left, `20px` from top — standard macOS positioning
-- **Background**: `--color-bg-app` — same as sidebar; no separate title bar color
-- **Workspace label**: to the right of the traffic lights, vertically centered in the 52px zone; `--font-size-ui-base` (13px), weight 500, `--color-text-secondary`
-- **Drag region**: the entire 52px strip, implemented with `-webkit-app-region: drag`
-- **No-drag zone**: traffic lights target area (approximately 70px wide from left edge) and any interactive controls must be explicitly marked `-webkit-app-region: no-drag`
+The title bar is a full-width strip rendered in `App.tsx` above all panels. It is 40px tall (`--height-titlebar`) and divided into three sections with a 1px `--color-border-subtle` bottom border.
+
+**Three-section layout:**
+
+- **Section 1 (sidebar)** — `width: var(--width-sidebar)`, `flexShrink: 0`. Left 70px is the traffic lights no-drag zone. Remaining space holds right-aligned icon buttons. Width automatically tracks the sidebar when `--width-sidebar` CSS variable is updated.
+- **Section 2 (title)** — `flex: 1`. Centered icon + app name label. In future, will show current document/view title. Entire section is the drag region.
+- **Section 3 (actions)** — fixed width, right-aligned global action buttons (Share, New Document).
+
+**Tokens and styling:**
+- **Height**: `--height-titlebar` (40px)
+- **Background**: `--color-bg-app`
+- **Bottom border**: `1px solid --color-border-subtle`
+- **Drag region**: root element (`-webkit-app-region: drag`); all interactive controls override to `-webkit-app-region: no-drag`
+- **Traffic lights no-drag zone**: left 70px of Section 1 (`-webkit-app-region: no-drag`)
 
 #### Windows (Phase 2)
 
@@ -274,7 +282,7 @@ Implemented via Tauri `titleBarStyle: "Overlay"`. Web content fills the full win
 
 - **Width**: `--width-sidebar` (244px), fixed
 - **Background**: `--color-bg-app`
-- **Top zone**: `--height-titlebar` (52px) — contains traffic lights and workspace label; see Window chrome
+- **Top zone**: none — TitleBar is rendered above the sidebar in `App.tsx`, not inside `Sidebar.tsx`
 - **Border-right**: none — background contrast separates sidebar from content area
 
 **Nav items**
