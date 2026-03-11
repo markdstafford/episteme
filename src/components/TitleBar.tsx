@@ -28,7 +28,7 @@ export function TitleBar({ folderPath, onStartAuthoring }: TitleBarProps) {
   return (
     <>
       <div
-        className="titlebar-drag"
+        data-tauri-drag-region
         style={{
           height: "var(--height-titlebar)",
           background: "var(--color-bg-app)",
