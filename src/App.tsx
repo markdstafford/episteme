@@ -10,9 +10,11 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { parsePreferences } from "@/lib/preferences";
 import { Loader2, MessageSquare } from "lucide-react";
+import { DesignKitchen } from "@/components/DesignKitchen";
 
 function App() {
   const [chatPanelOpen, setChatPanelOpen] = useState(false);
+  const [showKitchenSink, setShowKitchenSink] = useState(false);
   const folderPath = useWorkspaceStore((s) => s.folderPath);
   const isLoading = useWorkspaceStore((s) => s.isLoading);
   const loadSavedFolder = useWorkspaceStore((s) => s.loadSavedFolder);
@@ -41,6 +43,18 @@ function App() {
   }, []);
 
   useEffect(() => {
+    if (!import.meta.env.DEV) return;
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.code === "KeyK") {
+        e.preventDefault();
+        setShowKitchenSink((v) => !v);
+      }
+    };
+    document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
+  }, []);
+
+  useEffect(() => {
     const init = async () => {
       await loadSavedFolder();
       // Load AWS profile from preferences
@@ -56,6 +70,10 @@ function App() {
     };
     init();
   }, [loadSavedFolder]);
+
+  if (import.meta.env.DEV && showKitchenSink) {
+    return <DesignKitchen onClose={() => setShowKitchenSink(false)} />;
+  }
 
   if (isLoading && !folderPath) {
     return (
@@ -105,7 +123,6 @@ function App() {
       {chatPanelOpen && (
         <AiChatPanel onClose={() => setChatPanelOpen(false)} />
       )}
-
     </div>
   );
 }
