@@ -156,17 +156,17 @@ Props: `folderPath: string | null` (for disabling the New Document button when n
       - [x] 4 TitleBar tests pass
     - **Dependencies**: "Task: Reduce `--height-titlebar` to 40px"
 
-- [ ] **Story: Update layout integration**
-  - [ ] **Task: Remove TitleBar from `Sidebar.tsx` and restore folder name header**
+- [ ] **Story: Update layout integration** *(Task 3 complete; Task 4 pending)*
+  - [x] **Task: Remove TitleBar from `Sidebar.tsx` and restore folder name header**
     - **Description**: Undo the TitleBar integration from the previous implementation pass. (1) Remove `import { TitleBar }` and the `<TitleBar folderName={folderName} />` render. (2) Re-add `openFolder` from `useWorkspaceStore`. (3) Restore the folder name header as the first child inside the scroll container (`overflow-y-auto` div, not above it): a div with `data-testid="folder-header"` showing `folderName` (clickable → `openFolder()`), plus the Plus button (`setDialogOpen(true)`). Use the same Tailwind classes as the original — the sidebar migration enhancement handles token alignment. (4) Restore the 4 header tests removed from `tests/unit/Sidebar.test.tsx`: folder header renders, clicking name calls `openFolder`, truncation class present, flex row layout.
     - **Acceptance criteria**:
-      - [ ] No TitleBar import or render in `Sidebar.tsx`
-      - [ ] `openFolder` subscribed from workspace store
-      - [ ] Folder name header div present inside scroll container when `folderName` is non-null, absent when null
-      - [ ] Clicking folder name calls `openFolder()`
-      - [ ] Plus button renders when `onStartAuthoring` prop is provided
-      - [ ] `data-testid="folder-header"` present on header div
-      - [ ] All sidebar tests pass including the 4 restored header tests
+      - [x] No TitleBar import or render in `Sidebar.tsx`
+      - [x] `openFolder` subscribed from workspace store
+      - [x] Folder name header div present inside scroll container when `folderName` is non-null, absent when null
+      - [x] Clicking folder name calls `openFolder()`
+      - [x] Plus button renders when `onStartAuthoring` prop is provided
+      - [x] `data-testid="folder-header"` present on header div
+      - [x] All sidebar tests pass including the 4 restored header tests
     - **Dependencies**: None
 
   - [ ] **Task: Add `TitleBar` to `App.tsx` as full-width strip above the main layout**
