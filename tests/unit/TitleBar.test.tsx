@@ -3,10 +3,6 @@ import { describe, it, expect } from "vitest";
 import { TitleBar } from "@/components/TitleBar";
 
 describe("TitleBar", () => {
-  it("renders without errors", () => {
-    render(<TitleBar folderName={null} />);
-  });
-
   it("renders 'Episteme' as fallback when folderName is null", () => {
     render(<TitleBar folderName={null} />);
     expect(screen.getByText("Episteme")).toBeInTheDocument();
