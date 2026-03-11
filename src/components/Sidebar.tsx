@@ -14,15 +14,15 @@ export function Sidebar({ children }: SidebarProps) {
     : null;
 
   return (
-    <aside className="w-[var(--width-sidebar)] h-full border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shrink-0 flex flex-col">
+    <aside className="w-[var(--width-sidebar)] h-full bg-(--color-bg-app) shrink-0 flex flex-col">
       <div className="flex-1 overflow-y-auto py-2">
         {folderName && (
           <div
             data-testid="folder-header"
-            className="px-3 py-2 flex items-center justify-between border-b border-gray-200 dark:border-gray-700 shrink-0"
+            className="px-3 py-2 flex items-center justify-between border-b border-(--color-border-subtle) shrink-0"
           >
             <span
-              className="text-sm font-medium text-gray-700 dark:text-gray-300 truncate min-w-0 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 rounded"
+              className="text-sm font-medium text-(--color-text-quaternary) truncate min-w-0 cursor-pointer hover:bg-(--color-bg-subtle) rounded"
               onClick={() => openFolder()}
             >
               {folderName}
