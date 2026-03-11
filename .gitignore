@@ -26,8 +26,9 @@ Thumbs.db
 # Worktrees
 .worktrees/
 
-# Implementation plans
-.superpowers-plans/
+# Implementation plans and friction logs (ephemeral, not committed)
+.eng-docs/.superpowers-plans/
+.eng-docs/.friction-logs/
 
 # Environment
 .env
