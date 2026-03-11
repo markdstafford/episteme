@@ -1,3 +1,13 @@
+---
+created: 2026-03-10
+last_updated: 2026-03-10
+status: complete
+issue: 31
+specced_by: markdstafford
+implemented_by: markdstafford
+superseded_by: null
+---
+
 # Enhancement: Encode design tokens
 
 ## Parent feature

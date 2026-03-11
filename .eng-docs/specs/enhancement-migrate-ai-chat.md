@@ -1,3 +1,13 @@
+---
+created: 2026-03-10
+last_updated: 2026-03-10
+status: draft
+issue: 39
+specced_by: markdstafford
+implemented_by: null
+superseded_by: null
+---
+
 # Enhancement: Migrate AI chat panel to design system
 
 ## Parent feature

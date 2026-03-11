@@ -1,3 +1,13 @@
+---
+created: 2026-03-04
+last_updated: 2026-03-04
+status: complete
+issue: null
+specced_by: markdstafford
+implemented_by: markdstafford
+superseded_by: null
+---
+
 # Feature: Sidebar File Browser
 
 ## What
