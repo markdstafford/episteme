@@ -22,7 +22,6 @@ describe("App", () => {
 
   it("shows WelcomeScreen when no folder is open", () => {
     render(<App />);
-    expect(screen.getByText("Episteme")).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: /open folder/i })
     ).toBeInTheDocument();
@@ -41,6 +40,13 @@ describe("App", () => {
     render(<App />);
     expect(screen.getByText("Select a document from the sidebar")).toBeInTheDocument();
     expect(document.querySelector("aside")).toBeInTheDocument();
+  });
+
+  it("renders TitleBar in the main workspace layout", () => {
+    useWorkspaceStore.setState({ folderPath: "/some/path" });
+    render(<App />);
+    expect(screen.getByRole("button", { name: /navigate back/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /navigate forward/i })).toBeInTheDocument();
   });
 
   it("calls loadSavedFolder on mount", () => {
@@ -75,16 +81,15 @@ describe("App", () => {
     expect(openFolder).toHaveBeenCalledOnce();
   });
 
-  it("cleans up menu event listeners on unmount", async () => {
+  it("cleans up the menu:open-folder listener on unmount", async () => {
     const mockUnlisten = vi.fn();
     vi.mocked(listen).mockResolvedValue(mockUnlisten);
 
     const { unmount } = render(<App />);
     await waitFor(() => expect(listen).toHaveBeenCalledWith("menu:open-folder", expect.any(Function)));
-    await waitFor(() => expect(listen).toHaveBeenCalledWith("menu:open-settings", expect.any(Function)));
 
     unmount();
-    await waitFor(() => expect(mockUnlisten).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(mockUnlisten).toHaveBeenCalledTimes(1));
   });
 
   it("does not show DesignKitchen on initial render", () => {

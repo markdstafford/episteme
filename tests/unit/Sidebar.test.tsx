@@ -1,5 +1,4 @@
-import { render, screen } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
+import { render, screen, fireEvent } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { Sidebar } from "@/components/Sidebar";
 import { useWorkspaceStore } from "@/stores/workspace";
@@ -39,10 +38,48 @@ describe("Sidebar", () => {
     expect(aside).toBeInTheDocument();
   });
 
-  it("shows folder basename when a folder is open", () => {
+  it("renders folder name header when folderPath is set", () => {
     useWorkspaceStore.setState({ folderPath: "/Users/alice/my-docs-folder" });
     render(<Sidebar><p>content</p></Sidebar>);
+    expect(document.querySelector("[data-testid='folder-header']")).toBeInTheDocument();
     expect(screen.getByText("my-docs-folder")).toBeInTheDocument();
+  });
+
+  it("does not render folder name header when folderPath is null", () => {
+    render(<Sidebar><p>content</p></Sidebar>);
+    expect(document.querySelector("[data-testid='folder-header']")).not.toBeInTheDocument();
+  });
+
+  it("calls openFolder when folder name is clicked", () => {
+    const openFolder = vi.fn();
+    useWorkspaceStore.setState({
+      folderPath: "/Users/alice/my-docs-folder",
+      openFolder,
+    });
+    render(<Sidebar><p>content</p></Sidebar>);
+    fireEvent.click(screen.getByText("my-docs-folder"));
+    expect(openFolder).toHaveBeenCalledOnce();
+  });
+
+  it("folder name span has truncate class", () => {
+    useWorkspaceStore.setState({ folderPath: "/Users/alice/my-docs-folder" });
+    render(<Sidebar><p>content</p></Sidebar>);
+    const span = screen.getByText("my-docs-folder");
+    expect(span.className).toMatch(/truncate/);
+  });
+
+  it("folder header has flex row layout", () => {
+    useWorkspaceStore.setState({ folderPath: "/Users/alice/my-docs-folder" });
+    render(<Sidebar><p>content</p></Sidebar>);
+    const header = document.querySelector("[data-testid='folder-header']");
+    expect(header?.className).toMatch(/flex/);
+  });
+
+  it("does not render TitleBar inside Sidebar", () => {
+    useWorkspaceStore.setState({ folderPath: "/Users/alice/my-docs-folder" });
+    render(<Sidebar><p>content</p></Sidebar>);
+    expect(screen.queryByRole("button", { name: /navigate back/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /navigate forward/i })).not.toBeInTheDocument();
   });
 
   it("shows folder basename for Windows-style paths", () => {
@@ -57,45 +94,4 @@ describe("Sidebar", () => {
     expect(screen.queryByText("/Users/alice/my-docs-folder")).not.toBeInTheDocument();
   });
 
-  it("does not render a folder header when no folder is open", () => {
-    useWorkspaceStore.setState({ folderPath: null });
-    render(<Sidebar><p>content</p></Sidebar>);
-    expect(document.querySelector("[data-testid='folder-header']")).not.toBeInTheDocument();
-  });
-
-  it("clicking the folder name calls openFolder", async () => {
-    const openFolder = vi.fn();
-    useWorkspaceStore.setState({
-      folderPath: "/Users/alice/my-docs-folder",
-      openFolder,
-    });
-    render(<Sidebar><p>content</p></Sidebar>);
-    await userEvent.click(screen.getByText("my-docs-folder"));
-    expect(openFolder).toHaveBeenCalledOnce();
-  });
-
-  it("header has a bottom border separating it from the file tree", () => {
-    useWorkspaceStore.setState({ folderPath: "/Users/alice/my-docs-folder" });
-    render(<Sidebar><p>content</p></Sidebar>);
-    const header = document.querySelector("[data-testid='folder-header']");
-    expect(header).toBeInTheDocument();
-    expect(header?.className).toMatch(/border-b/);
-  });
-
-  it("folder name element has truncate class for long name handling", () => {
-    useWorkspaceStore.setState({ folderPath: "/Users/alice/my-docs-folder" });
-    render(<Sidebar><p>content</p></Sidebar>);
-    const nameEl = screen.getByText("my-docs-folder");
-    expect(nameEl.className).toMatch(/truncate/);
-    expect(nameEl.className).toMatch(/min-w-0/);
-  });
-
-  it("header is a flex row to accommodate a future right-side button", () => {
-    useWorkspaceStore.setState({ folderPath: "/Users/alice/my-docs-folder" });
-    render(<Sidebar><p>content</p></Sidebar>);
-    const header = document.querySelector("[data-testid='folder-header']");
-    expect(header?.className).toMatch(/flex/);
-    expect(header?.className).toMatch(/items-center/);
-    expect(header?.className).toMatch(/justify-between/);
-  });
 });

@@ -19,7 +19,6 @@ pub fn run() {
       commands::ai::ai_sso_login,
       commands::ai::ai_check_auth,
       commands::ai::ai_chat,
-      commands::window::open_settings_window,
       commands::skills::list_skills,
       commands::skills::count_documents_by_type,
     ])
@@ -43,9 +42,7 @@ pub fn run() {
           let _ = app.emit("menu:open-folder", ());
         }
         if event.id() == "settings" {
-          if let Err(e) = commands::window::open_settings_window(app.clone()) {
-            log::error!("Failed to open settings window: {}", e);
-          }
+          app.emit("menu:open-settings", ()).ok();
         }
       });
 
