@@ -62,7 +62,7 @@ function App() {
   if (isLoading && !folderPath) {
     return (
       <div className="flex flex-col h-screen">
-        <TitleBar folderPath={null} />
+        <TitleBar folderPath={null} onStartAuthoring={() => {}} />
         <div className="flex flex-1 items-center justify-center bg-gray-50 dark:bg-gray-900">
           <div className="text-center">
             <Loader2 className="w-8 h-8 animate-spin text-blue-600 mx-auto" />
@@ -78,7 +78,7 @@ function App() {
   if (!folderPath) {
     return (
       <div className="flex flex-col h-screen">
-        <TitleBar folderPath={null} />
+        <TitleBar folderPath={null} onStartAuthoring={() => {}} />
         <WelcomeScreen />
       </div>
     );
@@ -86,14 +86,15 @@ function App() {
 
   return (
     <div className="flex flex-col h-screen">
-      <TitleBar folderPath={folderPath} />
+      <TitleBar
+        folderPath={folderPath}
+        onStartAuthoring={(skillName) => {
+          setChatPanelOpen(true);
+          startAuthoring(skillName);
+        }}
+      />
       <div className="flex flex-1 min-h-0">
-        <Sidebar
-          onStartAuthoring={(skillName) => {
-            setChatPanelOpen(true);
-            startAuthoring(skillName);
-          }}
-        >
+        <Sidebar>
           <FileTree />
         </Sidebar>
         <div className="flex-1 flex flex-col min-w-0">

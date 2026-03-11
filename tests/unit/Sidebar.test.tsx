@@ -94,13 +94,4 @@ describe("Sidebar", () => {
     expect(screen.queryByText("/Users/alice/my-docs-folder")).not.toBeInTheDocument();
   });
 
-  it("renders Plus button when onStartAuthoring prop is provided", () => {
-    useWorkspaceStore.setState({ folderPath: "/Users/alice/my-docs-folder" });
-    render(
-      <Sidebar onStartAuthoring={vi.fn()}>
-        <p>content</p>
-      </Sidebar>
-    );
-    expect(screen.getByRole("button", { name: /new document/i })).toBeInTheDocument();
-  });
 });

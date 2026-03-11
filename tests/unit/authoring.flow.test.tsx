@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, within } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import App from "@/App";
 import { useWorkspaceStore } from "@/stores/workspace";
@@ -64,9 +64,8 @@ describe("Document authoring flow", () => {
 
   it("New document button is visible when a folder is open", () => {
     render(<App />);
-    const folderHeader = screen.getByTestId("folder-header");
     expect(
-      within(folderHeader).getByRole("button", { name: /new document/i })
+      screen.getByRole("button", { name: /new document/i })
     ).toBeInTheDocument();
   });
 
@@ -75,8 +74,7 @@ describe("Document authoring flow", () => {
 
     expect(screen.queryByTestId("create-new-dialog")).not.toBeInTheDocument();
 
-    const folderHeader = screen.getByTestId("folder-header");
-    fireEvent.click(within(folderHeader).getByRole("button", { name: /new document/i }));
+    fireEvent.click(screen.getByRole("button", { name: /new document/i }));
 
     expect(screen.getByTestId("create-new-dialog")).toBeInTheDocument();
   });
@@ -87,8 +85,7 @@ describe("Document authoring flow", () => {
     // Chat panel should not be visible initially
     expect(screen.queryByText("AI assistant")).not.toBeInTheDocument();
 
-    const folderHeader = screen.getByTestId("folder-header");
-    fireEvent.click(within(folderHeader).getByRole("button", { name: /new document/i }));
+    fireEvent.click(screen.getByRole("button", { name: /new document/i }));
     fireEvent.click(screen.getByText("Select no skill"));
 
     // AiChatPanel header should now be visible
@@ -98,8 +95,7 @@ describe("Document authoring flow", () => {
   it("selecting from the dialog calls startAuthoring and sets authoringMode", () => {
     render(<App />);
 
-    const folderHeader = screen.getByTestId("folder-header");
-    fireEvent.click(within(folderHeader).getByRole("button", { name: /new document/i }));
+    fireEvent.click(screen.getByRole("button", { name: /new document/i }));
     fireEvent.click(screen.getByText("Select no skill"));
 
     expect(useAiChatStore.getState().authoringMode).toBe(true);
@@ -115,8 +111,7 @@ describe("Document authoring flow", () => {
 
     render(<App />);
 
-    const folderHeader = screen.getByTestId("folder-header");
-    fireEvent.click(within(folderHeader).getByRole("button", { name: /new document/i }));
+    fireEvent.click(screen.getByRole("button", { name: /new document/i }));
     fireEvent.click(screen.getByText("Select no skill"));
 
     expect(useAiChatStore.getState().messages).toHaveLength(0);
@@ -125,8 +120,7 @@ describe("Document authoring flow", () => {
   it("selecting a skill sets activeSkill in the store", () => {
     render(<App />);
 
-    const folderHeader = screen.getByTestId("folder-header");
-    fireEvent.click(within(folderHeader).getByRole("button", { name: /new document/i }));
+    fireEvent.click(screen.getByRole("button", { name: /new document/i }));
     fireEvent.click(screen.getByText("Select skill"));
 
     expect(useAiChatStore.getState().activeSkill).toBe("product-description");
@@ -138,8 +132,7 @@ describe("Document authoring flow", () => {
     // Chat panel should not be visible initially
     expect(screen.queryByText("AI assistant")).not.toBeInTheDocument();
 
-    const folderHeader = screen.getByTestId("folder-header");
-    fireEvent.click(within(folderHeader).getByRole("button", { name: /new document/i }));
+    fireEvent.click(screen.getByRole("button", { name: /new document/i }));
     fireEvent.click(screen.getByText("Close dialog"));
 
     // Chat panel should still not be open
@@ -150,8 +143,7 @@ describe("Document authoring flow", () => {
     render(<App />);
 
     // First selection — simulates a session that has progressed
-    const folderHeader = screen.getByTestId("folder-header");
-    fireEvent.click(within(folderHeader).getByRole("button", { name: /new document/i }));
+    fireEvent.click(screen.getByRole("button", { name: /new document/i }));
     fireEvent.click(screen.getByText("Select no skill"));
     useAiChatStore.setState({
       authoringFilePath: "/workspace/docs/draft.md",
@@ -160,7 +152,7 @@ describe("Document authoring flow", () => {
     });
 
     // Second click then select — startAuthoring should clear messages and reset per-session fields
-    fireEvent.click(within(screen.getByTestId("folder-header")).getByRole("button", { name: /new document/i }));
+    fireEvent.click(screen.getByRole("button", { name: /new document/i }));
     fireEvent.click(screen.getByText("Select no skill"));
 
     const s = useAiChatStore.getState();
