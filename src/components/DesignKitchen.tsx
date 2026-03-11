@@ -203,7 +203,7 @@ export function DesignKitchen({ onClose }: DesignKitchenProps) {
                   boxShadow: value,
                 }} />
                 <div style={{ fontSize: "var(--font-size-ui-xs)", color: "var(--color-text-tertiary)", fontFamily: "var(--font-mono)", textAlign: "center", maxWidth: "120px" }}>
-                  {name}
+                  <span>{name}</span>
                 </div>
               </div>
             ))}
