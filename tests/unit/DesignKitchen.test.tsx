@@ -78,7 +78,10 @@ describe("DesignKitchen", () => {
   it("renders input states", () => {
     render(<DesignKitchen onClose={vi.fn()} />);
     expect(screen.getByPlaceholderText("Default input")).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("Hover input")).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("Focus input")).toBeInTheDocument();
     expect(screen.getByPlaceholderText("Error input")).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("Disabled input")).toBeInTheDocument();
   });
 
   it("renders all badge variants", () => {

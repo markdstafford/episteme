@@ -302,6 +302,7 @@ export function DesignKitchen({ onClose }: DesignKitchenProps) {
             <div style={{ display: "flex", flexWrap: "wrap", gap: "12px", alignItems: "flex-start" }}>
               {[
                 { label: "Default",  placeholder: "Default input",  extraStyle: {} as React.CSSProperties },
+                { label: "Hover",    placeholder: "Hover input",    extraStyle: { borderColor: "var(--color-border-strong)", background: "var(--color-bg-base)" } as React.CSSProperties },
                 { label: "Focus",    placeholder: "Focus input",    extraStyle: { borderColor: "var(--color-accent)", boxShadow: "0 0 0 2px var(--color-accent-subtle)", outline: "none" } as React.CSSProperties },
                 { label: "Error",    placeholder: "Error input",    extraStyle: { borderColor: "var(--color-state-danger)", boxShadow: "0 0 0 2px var(--color-state-danger-subtle)" } as React.CSSProperties },
                 { label: "Disabled", placeholder: "Disabled input", extraStyle: { opacity: 0.4, cursor: "not-allowed" } as React.CSSProperties, disabled: true },
@@ -311,7 +312,6 @@ export function DesignKitchen({ onClose }: DesignKitchenProps) {
                   <input
                     placeholder={placeholder}
                     disabled={disabled}
-                    readOnly={disabled}
                     style={{
                       height: "28px",
                       padding: "0 10px",
