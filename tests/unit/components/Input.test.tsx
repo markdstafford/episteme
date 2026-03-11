@@ -126,6 +126,14 @@ describe("Input", () => {
       );
     });
 
+    it("preserves error border after mouse enter then mouse leave", () => {
+      render(<Input error />);
+      const input = screen.getByRole("textbox");
+      fireEvent.mouseEnter(input);
+      fireEvent.mouseLeave(input);
+      expect(input.style.borderColor).toBe("var(--color-state-danger)");
+    });
+
     it("no error styles when error is false or omitted", () => {
       render(<Input />);
       const input = screen.getByRole("textbox");

@@ -50,13 +50,13 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
         data-ui-input=""
         style={baseStyle}
         onMouseEnter={(e) => {
-          if (!disabled) {
+          if (!disabled && !error) {
             e.currentTarget.style.borderColor = "var(--color-border-strong)";
           }
           onMouseEnter?.(e);
         }}
         onMouseLeave={(e) => {
-          if (!disabled) {
+          if (!disabled && !error) {
             e.currentTarget.style.borderColor = "";
           }
           onMouseLeave?.(e);
