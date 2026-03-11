@@ -93,4 +93,28 @@ describe("DesignKitchen", () => {
     expect(screen.getByText("Warning")).toBeInTheDocument();
     expect(screen.getByText("Success")).toBeInTheDocument();
   });
+
+  it("renders sample sidebar panel", () => {
+    render(<DesignKitchen onClose={vi.fn()} />);
+    expect(screen.getByText("Documents")).toBeInTheDocument();
+    expect(screen.getByText("Getting Started")).toBeInTheDocument();
+  });
+
+  it("renders sample dialog trigger button", () => {
+    render(<DesignKitchen onClose={vi.fn()} />);
+    expect(screen.getByRole("button", { name: /open sample dialog/i })).toBeInTheDocument();
+  });
+
+  it("opens sample dialog when trigger is clicked", async () => {
+    render(<DesignKitchen onClose={vi.fn()} />);
+    fireEvent.click(screen.getByRole("button", { name: /open sample dialog/i }));
+    // findAllByText because "Sample Dialog" also appears as a section label
+    const matches = await screen.findAllByText("Sample Dialog");
+    expect(matches.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it("renders context menu trigger button", () => {
+    render(<DesignKitchen onClose={vi.fn()} />);
+    expect(screen.getByRole("button", { name: /open sample context menu/i })).toBeInTheDocument();
+  });
 });

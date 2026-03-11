@@ -1,4 +1,6 @@
 import React from "react";
+import * as Dialog from "@radix-ui/react-dialog";
+import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 
 const buttonBase: React.CSSProperties = {
   height: "28px",
@@ -359,7 +361,143 @@ export function DesignKitchen({ onClose }: DesignKitchenProps) {
             </div>
           </div>
 
-          {/* Task 8 will add more here */}
+          {/* Sample Sidebar */}
+          <div style={{ marginBottom: "48px" }}>
+            <div style={{ fontSize: "var(--font-size-ui-xs)", color: "var(--color-text-quaternary)", marginBottom: "16px", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+              Sample Sidebar
+            </div>
+            <div style={{
+              width: "244px",
+              background: "var(--color-bg-app)",
+              borderRadius: "var(--radius-lg)",
+              border: "1px solid var(--color-border-subtle)",
+              padding: "8px",
+              fontFamily: "var(--font-ui)",
+            }}>
+              <div style={{ fontSize: "var(--font-size-ui-xs)", color: "var(--color-text-quaternary)", textTransform: "uppercase", letterSpacing: "0.06em", padding: "16px 8px 4px" }}>
+                Documents
+              </div>
+              {[
+                { label: "Getting Started", selected: false },
+                { label: "Architecture",    selected: true },
+                { label: "API Reference",   selected: false },
+                { label: "Contributing",    selected: false },
+              ].map(({ label, selected }) => (
+                <div key={label} style={{
+                  height: "28px",
+                  padding: "0 8px",
+                  borderRadius: "var(--radius-md)",
+                  display: "flex",
+                  alignItems: "center",
+                  fontSize: "var(--font-size-ui-lg)",
+                  background: selected ? "var(--color-bg-hover)" : "transparent",
+                  color: selected ? "var(--color-text-primary)" : "var(--color-text-secondary)",
+                  cursor: "default",
+                }}>
+                  {label}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Sample Dialog */}
+          <div style={{ marginBottom: "48px" }}>
+            <div style={{ fontSize: "var(--font-size-ui-xs)", color: "var(--color-text-quaternary)", marginBottom: "16px", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+              Sample Dialog
+            </div>
+            <Dialog.Root>
+              <Dialog.Trigger asChild>
+                <button style={{ ...buttonBase, background: "var(--color-bg-elevated)", color: "var(--color-text-primary)", border: "1px solid var(--color-border-default)" }}>
+                  Open sample dialog
+                </button>
+              </Dialog.Trigger>
+              <Dialog.Portal>
+                <Dialog.Overlay style={{ position: "fixed", inset: 0, background: "oklch(0% 0 0 / 0.5)", backdropFilter: "blur(4px)", zIndex: 10000 }} />
+                <Dialog.Content style={{
+                  position: "fixed",
+                  top: "50%", left: "50%",
+                  transform: "translate(-50%, -50%)",
+                  width: "480px",
+                  background: "var(--color-bg-elevated)",
+                  borderRadius: "var(--radius-xl)",
+                  boxShadow: "var(--shadow-lg)",
+                  zIndex: 10001,
+                  fontFamily: "var(--font-ui)",
+                }}>
+                  <div style={{ padding: "20px", borderBottom: "1px solid var(--color-border-subtle)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <Dialog.Title style={{ fontSize: "var(--font-size-ui-md)", fontWeight: 600, color: "var(--color-text-primary)" }}>Sample Dialog</Dialog.Title>
+                    <Dialog.Close asChild>
+                      <button style={{ background: "transparent", border: "none", cursor: "pointer", color: "var(--color-text-tertiary)" }} aria-label="Close dialog">✕</button>
+                    </Dialog.Close>
+                  </div>
+                  <div style={{ padding: "20px", fontSize: "var(--font-size-ui-base)", color: "var(--color-text-secondary)" }}>
+                    This is the dialog body. It uses the correct background, radius, shadow, and typography tokens from the design system.
+                  </div>
+                  <div style={{ padding: "16px", borderTop: "1px solid var(--color-border-subtle)", display: "flex", justifyContent: "flex-end", gap: "8px" }}>
+                    <Dialog.Close asChild>
+                      <button style={{ ...buttonBase, background: "var(--color-bg-elevated)", color: "var(--color-text-primary)", border: "1px solid var(--color-border-default)" }}>Cancel</button>
+                    </Dialog.Close>
+                    <Dialog.Close asChild>
+                      <button style={{ ...buttonBase, background: "var(--color-accent)", color: "white", border: "none" }}>Confirm</button>
+                    </Dialog.Close>
+                  </div>
+                </Dialog.Content>
+              </Dialog.Portal>
+            </Dialog.Root>
+          </div>
+
+          {/* Sample Context Menu */}
+          <div style={{ marginBottom: "48px" }}>
+            <div style={{ fontSize: "var(--font-size-ui-xs)", color: "var(--color-text-quaternary)", marginBottom: "16px", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+              Sample Context Menu
+            </div>
+            <DropdownMenu.Root>
+              <DropdownMenu.Trigger asChild>
+                <button style={{ ...buttonBase, background: "var(--color-bg-elevated)", color: "var(--color-text-primary)", border: "1px solid var(--color-border-default)" }}>
+                  Open sample context menu
+                </button>
+              </DropdownMenu.Trigger>
+              <DropdownMenu.Portal>
+                <DropdownMenu.Content style={{
+                  minWidth: "180px",
+                  background: "var(--color-bg-overlay)",
+                  border: "1px solid var(--color-border-subtle)",
+                  borderRadius: "var(--radius-lg)",
+                  padding: "4px",
+                  fontFamily: "var(--font-ui)",
+                  zIndex: 10001,
+                }}>
+                  {[
+                    { label: "Open",      shortcut: "⌘O" },
+                    { label: "Rename",    shortcut: "F2" },
+                    { label: "Duplicate", shortcut: "⌘D" },
+                  ].map(({ label, shortcut }) => (
+                    <DropdownMenu.Item key={label} style={{
+                      height: "28px", padding: "0 8px",
+                      display: "flex", alignItems: "center", justifyContent: "space-between",
+                      fontSize: "var(--font-size-ui-base)", color: "var(--color-text-secondary)",
+                      borderRadius: "var(--radius-md)", cursor: "default", outline: "none",
+                    }}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = "var(--color-bg-hover)"; e.currentTarget.style.color = "var(--color-text-primary)"; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--color-text-secondary)"; }}
+                    >
+                      <span>{label}</span>
+                      <span style={{ fontSize: "var(--font-size-ui-xs)", color: "var(--color-text-quaternary)" }}>{shortcut}</span>
+                    </DropdownMenu.Item>
+                  ))}
+                  <DropdownMenu.Separator style={{ height: "1px", background: "var(--color-border-subtle)", margin: "4px 0" }} />
+                  <DropdownMenu.Item style={{
+                    height: "28px", padding: "0 8px",
+                    display: "flex", alignItems: "center",
+                    fontSize: "var(--font-size-ui-base)", color: "var(--color-state-danger)",
+                    borderRadius: "var(--radius-md)", cursor: "default", outline: "none",
+                  }}>
+                    Delete
+                  </DropdownMenu.Item>
+                </DropdownMenu.Content>
+              </DropdownMenu.Portal>
+            </DropdownMenu.Root>
+          </div>
         </Section>
       </div>
     </div>
