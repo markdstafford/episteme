@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useWorkspaceStore } from "@/stores/workspace";
 import { useAiChatStore } from "@/stores/aiChat";
 import { WelcomeScreen } from "@/components/WelcomeScreen";
+import { TitleBar } from "@/components/TitleBar";
 import { Sidebar } from "@/components/Sidebar";
 import { FileTree } from "@/components/FileTree";
 import { DocumentViewer } from "@/components/DocumentViewer";
@@ -41,7 +42,6 @@ function App() {
   useEffect(() => {
     const init = async () => {
       await loadSavedFolder();
-      // Load AWS profile from preferences
       try {
         const raw = await invoke("load_preferences");
         const prefs = parsePreferences(raw);
@@ -61,52 +61,63 @@ function App() {
 
   if (isLoading && !folderPath) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900">
-        <div className="text-center">
-          <Loader2 className="w-8 h-8 animate-spin text-blue-600 mx-auto" />
-          <p className="mt-4 text-gray-600 dark:text-gray-400">
-            Loading folder...
-          </p>
+      <div className="flex flex-col h-screen">
+        <TitleBar folderPath={null} />
+        <div className="flex flex-1 items-center justify-center bg-gray-50 dark:bg-gray-900">
+          <div className="text-center">
+            <Loader2 className="w-8 h-8 animate-spin text-blue-600 mx-auto" />
+            <p className="mt-4 text-gray-600 dark:text-gray-400">
+              Loading folder...
+            </p>
+          </div>
         </div>
       </div>
     );
   }
 
   if (!folderPath) {
-    return <WelcomeScreen />;
+    return (
+      <div className="flex flex-col h-screen">
+        <TitleBar folderPath={null} />
+        <WelcomeScreen />
+      </div>
+    );
   }
 
   return (
-    <div className="flex h-screen bg-white dark:bg-gray-900">
-      <Sidebar
-        onStartAuthoring={(skillName) => {
-          setChatPanelOpen(true);
-          startAuthoring(skillName);
-        }}
-      >
-        <FileTree />
-      </Sidebar>
-      <div className="flex-1 flex flex-col min-w-0">
-        {/* Toolbar */}
-        <div className="flex items-center justify-end px-4 py-1 border-b border-gray-200 dark:border-gray-700">
-          <button
-            onClick={() => setChatPanelOpen(!chatPanelOpen)}
-            className={`p-1.5 rounded hover:bg-gray-100 dark:hover:bg-gray-800 ${
-              chatPanelOpen ? "bg-gray-100 dark:bg-gray-800 text-blue-600" : "text-gray-500"
-            }`}
-            title="Toggle AI Assistant"
-          >
-            <MessageSquare className="w-4 h-4" />
-          </button>
+    <div className="flex flex-col h-screen">
+      <TitleBar folderPath={folderPath} />
+      <div className="flex flex-1 min-h-0">
+        <Sidebar
+          onStartAuthoring={(skillName) => {
+            setChatPanelOpen(true);
+            startAuthoring(skillName);
+          }}
+        >
+          <FileTree />
+        </Sidebar>
+        <div className="flex-1 flex flex-col min-w-0">
+          {/* Toolbar */}
+          <div className="flex items-center justify-end px-4 py-1 border-b border-gray-200 dark:border-gray-700">
+            <button
+              onClick={() => setChatPanelOpen(!chatPanelOpen)}
+              className={`p-1.5 rounded hover:bg-gray-100 dark:hover:bg-gray-800 ${
+                chatPanelOpen ? "bg-gray-100 dark:bg-gray-800 text-blue-600" : "text-gray-500"
+              }`}
+              title="Toggle AI Assistant"
+            >
+              <MessageSquare className="w-4 h-4" />
+            </button>
+          </div>
+          {/* Document viewer fills remaining space */}
+          <div className="flex-1 flex flex-col overflow-hidden">
+            <DocumentViewer />
+          </div>
         </div>
-        {/* Document viewer fills remaining space */}
-        <div className="flex-1 flex flex-col overflow-hidden">
-          <DocumentViewer />
-        </div>
+        {chatPanelOpen && (
+          <AiChatPanel onClose={() => setChatPanelOpen(false)} />
+        )}
       </div>
-      {chatPanelOpen && (
-        <AiChatPanel onClose={() => setChatPanelOpen(false)} />
-      )}
     </div>
   );
 }
