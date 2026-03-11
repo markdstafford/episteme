@@ -87,14 +87,13 @@ describe("App", () => {
     await waitFor(() => expect(mockUnlisten).toHaveBeenCalledTimes(2));
   });
 
-  it("does not show DesignKitchen in production (DEV=false)", () => {
+  it("does not show DesignKitchen on initial render", () => {
     useWorkspaceStore.setState({ folderPath: "/some/path" });
     render(<App />);
     expect(screen.queryByText("Design Kitchen")).not.toBeInTheDocument();
   });
 
   it("shows DesignKitchen overlay when Cmd+Shift+K is pressed in dev", async () => {
-    vi.stubEnv("DEV", true);
     useWorkspaceStore.setState({ folderPath: "/some/path" });
     render(<App />);
 
@@ -103,12 +102,9 @@ describe("App", () => {
     fireEvent.keyDown(document, { key: "K", metaKey: true, shiftKey: true });
 
     expect(screen.getByText("Design Kitchen")).toBeInTheDocument();
-
-    vi.unstubAllEnvs();
   });
 
   it("dismisses DesignKitchen when Cmd+Shift+K is pressed again in dev", async () => {
-    vi.stubEnv("DEV", true);
     useWorkspaceStore.setState({ folderPath: "/some/path" });
     render(<App />);
 
@@ -117,7 +113,5 @@ describe("App", () => {
 
     fireEvent.keyDown(document, { key: "K", metaKey: true, shiftKey: true });
     expect(screen.queryByText("Design Kitchen")).not.toBeInTheDocument();
-
-    vi.unstubAllEnvs();
   });
 });
