@@ -156,7 +156,7 @@ Props: `folderPath: string | null` (for disabling the New Document button when n
       - [x] 4 TitleBar tests pass
     - **Dependencies**: "Task: Reduce `--height-titlebar` to 40px"
 
-- [ ] **Story: Update layout integration** *(Task 3 complete; Task 4 pending)*
+- [x] **Story: Update layout integration**
   - [x] **Task: Remove TitleBar from `Sidebar.tsx` and restore folder name header**
     - **Description**: Undo the TitleBar integration from the previous implementation pass. (1) Remove `import { TitleBar }` and the `<TitleBar folderName={folderName} />` render. (2) Re-add `openFolder` from `useWorkspaceStore`. (3) Restore the folder name header as the first child inside the scroll container (`overflow-y-auto` div, not above it): a div with `data-testid="folder-header"` showing `folderName` (clickable → `openFolder()`), plus the Plus button (`setDialogOpen(true)`). Use the same Tailwind classes as the original — the sidebar migration enhancement handles token alignment. (4) Restore the 4 header tests removed from `tests/unit/Sidebar.test.tsx`: folder header renders, clicking name calls `openFolder`, truncation class present, flex row layout.
     - **Acceptance criteria**:
@@ -169,14 +169,14 @@ Props: `folderPath: string | null` (for disabling the New Document button when n
       - [x] All sidebar tests pass including the 4 restored header tests
     - **Dependencies**: None
 
-  - [ ] **Task: Add `TitleBar` to `App.tsx` as full-width strip above the main layout**
+  - [x] **Task: Add `TitleBar` to `App.tsx` as full-width strip above the main layout**
     - **Description**: Integrate the rebuilt TitleBar into `App.tsx`. (1) Import `TitleBar` from `@/components/TitleBar`. (2) Change the outermost layout div from `flex h-screen` to `flex flex-col h-screen`. (3) Render `<TitleBar folderPath={folderPath} />` as the first child. (4) Wrap the sidebar + content + chat panel row in a new inner `<div className="flex flex-1 min-h-0">` — `flex-1` fills remaining height, `min-h-0` prevents flex children from overflowing. (5) Add `<TitleBar folderPath={folderPath} />` to the loading-state and welcome-screen early returns so the window remains draggable in those states. The `DesignKitchen` early return does not get TitleBar. (6) Update `tests/unit/app.test.tsx` to verify TitleBar is present in the main layout.
     - **Acceptance criteria**:
-      - [ ] `TitleBar` imported and rendered in `App.tsx`
-      - [ ] Outer div is `flex flex-col h-screen`
-      - [ ] TitleBar is the first child of the outer div in the main layout path
-      - [ ] Sidebar, content column, and chat panel are inside `flex flex-1 min-h-0` inner div
-      - [ ] TitleBar renders in the loading state and welcome screen paths
-      - [ ] DesignKitchen path renders without TitleBar
-      - [ ] All existing tests pass; new test verifies TitleBar in main layout
+      - [x] `TitleBar` imported and rendered in `App.tsx`
+      - [x] Outer div is `flex flex-col h-screen`
+      - [x] TitleBar is the first child of the outer div in the main layout path
+      - [x] Sidebar, content column, and chat panel are inside `flex flex-1 min-h-0` inner div
+      - [x] TitleBar renders in the loading state and welcome screen paths
+      - [x] DesignKitchen path renders without TitleBar
+      - [x] All existing tests pass; new test verifies TitleBar in main layout
     - **Dependencies**: "Task: Rewrite TitleBar.tsx as a three-section component"

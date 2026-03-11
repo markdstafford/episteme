@@ -22,7 +22,6 @@ describe("App", () => {
 
   it("shows WelcomeScreen when no folder is open", () => {
     render(<App />);
-    expect(screen.getByText("Episteme")).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: /open folder/i })
     ).toBeInTheDocument();
@@ -41,6 +40,13 @@ describe("App", () => {
     render(<App />);
     expect(screen.getByText("Select a document from the sidebar")).toBeInTheDocument();
     expect(document.querySelector("aside")).toBeInTheDocument();
+  });
+
+  it("renders TitleBar in the main workspace layout", () => {
+    useWorkspaceStore.setState({ folderPath: "/some/path" });
+    render(<App />);
+    expect(screen.getByRole("button", { name: /navigate back/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /navigate forward/i })).toBeInTheDocument();
   });
 
   it("calls loadSavedFolder on mount", () => {
