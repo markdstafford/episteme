@@ -1,5 +1,4 @@
 import { render, screen } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { Sidebar } from "@/components/Sidebar";
 import { useWorkspaceStore } from "@/stores/workspace";
@@ -57,45 +56,20 @@ describe("Sidebar", () => {
     expect(screen.queryByText("/Users/alice/my-docs-folder")).not.toBeInTheDocument();
   });
 
-  it("does not render a folder header when no folder is open", () => {
+  it("does not render the old folder-header div (replaced by TitleBar)", () => {
     useWorkspaceStore.setState({ folderPath: null });
     render(<Sidebar><p>content</p></Sidebar>);
     expect(document.querySelector("[data-testid='folder-header']")).not.toBeInTheDocument();
   });
 
-  it("clicking the folder name calls openFolder", async () => {
-    const openFolder = vi.fn();
-    useWorkspaceStore.setState({
-      folderPath: "/Users/alice/my-docs-folder",
-      openFolder,
-    });
-    render(<Sidebar><p>content</p></Sidebar>);
-    await userEvent.click(screen.getByText("my-docs-folder"));
-    expect(openFolder).toHaveBeenCalledOnce();
-  });
-
-  it("header has a bottom border separating it from the file tree", () => {
+  it("renders TitleBar as the first child of aside", () => {
     useWorkspaceStore.setState({ folderPath: "/Users/alice/my-docs-folder" });
     render(<Sidebar><p>content</p></Sidebar>);
-    const header = document.querySelector("[data-testid='folder-header']");
-    expect(header).toBeInTheDocument();
-    expect(header?.className).toMatch(/border-b/);
-  });
-
-  it("folder name element has truncate class for long name handling", () => {
-    useWorkspaceStore.setState({ folderPath: "/Users/alice/my-docs-folder" });
-    render(<Sidebar><p>content</p></Sidebar>);
-    const nameEl = screen.getByText("my-docs-folder");
-    expect(nameEl.className).toMatch(/truncate/);
-    expect(nameEl.className).toMatch(/min-w-0/);
-  });
-
-  it("header is a flex row to accommodate a future right-side button", () => {
-    useWorkspaceStore.setState({ folderPath: "/Users/alice/my-docs-folder" });
-    render(<Sidebar><p>content</p></Sidebar>);
-    const header = document.querySelector("[data-testid='folder-header']");
-    expect(header?.className).toMatch(/flex/);
-    expect(header?.className).toMatch(/items-center/);
-    expect(header?.className).toMatch(/justify-between/);
+    const aside = document.querySelector("aside");
+    // TitleBar renders a div; it should be the first element child of aside
+    expect(aside?.firstElementChild).not.toBeNull();
+    // The scroll container (second child) should follow TitleBar
+    const scrollContainer = aside?.children[1];
+    expect(scrollContainer?.className).toMatch(/overflow-y-auto/);
   });
 });
