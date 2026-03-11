@@ -133,11 +133,17 @@ function ColorGroup({ label, tokens }: { label: string; tokens: ColorToken[] }) 
         {tokens.map(({ name, dark, light }) => (
           <div key={name} style={{ display: "flex", flexDirection: "column", gap: "4px", minWidth: "160px" }}>
             <div style={{ display: "flex", gap: "2px", height: "32px", borderRadius: "var(--radius-base)", overflow: "hidden", border: "1px solid var(--color-border-subtle)" }}>
-              <div style={{ flex: 1, background: dark }} title={`dark: ${dark}`} />
-              <div style={{ flex: 1, background: light }} title={`light: ${light}`} />
+              <div style={{ flex: 1, background: dark }} title="dark" />
+              <div style={{ flex: 1, background: light }} title="light" />
             </div>
             <div style={{ fontSize: "var(--font-size-ui-xs)", color: "var(--color-text-tertiary)", fontFamily: "var(--font-mono)" }}>
               {name}
+            </div>
+            <div style={{ fontSize: "var(--font-size-ui-xs)", color: "var(--color-text-quaternary)", fontFamily: "var(--font-mono)" }}>
+              ☾ {dark}
+            </div>
+            <div style={{ fontSize: "var(--font-size-ui-xs)", color: "var(--color-text-quaternary)", fontFamily: "var(--font-mono)" }}>
+              ☀ {light}
             </div>
           </div>
         ))}
