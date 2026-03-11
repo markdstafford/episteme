@@ -22,7 +22,7 @@ export function Sidebar({ children }: SidebarProps) {
             className="px-3 py-2 flex items-center justify-between border-b border-(--color-border-subtle) shrink-0"
           >
             <span
-              className="text-sm font-medium text-(--color-text-quaternary) truncate min-w-0 cursor-pointer hover:bg-(--color-bg-subtle) rounded"
+              className="text-[length:var(--font-size-ui-xs)] font-medium text-(--color-text-quaternary) truncate min-w-0 cursor-pointer hover:bg-(--color-bg-subtle) rounded"
               onClick={() => openFolder()}
             >
               {folderName}
