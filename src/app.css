@@ -41,7 +41,7 @@
   --height-control-lg: 32px;
   --height-nav-item: 28px;
   --height-toolbar: 39px;
-  --height-titlebar: 52px;
+  --height-titlebar: 32px;
   --width-sidebar: 244px;
   --doc-content-width: 680px;
 
@@ -127,5 +127,11 @@
       --color-border-default: oklch(84% 0.007 264);
       --color-border-strong: oklch(78% 0.008 264);
     }
+  }
+}
+
+@layer components {
+  .titlebar-btn:hover:not(:disabled) {
+    background: var(--color-bg-hover);
   }
 }
