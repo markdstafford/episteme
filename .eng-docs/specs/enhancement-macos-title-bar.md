@@ -137,23 +137,23 @@ Props: `folderPath: string | null` (for disabling the New Document button when n
       - [x] macOS title bar pattern section in `design-system.md` describes the three-section layout
     - **Dependencies**: None
 
-- [ ] **Story: Rebuild TitleBar component**
-  - [ ] **Task: Rewrite `TitleBar.tsx` as a three-section component**
+- [x] **Story: Rebuild TitleBar component**
+  - [x] **Task: Rewrite `TitleBar.tsx` as a three-section component**
     - **Description**: Substantially rewrite `src/components/TitleBar.tsx`. The new component accepts `folderPath: string | null`. It renders a full-width horizontal bar with `height: var(--height-titlebar)`, `background: var(--color-bg-app)`, `border-bottom: 1px solid var(--color-border-subtle)`, and `WebkitAppRegion: 'drag'` on the root. Use the existing `TauriStyle` type for drag region styling.
       - **Section 1 (sidebar)**: `width: var(--width-sidebar)`, `flexShrink: 0`. Using the CSS variable here — not a hardcoded value — is what makes section 1 automatically track the sidebar width when resizing is implemented. Left 70px is the traffic lights no-drag zone (empty div, `WebkitAppRegion: 'no-drag'`). Remaining space: 2 placeholder icon buttons (`ChevronLeft`, `ChevronRight` from Lucide, 16px), right-aligned. Each button: 28×28px, transparent bg, `var(--color-text-tertiary)`, hover bg `var(--color-bg-hover)`, `var(--radius-base)`, `WebkitAppRegion: 'no-drag'`.
       - **Section 2 (title)**: `flex: 1`. Centered row: `Aperture` icon (14px, `var(--color-text-tertiary)`) + "Episteme" text (`var(--font-size-ui-base)`, weight 500, `var(--color-text-secondary)`, `var(--font-ui)`), gap `var(--space-2)`.
       - **Section 3 (actions)**: `flexShrink: 0`, padding-right `var(--space-2)`, `WebkitAppRegion: 'no-drag'`. Contains: `Share2` placeholder button + `Plus` New Document button. When `folderPath` is null, Plus button renders `opacity: 0.4, cursor: 'not-allowed'` and is `disabled`.
       - Rewrite `tests/unit/TitleBar.test.tsx`: (1) section 1 back/forward buttons render, (2) "Episteme" title renders, (3) New Document button disabled when `folderPath` is null, (4) New Document button enabled when `folderPath` is non-null.
     - **Acceptance criteria**:
-      - [ ] Three sections render in a single horizontal row
-      - [ ] Height `var(--height-titlebar)`, background `var(--color-bg-app)`, bottom border `1px solid var(--color-border-subtle)`
-      - [ ] Root div is `-webkit-app-region: drag`; all buttons are `-webkit-app-region: no-drag`
-      - [ ] Section 1 is `var(--width-sidebar)` wide with left 70px no-drag zone and back/forward buttons right-aligned
-      - [ ] Section 2 fills remaining space with centered "Episteme" icon+text
-      - [ ] Section 3 has Share2 placeholder button and Plus New Document button
-      - [ ] New Document button is visually disabled (`opacity: 0.4`) and `disabled` attribute set when `folderPath` is null
-      - [ ] New Document button is not disabled when `folderPath` is a string
-      - [ ] 4 TitleBar tests pass
+      - [x] Three sections render in a single horizontal row
+      - [x] Height `var(--height-titlebar)`, background `var(--color-bg-app)`, bottom border `1px solid var(--color-border-subtle)`
+      - [x] Root div is `-webkit-app-region: drag`; all buttons are `-webkit-app-region: no-drag`
+      - [x] Section 1 is `var(--width-sidebar)` wide with left 70px no-drag zone and back/forward buttons right-aligned
+      - [x] Section 2 fills remaining space with centered "Episteme" icon+text
+      - [x] Section 3 has Share2 placeholder button and Plus New Document button
+      - [x] New Document button is visually disabled (`opacity: 0.4`) and `disabled` attribute set when `folderPath` is null
+      - [x] New Document button is not disabled when `folderPath` is a string
+      - [x] 4 TitleBar tests pass
     - **Dependencies**: "Task: Reduce `--height-titlebar` to 40px"
 
 - [ ] **Story: Update layout integration**
