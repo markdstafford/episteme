@@ -116,4 +116,145 @@ describe("FileTreeItem", () => {
       "true"
     );
   });
+
+  describe("context menu", () => {
+    it("shows 'Open' item when right-clicking a file", async () => {
+      render(
+        <FileTreeItem
+          node={fileNode}
+          depth={0}
+          isExpanded={false}
+          isSelected={false}
+          isFocused={false}
+          onToggle={vi.fn()}
+          onSelect={vi.fn()}
+        />
+      );
+      await userEvent.pointer({
+        target: screen.getByRole("treeitem"),
+        keys: "[MouseRight]",
+      });
+      expect(screen.getByRole("menu")).toBeInTheDocument();
+      expect(screen.getByText("Open")).toBeInTheDocument();
+    });
+
+    it("calls onSelect when 'Open' is clicked in file context menu", async () => {
+      const onSelect = vi.fn();
+      render(
+        <FileTreeItem
+          node={fileNode}
+          depth={0}
+          isExpanded={false}
+          isSelected={false}
+          isFocused={false}
+          onToggle={vi.fn()}
+          onSelect={onSelect}
+        />
+      );
+      await userEvent.pointer({
+        target: screen.getByRole("treeitem"),
+        keys: "[MouseRight]",
+      });
+      await userEvent.click(screen.getByText("Open"));
+      expect(onSelect).toHaveBeenCalledWith("/docs/README.md");
+    });
+
+    it("shows 'Expand' item when right-clicking a collapsed directory", async () => {
+      render(
+        <FileTreeItem
+          node={folderNode}
+          depth={0}
+          isExpanded={false}
+          isSelected={false}
+          isFocused={false}
+          onToggle={vi.fn()}
+          onSelect={vi.fn()}
+        />
+      );
+      await userEvent.pointer({
+        target: screen.getByRole("treeitem"),
+        keys: "[MouseRight]",
+      });
+      expect(screen.getByRole("menu")).toBeInTheDocument();
+      expect(screen.getByText("Expand")).toBeInTheDocument();
+    });
+
+    it("shows 'Collapse' item when right-clicking an expanded directory", async () => {
+      render(
+        <FileTreeItem
+          node={folderNode}
+          depth={0}
+          isExpanded={true}
+          isSelected={false}
+          isFocused={false}
+          onToggle={vi.fn()}
+          onSelect={vi.fn()}
+        />
+      );
+      await userEvent.pointer({
+        target: screen.getByRole("treeitem"),
+        keys: "[MouseRight]",
+      });
+      expect(screen.getByRole("menu")).toBeInTheDocument();
+      expect(screen.getByText("Collapse")).toBeInTheDocument();
+    });
+
+    it("calls onToggle when directory context menu action is clicked", async () => {
+      const onToggle = vi.fn();
+      render(
+        <FileTreeItem
+          node={folderNode}
+          depth={0}
+          isExpanded={false}
+          isSelected={false}
+          isFocused={false}
+          onToggle={onToggle}
+          onSelect={vi.fn()}
+        />
+      );
+      await userEvent.pointer({
+        target: screen.getByRole("treeitem"),
+        keys: "[MouseRight]",
+      });
+      await userEvent.click(screen.getByText("Expand"));
+      expect(onToggle).toHaveBeenCalledWith("/docs/specs");
+    });
+
+    it("shows a separator and disabled 'Rename' item in context menu", async () => {
+      render(
+        <FileTreeItem
+          node={fileNode}
+          depth={0}
+          isExpanded={false}
+          isSelected={false}
+          isFocused={false}
+          onToggle={vi.fn()}
+          onSelect={vi.fn()}
+        />
+      );
+      await userEvent.pointer({
+        target: screen.getByRole("treeitem"),
+        keys: "[MouseRight]",
+      });
+      expect(screen.getByRole("separator")).toBeInTheDocument();
+      expect(screen.getByText("Rename")).toBeInTheDocument();
+    });
+
+    it("left-click behavior is unchanged after wrapping with context menu", async () => {
+      const onSelect = vi.fn();
+      render(
+        <FileTreeItem
+          node={fileNode}
+          depth={0}
+          isExpanded={false}
+          isSelected={false}
+          isFocused={false}
+          onToggle={vi.fn()}
+          onSelect={onSelect}
+        />
+      );
+      await userEvent.click(screen.getByRole("treeitem"));
+      expect(onSelect).toHaveBeenCalledWith("/docs/README.md");
+    });
+  });
 });

@@ -2,16 +2,24 @@ import { useEffect, useState, useCallback } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { FileText, Wrench, HelpCircle } from "lucide-react";
 import { parsePreferences } from "@/lib/preferences";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogClose,
+  DialogBody,
+} from "@/components/ui/Dialog";
 
 interface SkillInfo {
-  id: string;       // directory name — passed to load_skill
-  name: string;     // display name
+  id: string;
+  name: string;
   description: string;
 }
 
 interface Option {
   label: string;
-  skillName: string | null; // null = "Other"
+  skillName: string | null;
 }
 
 interface CreateNewDialogProps {
@@ -23,12 +31,12 @@ interface CreateNewDialogProps {
 function buildOptionList(
   skills: SkillInfo[],
   counts: Record<string, number>,
-  mru: string[]   // mru stores ids
+  mru: string[]
 ): Option[] {
   const skillIds = new Set(skills.map((s) => s.id));
   const validMru = mru.filter((id) => skillIds.has(id));
 
-  const slots: string[] = validMru.slice(0, 3);  // slots holds ids
+  const slots: string[] = validMru.slice(0, 3);
   const slotsSet = new Set(slots);
 
   const remaining = skills
@@ -42,7 +50,6 @@ function buildOptionList(
     slots.push(remaining.shift()!.id);
   }
 
-  // Build display options: label = skill.name, skillName = skill.id
   const idToSkill = new Map(skills.map((s) => [s.id, s]));
   const options: Option[] = slots.map((id) => {
     const skill = idToSkill.get(id)!;
@@ -53,11 +60,26 @@ function buildOptionList(
 }
 
 function iconForSkill(name: string) {
-  if (name.includes("tech")) return <Wrench className="w-4 h-4 text-gray-400 shrink-0" />;
-  return <FileText className="w-4 h-4 text-gray-400 shrink-0" />;
+  if (name.includes("tech"))
+    return (
+      <Wrench
+        size={16}
+        style={{ color: "var(--color-text-tertiary)" }}
+      />
+    );
+  return (
+    <FileText
+      size={16}
+      style={{ color: "var(--color-text-tertiary)" }}
+    />
+  );
 }
 
-export function CreateNewDialog({ workspacePath, onSelect, onClose }: CreateNewDialogProps) {
+export function CreateNewDialog({
+  workspacePath,
+  onSelect,
+  onClose,
+}: CreateNewDialogProps) {
   const [options, setOptions] = useState<Option[] | null>(null);
 
   useEffect(() => {
@@ -66,7 +88,9 @@ export function CreateNewDialog({ workspacePath, onSelect, onClose }: CreateNewD
       try {
         const [skills, counts, prefsRaw] = await Promise.all([
           invoke<SkillInfo[]>("list_skills", { workspacePath }),
-          invoke<Record<string, number>>("count_documents_by_type", { workspacePath }),
+          invoke<Record<string, number>>("count_documents_by_type", {
+            workspacePath,
+          }),
           invoke("load_preferences"),
         ]);
         if (cancelled) return;
@@ -77,25 +101,27 @@ export function CreateNewDialog({ workspacePath, onSelect, onClose }: CreateNewD
       }
     }
     load();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [workspacePath]);
 
   const handleSelect = useCallback(
     (opt: Option) => {
-      // Fire MRU save as best-effort background operation; don't block selection
       if (opt.skillName !== null) {
         const skillName = opt.skillName;
         invoke("load_preferences")
           .then((prefsRaw) => {
             const prefs = parsePreferences(prefsRaw);
-            const updated = [skillName, ...prefs.recently_used_skill_types.filter((n) => n !== skillName)].slice(0, 3);
+            const updated = [
+              skillName,
+              ...prefs.recently_used_skill_types.filter((n) => n !== skillName),
+            ].slice(0, 3);
             return invoke("save_preferences", {
               preferences: { ...prefs, recently_used_skill_types: updated },
             });
           })
-          .catch(() => {
-            // best-effort MRU update; don't block the user
-          });
+          .catch(() => {});
       }
       onSelect(opt.skillName);
       onClose();
@@ -106,49 +132,103 @@ export function CreateNewDialog({ workspacePath, onSelect, onClose }: CreateNewD
   useEffect(() => {
     if (options === null) return;
     function handleKey(e: KeyboardEvent) {
-      if (e.key === "Escape") {
-        onClose();
-        return;
-      }
+      // Escape is handled by Radix Dialog via onOpenChange; skip it here
+      // to avoid calling onClose twice.
+      if (e.key === "Escape") return;
       const n = parseInt(e.key, 10);
-      if (!isNaN(n) && n >= 1 && n <= options.length) {
-        handleSelect(options[n - 1]);
+      if (!isNaN(n) && n >= 1 && n <= options!.length) {
+        handleSelect(options![n - 1]);
       }
     }
     document.addEventListener("keydown", handleKey);
     return () => document.removeEventListener("keydown", handleKey);
-  }, [options, handleSelect, onClose]);
+  }, [options, handleSelect]);
 
   return (
-    <>
-      {/* Click-capture layer */}
-      <div className="fixed inset-0" onClick={onClose} />
-
-      {/* Dialog */}
-      <div className="fixed top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg w-72 p-2 z-50">
-        {options === null ? (
-          <div className="px-3 py-2 text-sm text-gray-400">Loading...</div>
-        ) : (
-          options.map((opt, i) => (
-            <button
-              key={opt.skillName ?? "other"}
-              data-option="true"
-              onClick={() => handleSelect(opt)}
-              className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer text-left"
+    <Dialog open onOpenChange={(open) => { if (!open) onClose(); }}>
+      <DialogContent style={{ width: 288 }}>
+        <DialogHeader>
+          <DialogTitle>New document</DialogTitle>
+          <DialogClose />
+        </DialogHeader>
+        <DialogBody style={{ padding: "var(--space-1)" }}>
+          {options === null ? (
+            <div
+              style={{
+                padding: "var(--space-2) var(--space-3)",
+                fontSize: "var(--font-size-ui-base)",
+                color: "var(--color-text-tertiary)",
+              }}
             >
-              <span className="shrink-0">
-                {opt.skillName !== null ? iconForSkill(opt.skillName) : <HelpCircle className="w-4 h-4 text-gray-400" />}
-              </span>
-              <span className="flex-1 min-w-0 text-sm text-gray-900 dark:text-gray-100 truncate">
-                {opt.label}
-              </span>
-              <span className="shrink-0 text-xs text-gray-400 bg-gray-100 dark:bg-gray-700 rounded px-1.5 py-0.5">
-                {i + 1}
-              </span>
-            </button>
-          ))
-        )}
-      </div>
-    </>
+              Loading...
+            </div>
+          ) : (
+            options.map((opt, i) => (
+              <button
+                key={opt.skillName ?? "other"}
+                data-option="true"
+                onClick={() => handleSelect(opt)}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 12,
+                  width: "100%",
+                  padding: "var(--space-2) var(--space-3)",
+                  borderRadius: "var(--radius-md)",
+                  background: "transparent",
+                  border: "none",
+                  cursor: "pointer",
+                  textAlign: "left",
+                  transition: `background-color var(--duration-fast)`,
+                }}
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLElement).style.backgroundColor =
+                    "var(--color-bg-hover)";
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLElement).style.backgroundColor = "";
+                }}
+              >
+                <span style={{ flexShrink: 0 }}>
+                  {opt.skillName !== null ? (
+                    iconForSkill(opt.skillName)
+                  ) : (
+                    <HelpCircle
+                      size={16}
+                      style={{ color: "var(--color-text-tertiary)" }}
+                    />
+                  )}
+                </span>
+                <span
+                  style={{
+                    flex: 1,
+                    minWidth: 0,
+                    fontSize: "var(--font-size-ui-base)",
+                    color: "var(--color-text-primary)",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {opt.label}
+                </span>
+                <span
+                  style={{
+                    flexShrink: 0,
+                    fontSize: "var(--font-size-ui-xs)",
+                    color: "var(--color-text-quaternary)",
+                    backgroundColor: "var(--color-bg-hover)",
+                    borderRadius: "var(--radius-sm)",
+                    padding: "2px 6px",
+                  }}
+                >
+                  {i + 1}
+                </span>
+              </button>
+            ))
+          )}
+        </DialogBody>
+      </DialogContent>
+    </Dialog>
   );
 }
