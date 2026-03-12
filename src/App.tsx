@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useWorkspaceStore } from "@/stores/workspace";
 import { useAiChatStore } from "@/stores/aiChat";
+import { useSettingsStore } from "@/stores/settings";
 import { WelcomeScreen } from "@/components/WelcomeScreen";
 import { TitleBar } from "@/components/TitleBar";
 import { Sidebar } from "@/components/Sidebar";
@@ -26,6 +27,23 @@ function App() {
     const unlisten = listen("menu:open-folder", () => openFolder());
     return () => { unlisten.then((f) => f()); };
   }, [openFolder]);
+
+  useEffect(() => {
+    const unlisten = listen("menu:open-settings", () =>
+      useSettingsStore.getState().openSettings()
+    );
+    return () => { unlisten.then((f) => f()); };
+  }, []);
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && useSettingsStore.getState().settingsOpen) {
+        useSettingsStore.getState().closeSettings();
+      }
+    };
+    document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
+  }, []);
 
   useEffect(() => {
     if (!import.meta.env.DEV) return;
