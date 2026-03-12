@@ -54,8 +54,29 @@ export function FrontmatterBar({ frontmatter }: FrontmatterBarProps) {
           key={key}
           className="flex-shrink-0"
         >
-          <span className="text-xs text-gray-500 block">{key}</span>
-          <span className="text-sm text-gray-700 dark:text-gray-300 font-medium">
+          <span
+            className="block"
+            style={{
+              fontSize: "var(--font-size-ui-sm)",
+              fontWeight: "500",
+              textTransform: "uppercase",
+              letterSpacing: "0.06em",
+              color: "var(--color-text-tertiary)",
+            }}
+          >
+            {key}
+          </span>
+          <span
+            style={{
+              display: "block",
+              fontSize: "var(--font-size-ui-base)",
+              color: "var(--color-text-secondary)",
+              maxWidth: "200px",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+            }}
+          >
             {formatValue(value)}
           </span>
         </div>

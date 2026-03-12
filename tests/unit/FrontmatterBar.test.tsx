@@ -81,4 +81,25 @@ describe("FrontmatterBar", () => {
       allLabels.indexOf("custom_field")
     );
   });
+
+  it("key spans use design system typography", () => {
+    render(<FrontmatterBar frontmatter={{ title: "Doc" }} />);
+    const keySpan = screen.getByText("title");
+    expect(keySpan.style.fontSize).toBe("var(--font-size-ui-sm)");
+    expect(keySpan.style.fontWeight).toBe("500");
+    expect(keySpan.style.textTransform).toBe("uppercase");
+    expect(keySpan.style.letterSpacing).toBe("0.06em");
+    expect(keySpan.style.color).toBe("var(--color-text-tertiary)");
+  });
+
+  it("value spans use design system typography with truncation", () => {
+    render(<FrontmatterBar frontmatter={{ title: "Doc" }} />);
+    const valueSpan = screen.getByText("Doc");
+    expect(valueSpan.style.fontSize).toBe("var(--font-size-ui-base)");
+    expect(valueSpan.style.color).toBe("var(--color-text-secondary)");
+    expect(valueSpan.style.maxWidth).toBe("200px");
+    expect(valueSpan.style.overflow).toBe("hidden");
+    expect(valueSpan.style.textOverflow).toBe("ellipsis");
+    expect(valueSpan.style.whiteSpace).toBe("nowrap");
+  });
 });
