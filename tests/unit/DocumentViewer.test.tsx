@@ -139,6 +139,23 @@ describe("DocumentViewer", () => {
     expect((outer.children[1] as HTMLElement).style.maxWidth).toBe("var(--doc-content-width)");
   });
 
+  it("applies doc-scale typography to prose container", async () => {
+    mockInvoke.mockResolvedValue("# Hello");
+    useFileTreeStore.setState({ selectedFilePath: "/workspace/doc.md" });
+
+    const { container } = render(<DocumentViewer />);
+    await waitFor(() => {
+      expect(screen.queryByText("Loading document...")).not.toBeInTheDocument();
+    });
+
+    // Outer → lastElementChild is content column → firstElementChild is prose wrapper
+    const outer = container.firstChild as HTMLElement;
+    const contentCol = outer.lastElementChild as HTMLElement;
+    const proseWrapper = contentCol.firstElementChild as HTMLElement;
+    expect(proseWrapper.style.fontSize).toBe("var(--font-size-doc-base)");
+    expect(proseWrapper.style.lineHeight).toBe("1.7");
+  });
+
   it("clears content when selected file changes to null", async () => {
     mockInvoke.mockResolvedValue("# Doc");
     useFileTreeStore.setState({ selectedFilePath: "/workspace/doc.md" });

@@ -125,7 +125,9 @@ export function DocumentViewer() {
         }}
       >
         {content !== null && (
-          <MarkdownRenderer content={content} onLinkClick={handleLinkClick} />
+          <div style={{ fontSize: "var(--font-size-doc-base)", lineHeight: "1.7" }}>
+            <MarkdownRenderer content={content} onLinkClick={handleLinkClick} />
+          </div>
         )}
       </div>
     </div>
