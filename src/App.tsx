@@ -83,10 +83,10 @@ function App() {
     return (
       <div className="flex flex-col h-screen">
         <TitleBar folderPath={null} onStartAuthoring={() => {}} />
-        <div className="flex flex-1 items-center justify-center bg-gray-50 dark:bg-gray-900">
+        <div className="flex flex-1 items-center justify-center bg-(--color-bg-app)">
           <div className="text-center">
-            <Loader2 className="w-8 h-8 animate-spin text-blue-600 mx-auto" />
-            <p className="mt-4 text-gray-600 dark:text-gray-400">
+            <Loader2 className="w-8 h-8 animate-spin text-(--color-accent) mx-auto" />
+            <p className="mt-4 text-(--color-text-secondary)">
               Loading folder...
             </p>
           </div>
@@ -123,11 +123,11 @@ function App() {
           </div>
         ) : (
           <div className="flex-1 flex flex-col min-w-0 animate-fade-in">
-            <div className="flex items-center justify-end px-4 py-1 border-b border-gray-200 dark:border-gray-700">
+            <div className="flex items-center justify-end px-4 py-1 border-b border-(--color-border-subtle)">
               <button
                 onClick={() => setChatPanelOpen(!chatPanelOpen)}
-                className={`p-1.5 rounded hover:bg-gray-100 dark:hover:bg-gray-800 ${
-                  chatPanelOpen ? "bg-gray-100 dark:bg-gray-800 text-blue-600" : "text-gray-500"
+                className={`p-1.5 rounded hover:bg-(--color-bg-subtle) ${
+                  chatPanelOpen ? "bg-(--color-bg-hover) text-(--color-accent)" : "text-(--color-text-tertiary)"
                 }`}
                 title="Toggle AI Assistant"
               >

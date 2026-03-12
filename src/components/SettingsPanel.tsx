@@ -11,7 +11,7 @@ interface Preferences {
   last_opened_folder?: string | null;
 }
 
-function AwsProfileSetting({ id }: { id: string }) {
+function AwsProfileSetting({ id, label }: { id: string; label: string }) {
   const [awsProfile, setAwsProfile] = useState("");
   const [fullPrefs, setFullPrefs] = useState<Preferences>({});
   const [prefsLoaded, setPrefsLoaded] = useState(false);
@@ -47,7 +47,7 @@ function AwsProfileSetting({ id }: { id: string }) {
         htmlFor={id}
         className="text-[length:var(--font-size-ui-base)] text-(--color-text-secondary)"
       >
-        AWS Profile
+        {label}
       </label>
       <input
         id={id}
@@ -71,10 +71,13 @@ function SectionHeader({ label }: { label: string }) {
 }
 
 function SettingControl({ settingId }: { settingId: string }) {
-  if (settingId === "aws_profile") return <AwsProfileSetting id={settingId} />;
-  if (import.meta.env.DEV) {
-    console.warn(`SettingControl: no renderer for settingId "${settingId}"`);
+  if (settingId === "aws_profile") {
+    const setting = settingsConfig
+      .flatMap((c) => c.sections.flatMap((s) => s.settings))
+      .find((s) => s.id === settingId);
+    return <AwsProfileSetting id={settingId} label={setting?.label ?? settingId} />;
   }
+  if (import.meta.env.DEV) console.warn(`No control for setting: ${settingId}`);
   return null;
 }
 
