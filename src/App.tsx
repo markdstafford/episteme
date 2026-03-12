@@ -7,22 +7,19 @@ import { TitleBar } from "@/components/TitleBar";
 import { Sidebar } from "@/components/Sidebar";
 import { FileTree } from "@/components/FileTree";
 import { DocumentViewer } from "@/components/DocumentViewer";
-import { AiChatPanel } from "@/components/AiChatPanel";
 import { SettingsPanel } from "@/components/SettingsPanel";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { parsePreferences } from "@/lib/preferences";
-import { Loader2, MessageSquare } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { DesignKitchen } from "@/components/DesignKitchen";
 
 function App() {
-  const [chatPanelOpen, setChatPanelOpen] = useState(false);
   const [showKitchenSink, setShowKitchenSink] = useState(false);
   const folderPath = useWorkspaceStore((s) => s.folderPath);
   const isLoading = useWorkspaceStore((s) => s.isLoading);
   const loadSavedFolder = useWorkspaceStore((s) => s.loadSavedFolder);
   const openFolder = useWorkspaceStore((s) => s.openFolder);
-  const startAuthoring = useAiChatStore((s) => s.startAuthoring);
   const settingsOpen = useSettingsStore((s) => s.settingsOpen);
 
   useEffect(() => {
@@ -82,6 +79,7 @@ function App() {
   if (isLoading && !folderPath) {
     return (
       <div className="flex flex-col h-screen">
+        {/* TODO: re-wire to keyboard shortcut when AI chat panel toggle is implemented */}
         <TitleBar folderPath={null} onStartAuthoring={() => {}} />
         <div className="flex flex-1 items-center justify-center bg-(--color-bg-app)">
           <div className="text-center">
@@ -98,6 +96,7 @@ function App() {
   if (!folderPath) {
     return (
       <div className="flex flex-col h-screen">
+        {/* TODO: re-wire to keyboard shortcut when AI chat panel toggle is implemented */}
         <TitleBar folderPath={null} onStartAuthoring={() => {}} />
         <WelcomeScreen />
       </div>
@@ -106,12 +105,10 @@ function App() {
 
   return (
     <div className="flex flex-col h-screen">
+      {/* TODO: re-wire to keyboard shortcut when AI chat panel toggle is implemented */}
       <TitleBar
         folderPath={folderPath}
-        onStartAuthoring={(skillName) => {
-          setChatPanelOpen(true);
-          startAuthoring(skillName);
-        }}
+        onStartAuthoring={() => {}}
       />
       <div className="flex flex-1 min-h-0">
         <Sidebar>
@@ -123,24 +120,10 @@ function App() {
           </div>
         ) : (
           <div className="flex-1 flex flex-col min-w-0 animate-fade-in">
-            <div className="flex items-center justify-end px-4 py-1 border-b border-(--color-border-subtle)">
-              <button
-                onClick={() => setChatPanelOpen(!chatPanelOpen)}
-                className={`p-1.5 rounded hover:bg-(--color-bg-subtle) ${
-                  chatPanelOpen ? "bg-(--color-bg-hover) text-(--color-accent)" : "text-(--color-text-tertiary)"
-                }`}
-                title="Toggle AI Assistant"
-              >
-                <MessageSquare className="w-4 h-4" />
-              </button>
-            </div>
             <div className="flex-1 flex flex-col overflow-hidden">
               <DocumentViewer />
             </div>
           </div>
-        )}
-        {!settingsOpen && chatPanelOpen && (
-          <AiChatPanel onClose={() => setChatPanelOpen(false)} />
         )}
       </div>
     </div>
