@@ -40,6 +40,8 @@ export function ContextMenuItem({
     <RadixContextMenu.Item
       disabled={disabled}
       onSelect={onSelect}
+      className="context-menu-item"
+      data-destructive={destructive ? true : undefined}
       style={{
         display: "flex",
         alignItems: "center",
@@ -55,21 +57,6 @@ export function ContextMenuItem({
         outline: "none",
         opacity: disabled ? 0.4 : 1,
         pointerEvents: disabled ? "none" : undefined,
-      }}
-      onMouseEnter={(e) => {
-        if (!disabled) {
-          (e.currentTarget as HTMLElement).style.backgroundColor =
-            "var(--color-bg-hover)";
-          (e.currentTarget as HTMLElement).style.color = destructive
-            ? "var(--color-state-danger)"
-            : "var(--color-text-primary)";
-        }
-      }}
-      onMouseLeave={(e) => {
-        (e.currentTarget as HTMLElement).style.backgroundColor = "";
-        (e.currentTarget as HTMLElement).style.color = destructive
-          ? "var(--color-state-danger)"
-          : "var(--color-text-secondary)";
       }}
     >
       {children}
