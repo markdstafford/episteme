@@ -83,7 +83,7 @@ export function DocumentViewer() {
   if (!selectedFilePath) {
     return (
       <div className="flex-1 flex items-center justify-center">
-        <p className="text-gray-400 text-lg">
+        <p style={{ color: "var(--color-text-tertiary)", fontSize: "var(--font-size-ui-lg)" }}>
           Select a document from the sidebar
         </p>
       </div>
@@ -94,8 +94,13 @@ export function DocumentViewer() {
     return (
       <div className="flex-1 flex items-center justify-center">
         <div className="text-center">
-          <Loader2 className="w-6 h-6 animate-spin text-blue-600 mx-auto" />
-          <p className="mt-2 text-gray-400">Loading document...</p>
+          <Loader2
+            className="w-6 h-6 animate-spin mx-auto"
+            style={{ color: "var(--color-accent)" }}
+          />
+          <p className="mt-2" style={{ color: "var(--color-text-tertiary)" }}>
+            Loading document...
+          </p>
         </div>
       </div>
     );
@@ -104,7 +109,7 @@ export function DocumentViewer() {
   if (error) {
     return (
       <div className="flex-1 flex items-center justify-center">
-        <p className="text-red-600 text-sm">
+        <p style={{ color: "var(--color-state-danger)", fontSize: "var(--font-size-ui-sm)" }}>
           Failed to load document: {error}
         </p>
       </div>

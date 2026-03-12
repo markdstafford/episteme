@@ -156,6 +156,30 @@ describe("DocumentViewer", () => {
     expect(proseWrapper.style.lineHeight).toBe("1.7");
   });
 
+  it("empty state uses --color-text-tertiary", () => {
+    render(<DocumentViewer />);
+    const text = screen.getByText("Select a document from the sidebar");
+    expect(text.style.color).toBe("var(--color-text-tertiary)");
+  });
+
+  it("loading state Loader2 icon uses --color-accent", () => {
+    mockInvoke.mockReturnValue(new Promise(() => {}));
+    useFileTreeStore.setState({ selectedFilePath: "/workspace/doc.md" });
+
+    render(<DocumentViewer />);
+    const svg = document.querySelector("svg")!;
+    expect(svg.style.color).toBe("var(--color-accent)");
+  });
+
+  it("error state uses --color-state-danger", async () => {
+    mockInvoke.mockRejectedValue(new Error("Not found"));
+    useFileTreeStore.setState({ selectedFilePath: "/workspace/missing.md" });
+
+    render(<DocumentViewer />);
+    const errorText = await screen.findByText(/Failed to load document/);
+    expect(errorText.style.color).toBe("var(--color-state-danger)");
+  });
+
   it("clears content when selected file changes to null", async () => {
     mockInvoke.mockResolvedValue("# Doc");
     useFileTreeStore.setState({ selectedFilePath: "/workspace/doc.md" });
