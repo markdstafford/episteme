@@ -64,13 +64,13 @@ function iconForSkill(name: string) {
     return (
       <Wrench
         size={16}
-        style={{ color: "var(--color-text-tertiary)", flexShrink: 0 }}
+        style={{ color: "var(--color-text-tertiary)" }}
       />
     );
   return (
     <FileText
       size={16}
-      style={{ color: "var(--color-text-tertiary)", flexShrink: 0 }}
+      style={{ color: "var(--color-text-tertiary)" }}
     />
   );
 }
@@ -142,7 +142,7 @@ export function CreateNewDialog({
     }
     document.addEventListener("keydown", handleKey);
     return () => document.removeEventListener("keydown", handleKey);
-  }, [options, handleSelect, onClose]);
+  }, [options, handleSelect]);
 
   return (
     <Dialog open onOpenChange={(open) => { if (!open) onClose(); }}>
@@ -155,7 +155,7 @@ export function CreateNewDialog({
           {options === null ? (
             <div
               style={{
-                padding: "8px 12px",
+                padding: "var(--space-2) var(--space-3)",
                 fontSize: "var(--font-size-ui-base)",
                 color: "var(--color-text-tertiary)",
               }}
@@ -173,7 +173,7 @@ export function CreateNewDialog({
                   alignItems: "center",
                   gap: 12,
                   width: "100%",
-                  padding: "8px 12px",
+                  padding: "var(--space-2) var(--space-3)",
                   borderRadius: "var(--radius-md)",
                   background: "transparent",
                   border: "none",
@@ -195,10 +195,7 @@ export function CreateNewDialog({
                   ) : (
                     <HelpCircle
                       size={16}
-                      style={{
-                        color: "var(--color-text-tertiary)",
-                        flexShrink: 0,
-                      }}
+                      style={{ color: "var(--color-text-tertiary)" }}
                     />
                   )}
                 </span>
