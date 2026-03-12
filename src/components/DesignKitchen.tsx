@@ -1,15 +1,8 @@
 import React from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
-
-const buttonBase: React.CSSProperties = {
-  height: "28px",
-  padding: "0 12px",
-  fontSize: "var(--font-size-ui-base)",
-  borderRadius: "var(--radius-base)",
-  cursor: "pointer",
-  fontFamily: "var(--font-ui)",
-};
+import { Button } from "./ui/Button";
+import { Input } from "./ui/Input";
 
 interface DesignKitchenProps {
   onClose: () => void;
@@ -254,45 +247,11 @@ export function DesignKitchen({ onClose }: DesignKitchenProps) {
             <div style={{ fontSize: "var(--font-size-ui-xs)", color: "var(--color-text-quaternary)", marginBottom: "16px", textTransform: "uppercase", letterSpacing: "0.06em" }}>
               Buttons
             </div>
-            {[
-              {
-                label: "Primary",
-                style: { background: "var(--color-accent)", color: "white", border: "none" } as React.CSSProperties,
-                hoverStyle: { background: "var(--color-accent-hover)", outline: "2px solid var(--color-accent)", outlineOffset: "2px" } as React.CSSProperties,
-              },
-              {
-                label: "Secondary",
-                style: { background: "var(--color-bg-elevated)", color: "var(--color-text-primary)", border: "1px solid var(--color-border-default)" } as React.CSSProperties,
-                hoverStyle: { background: "var(--color-bg-hover)", outline: "2px solid var(--color-accent)", outlineOffset: "2px" } as React.CSSProperties,
-              },
-              {
-                label: "Ghost",
-                style: { background: "transparent", color: "var(--color-text-secondary)", border: "none" } as React.CSSProperties,
-                hoverStyle: { background: "var(--color-bg-hover)", outline: "2px solid var(--color-accent)", outlineOffset: "2px" } as React.CSSProperties,
-              },
-              {
-                label: "Destructive",
-                style: { background: "var(--color-state-danger)", color: "white", border: "none" } as React.CSSProperties,
-                hoverStyle: { background: "var(--color-state-danger)", filter: "brightness(1.15)", outline: "2px solid var(--color-state-danger)", outlineOffset: "2px" } as React.CSSProperties,
-              },
-            ].map(({ label, style, hoverStyle }) => (
-              <div key={label} style={{ display: "flex", alignItems: "center", gap: "16px", marginBottom: "12px" }}>
-                <div style={{ width: "100px", fontSize: "var(--font-size-ui-xs)", color: "var(--color-text-tertiary)" }}>{label}</div>
-                <button
-                  style={{ ...buttonBase, ...style }}
-                  onMouseEnter={(e) => Object.assign(e.currentTarget.style, hoverStyle)}
-                  onMouseLeave={(e) => Object.assign(e.currentTarget.style, style, { filter: "", outline: "", outlineOffset: "" })}
-                  onFocus={(e) => Object.assign(e.currentTarget.style, hoverStyle)}
-                  onBlur={(e) => Object.assign(e.currentTarget.style, style, { filter: "", outline: "", outlineOffset: "" })}
-                >
-                  {label}
-                </button>
-                <button
-                  style={{ ...buttonBase, ...style, opacity: 0.4, cursor: "not-allowed" }}
-                  disabled
-                >
-                  {label} (disabled)
-                </button>
+            {(["primary", "secondary", "ghost", "destructive"] as const).map((variant) => (
+              <div key={variant} style={{ display: "flex", alignItems: "center", gap: "16px", marginBottom: "12px" }}>
+                <div style={{ width: "100px", fontSize: "var(--font-size-ui-xs)", color: "var(--color-text-tertiary)", textTransform: "capitalize" }}>{variant}</div>
+                <Button variant={variant}>{variant.charAt(0).toUpperCase() + variant.slice(1)}</Button>
+                <Button variant={variant} disabled>{variant.charAt(0).toUpperCase() + variant.slice(1)} (disabled)</Button>
               </div>
             ))}
           </div>
@@ -302,32 +261,18 @@ export function DesignKitchen({ onClose }: DesignKitchenProps) {
               Inputs
             </div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: "12px", alignItems: "flex-start" }}>
-              {[
-                { label: "Default",  placeholder: "Default input",  extraStyle: {} as React.CSSProperties },
-                { label: "Hover",    placeholder: "Hover input",    extraStyle: { borderColor: "var(--color-border-strong)", background: "var(--color-bg-base)" } as React.CSSProperties },
-                { label: "Focus",    placeholder: "Focus input",    extraStyle: { borderColor: "var(--color-accent)", boxShadow: "0 0 0 2px var(--color-accent-subtle)", outline: "none" } as React.CSSProperties },
-                { label: "Error",    placeholder: "Error input",    extraStyle: { borderColor: "var(--color-state-danger)", boxShadow: "0 0 0 2px var(--color-state-danger-subtle)" } as React.CSSProperties },
-                { label: "Disabled", placeholder: "Disabled input", extraStyle: { opacity: 0.4, cursor: "not-allowed" } as React.CSSProperties, disabled: true },
-              ].map(({ label, placeholder, extraStyle, disabled }) => (
-                <div key={label} style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                  <div style={{ fontSize: "var(--font-size-ui-xs)", color: "var(--color-text-tertiary)" }}>{label}</div>
-                  <input
-                    placeholder={placeholder}
-                    disabled={disabled}
-                    style={{
-                      height: "28px",
-                      padding: "0 10px",
-                      fontSize: "var(--font-size-ui-base)",
-                      fontFamily: "var(--font-ui)",
-                      background: "var(--color-bg-subtle)",
-                      border: "1px solid var(--color-border-default)",
-                      borderRadius: "var(--radius-base)",
-                      color: "var(--color-text-primary)",
-                      ...extraStyle,
-                    }}
-                  />
-                </div>
-              ))}
+              <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                <div style={{ fontSize: "var(--font-size-ui-xs)", color: "var(--color-text-tertiary)" }}>Default (hover/focus me)</div>
+                <Input placeholder="Default input" />
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                <div style={{ fontSize: "var(--font-size-ui-xs)", color: "var(--color-text-tertiary)" }}>Error</div>
+                <Input placeholder="Error input" error />
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                <div style={{ fontSize: "var(--font-size-ui-xs)", color: "var(--color-text-tertiary)" }}>Disabled</div>
+                <Input placeholder="Disabled input" disabled />
+              </div>
             </div>
           </div>
 
@@ -407,9 +352,7 @@ export function DesignKitchen({ onClose }: DesignKitchenProps) {
             </div>
             <Dialog.Root>
               <Dialog.Trigger asChild>
-                <button style={{ ...buttonBase, background: "var(--color-bg-elevated)", color: "var(--color-text-primary)", border: "1px solid var(--color-border-default)" }}>
-                  Open sample dialog
-                </button>
+                <Button variant="secondary">Open sample dialog</Button>
               </Dialog.Trigger>
               <Dialog.Portal>
                 <Dialog.Overlay style={{ position: "fixed", inset: 0, background: "oklch(0% 0 0 / 0.5)", backdropFilter: "blur(4px)", zIndex: 10000 }} />
@@ -435,10 +378,10 @@ export function DesignKitchen({ onClose }: DesignKitchenProps) {
                   </div>
                   <div style={{ padding: "16px", borderTop: "1px solid var(--color-border-subtle)", display: "flex", justifyContent: "flex-end", gap: "8px" }}>
                     <Dialog.Close asChild>
-                      <button style={{ ...buttonBase, background: "var(--color-bg-elevated)", color: "var(--color-text-primary)", border: "1px solid var(--color-border-default)" }}>Cancel</button>
+                      <Button variant="secondary">Cancel</Button>
                     </Dialog.Close>
                     <Dialog.Close asChild>
-                      <button style={{ ...buttonBase, background: "var(--color-accent)", color: "white", border: "none" }}>Confirm</button>
+                      <Button variant="primary">Confirm</Button>
                     </Dialog.Close>
                   </div>
                 </Dialog.Content>
@@ -453,9 +396,7 @@ export function DesignKitchen({ onClose }: DesignKitchenProps) {
             </div>
             <DropdownMenu.Root>
               <DropdownMenu.Trigger asChild>
-                <button style={{ ...buttonBase, background: "var(--color-bg-elevated)", color: "var(--color-text-primary)", border: "1px solid var(--color-border-default)" }}>
-                  Open sample context menu
-                </button>
+                <Button variant="secondary">Open sample context menu</Button>
               </DropdownMenu.Trigger>
               <DropdownMenu.Portal>
                 <DropdownMenu.Content style={{
