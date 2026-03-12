@@ -179,9 +179,8 @@ describe("App", () => {
     expect(screen.getByText(/credentials/i)).toBeInTheDocument();
   });
 
-  it("does not render toolbar when settings is open", () => {
+  it("does not render an AI chat toggle button", () => {
     useWorkspaceStore.setState({ folderPath: "/some/path" });
-    useSettingsStore.setState({ settingsOpen: true });
     render(<App />);
     expect(screen.queryByTitle(/toggle ai assistant/i)).not.toBeInTheDocument();
   });
