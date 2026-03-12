@@ -104,26 +104,93 @@ describe("DocumentViewer", () => {
     expect(screen.queryByText("status")).not.toBeInTheDocument();
   });
 
-  it("has correct layout classes", async () => {
+  it("has correct layout classes and background token", async () => {
     mockInvoke.mockResolvedValue("# Doc");
     useFileTreeStore.setState({ selectedFilePath: "/workspace/doc.md" });
 
     const { container } = render(<DocumentViewer />);
     await waitFor(() => {
-      expect(
-        screen.queryByText("Loading document...")
-      ).not.toBeInTheDocument();
+      expect(screen.queryByText("Loading document...")).not.toBeInTheDocument();
     });
 
-    // Check outer container has overflow-y-auto
     const outer = container.firstChild as HTMLElement;
     expect(outer.classList.contains("overflow-y-auto")).toBe(true);
+    expect(outer.style.backgroundColor).toBe("var(--color-bg-base)");
 
-    // Check inner container has max-w-4xl centering
-    const inner = outer.firstChild as HTMLElement;
-    expect(inner.classList.contains("max-w-4xl")).toBe(true);
-    expect(inner.classList.contains("mx-auto")).toBe(true);
-    expect(inner.classList.contains("p-8")).toBe(true);
+    const contentCol = outer.lastElementChild as HTMLElement;
+    expect(contentCol.style.maxWidth).toBe("var(--doc-content-width)");
+    expect(contentCol.classList.contains("mx-auto")).toBe(true);
+    expect(contentCol.classList.contains("max-w-4xl")).toBe(false);
+    expect(contentCol.classList.contains("p-8")).toBe(false);
+  });
+
+  it("renders FrontmatterBar outside the content column when frontmatter present", async () => {
+    mockInvoke.mockResolvedValue("---\ntitle: Test\n---\n# Content");
+    useFileTreeStore.setState({ selectedFilePath: "/workspace/doc.md" });
+
+    const { container } = render(<DocumentViewer />);
+    await waitFor(() => {
+      expect(screen.getByText("title")).toBeInTheDocument();
+    });
+
+    const outer = container.firstChild as HTMLElement;
+    expect(outer.children.length).toBe(2);
+    expect(outer.children[0].textContent).toContain("title");
+    expect((outer.children[1] as HTMLElement).style.maxWidth).toBe("var(--doc-content-width)");
+  });
+
+  it("applies doc-scale typography to prose container", async () => {
+    mockInvoke.mockResolvedValue("# Hello");
+    useFileTreeStore.setState({ selectedFilePath: "/workspace/doc.md" });
+
+    const { container } = render(<DocumentViewer />);
+    await waitFor(() => {
+      expect(screen.queryByText("Loading document...")).not.toBeInTheDocument();
+    });
+
+    // Outer → lastElementChild is content column → firstElementChild is prose wrapper
+    const outer = container.firstChild as HTMLElement;
+    const contentCol = outer.lastElementChild as HTMLElement;
+    const proseWrapper = contentCol.firstElementChild as HTMLElement;
+    expect(proseWrapper.style.fontSize).toBe("var(--font-size-doc-base)");
+    expect(proseWrapper.style.lineHeight).toBe("1.7");
+  });
+
+  it("empty state uses design system tokens matching WelcomeScreen", () => {
+    const { container } = render(<DocumentViewer />);
+    const outer = container.firstChild as HTMLElement;
+    expect(outer.style.backgroundColor).toBe("var(--color-bg-app)");
+    const text = screen.getByText("Select a document from the sidebar");
+    expect(text.style.color).toBe("var(--color-text-secondary)");
+    expect(text.style.fontSize).toBe("var(--font-size-ui-lg)");
+  });
+
+  it("loading state Loader2 icon uses --color-accent", () => {
+    mockInvoke.mockReturnValue(new Promise(() => {}));
+    useFileTreeStore.setState({ selectedFilePath: "/workspace/doc.md" });
+
+    render(<DocumentViewer />);
+    const svg = document.querySelector("svg")!;
+    expect(svg.style.color).toBe("var(--color-accent)");
+  });
+
+  it("loading state text uses --color-text-tertiary", () => {
+    mockInvoke.mockReturnValue(new Promise(() => {}));
+    useFileTreeStore.setState({ selectedFilePath: "/workspace/doc.md" });
+
+    render(<DocumentViewer />);
+    const loadingText = screen.getByText("Loading document...");
+    expect(loadingText.style.color).toBe("var(--color-text-tertiary)");
+  });
+
+  it("error state uses --color-state-danger", async () => {
+    mockInvoke.mockRejectedValue(new Error("Not found"));
+    useFileTreeStore.setState({ selectedFilePath: "/workspace/missing.md" });
+
+    render(<DocumentViewer />);
+    const errorText = await screen.findByText(/Failed to load document/);
+    expect(errorText.style.color).toBe("var(--color-state-danger)");
+    expect(errorText.style.fontSize).toBe("var(--font-size-ui-sm)");
   });
 
   it("clears content when selected file changes to null", async () => {

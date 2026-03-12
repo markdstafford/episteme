@@ -82,8 +82,11 @@ export function DocumentViewer() {
 
   if (!selectedFilePath) {
     return (
-      <div className="flex-1 flex items-center justify-center">
-        <p className="text-gray-400 text-lg">
+      <div
+        className="flex-1 flex items-center justify-center"
+        style={{ backgroundColor: "var(--color-bg-app)" }}
+      >
+        <p style={{ color: "var(--color-text-secondary)", fontSize: "var(--font-size-ui-lg)" }}>
           Select a document from the sidebar
         </p>
       </div>
@@ -94,8 +97,13 @@ export function DocumentViewer() {
     return (
       <div className="flex-1 flex items-center justify-center">
         <div className="text-center">
-          <Loader2 className="w-6 h-6 animate-spin text-blue-600 mx-auto" />
-          <p className="mt-2 text-gray-400">Loading document...</p>
+          <Loader2
+            className="w-6 h-6 animate-spin mx-auto"
+            style={{ color: "var(--color-accent)" }}
+          />
+          <p className="mt-2" style={{ color: "var(--color-text-tertiary)" }}>
+            Loading document...
+          </p>
         </div>
       </div>
     );
@@ -104,7 +112,7 @@ export function DocumentViewer() {
   if (error) {
     return (
       <div className="flex-1 flex items-center justify-center">
-        <p className="text-red-600 text-sm">
+        <p style={{ color: "var(--color-state-danger)", fontSize: "var(--font-size-ui-sm)" }}>
           Failed to load document: {error}
         </p>
       </div>
@@ -112,11 +120,22 @@ export function DocumentViewer() {
   }
 
   return (
-    <div className="flex-1 overflow-y-auto">
-      <div className="max-w-4xl mx-auto p-8">
-        {frontmatter && <FrontmatterBar frontmatter={frontmatter} />}
+    <div
+      className="flex-1 overflow-y-auto"
+      style={{ backgroundColor: "var(--color-bg-base)" }}
+    >
+      {frontmatter && <FrontmatterBar frontmatter={frontmatter} />}
+      <div
+        className="mx-auto"
+        style={{
+          maxWidth: "var(--doc-content-width)",
+          paddingInline: "var(--padding-content)",
+        }}
+      >
         {content !== null && (
-          <MarkdownRenderer content={content} onLinkClick={handleLinkClick} />
+          <div style={{ fontSize: "var(--font-size-doc-base)", lineHeight: "1.7" }}>
+            <MarkdownRenderer content={content} onLinkClick={handleLinkClick} />
+          </div>
         )}
       </div>
     </div>

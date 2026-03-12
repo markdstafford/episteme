@@ -1,3 +1,5 @@
+import { useRef, useState, useEffect } from "react";
+
 const DISPLAY_FIELDS = [
   "title",
   "status",
@@ -21,15 +23,31 @@ function formatValue(value: unknown): string {
   return String(value);
 }
 
+const PAIR_GAP_PX = 24; // --space-6
+const BADGE_RESERVE_PX = 80; // badge width estimate for first-pass calculation
+
+export function calculateVisibleCount(
+  containerWidth: number,
+  pairWidths: number[]
+): number {
+  let used = 0;
+  for (let i = 0; i < pairWidths.length; i++) {
+    const needed = i === 0 ? pairWidths[i] : pairWidths[i] + PAIR_GAP_PX;
+    if (used + needed > containerWidth) return i;
+    used += needed;
+  }
+  return pairWidths.length;
+}
+
 export function FrontmatterBar({ frontmatter }: FrontmatterBarProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [visibleCount, setVisibleCount] = useState<number | null>(null);
+
   const entries = Object.entries(frontmatter).filter(
     ([key]) => !HIDDEN_FIELDS.has(key)
   );
 
-  if (entries.length === 0) return null;
-
-  // Prioritize display fields, then show remaining
-  const sorted = entries.sort(([a], [b]) => {
+  const sorted = [...entries].sort(([a], [b]) => {
     const aIdx = DISPLAY_FIELDS.indexOf(a);
     const bIdx = DISPLAY_FIELDS.indexOf(b);
     if (aIdx !== -1 && bIdx !== -1) return aIdx - bIdx;
@@ -38,19 +56,121 @@ export function FrontmatterBar({ frontmatter }: FrontmatterBarProps) {
     return a.localeCompare(b);
   });
 
+  const frontmatterKey = sorted.map(([k, v]) => `${k}=${String(v)}`).join(",");
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const recalculate = () => {
+      const containerWidth = container.offsetWidth;
+      if (containerWidth === 0) return;
+
+      const pairEls = Array.from(
+        container.querySelectorAll<HTMLElement>("[data-pair]")
+      );
+      // All pairs are always in DOM now — if count doesn't match, DOM isn't ready yet
+      if (pairEls.length !== sorted.length) return;
+
+      const pairWidths = pairEls.map((el) => el.offsetWidth);
+      const countFits = calculateVisibleCount(containerWidth, pairWidths);
+
+      if (countFits === sorted.length) {
+        setVisibleCount(sorted.length);
+        return;
+      }
+
+      // Some pairs overflow — reserve space for the badge
+      const badgeEl = container.querySelector<HTMLElement>("[data-badge]");
+      const reserve = badgeEl
+        ? badgeEl.offsetWidth + PAIR_GAP_PX
+        : BADGE_RESERVE_PX;
+      setVisibleCount(calculateVisibleCount(containerWidth - reserve, pairWidths));
+    };
+
+    const observer = new ResizeObserver(recalculate);
+    observer.observe(container);
+    recalculate();
+    return () => observer.disconnect();
+  }, [frontmatterKey]);
+
+  if (entries.length === 0) return null;
+
+  const displayCount = visibleCount ?? sorted.length;
+  const hiddenCount = sorted.length - displayCount;
+
   return (
-    <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 mb-6 flex flex-wrap gap-x-0">
+    <div
+      ref={containerRef}
+      className="relative flex overflow-hidden"
+      style={{
+        backgroundColor: "var(--color-bg-subtle)",
+        borderBottom: "1px solid var(--color-border-subtle)",
+        paddingBlock: "var(--space-3)",
+        paddingInline: "var(--padding-content)",
+        gap: "var(--space-6)",
+      }}
+    >
       {sorted.map(([key, value], i) => (
         <div
           key={key}
-          className={`px-3 ${i < sorted.length - 1 ? "border-r border-gray-200 dark:border-gray-700" : ""}`}
+          data-pair=""
+          className="flex-shrink-0"
+          aria-hidden={visibleCount !== null && i >= visibleCount ? true : undefined}
         >
-          <span className="text-xs text-gray-500 block">{key}</span>
-          <span className="text-sm text-gray-700 dark:text-gray-300 font-medium">
+          <span
+            style={{
+              display: "block",
+              fontSize: "var(--font-size-ui-sm)",
+              fontWeight: "500",
+              textTransform: "uppercase",
+              letterSpacing: "0.06em",
+              color: "var(--color-text-tertiary)",
+            }}
+          >
+            {key}
+          </span>
+          <span
+            style={{
+              display: "block",
+              fontSize: "var(--font-size-ui-base)",
+              color: "var(--color-text-secondary)",
+              maxWidth: "200px",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+            }}
+          >
             {formatValue(value)}
           </span>
         </div>
       ))}
+      {hiddenCount > 0 && (
+        <div
+          data-badge=""
+          className="absolute inset-y-0 right-0 flex items-center"
+          style={{
+            paddingRight: "var(--padding-content)",
+            paddingLeft: "var(--space-8)",
+            background: `linear-gradient(to right, transparent, var(--color-bg-subtle) 30%)`,
+          }}
+        >
+          <span
+            className="flex items-center"
+            style={{
+              backgroundColor: "var(--color-bg-hover)",
+              color: "var(--color-text-secondary)",
+              fontSize: "var(--font-size-ui-xs)",
+              fontWeight: "500",
+              borderRadius: "var(--radius-sm)",
+              padding: "0 8px",
+              height: "var(--height-control-sm)",
+            }}
+          >
+            +{hiddenCount} more
+          </span>
+        </div>
+      )}
     </div>
   );
 }
