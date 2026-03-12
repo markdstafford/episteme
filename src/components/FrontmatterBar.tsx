@@ -55,8 +55,8 @@ export function FrontmatterBar({ frontmatter }: FrontmatterBarProps) {
           className="flex-shrink-0"
         >
           <span
-            className="block"
             style={{
+              display: "block",
               fontSize: "var(--font-size-ui-sm)",
               fontWeight: "500",
               textTransform: "uppercase",

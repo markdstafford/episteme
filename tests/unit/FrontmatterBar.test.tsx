@@ -101,5 +101,6 @@ describe("FrontmatterBar", () => {
     expect(valueSpan.style.overflow).toBe("hidden");
     expect(valueSpan.style.textOverflow).toBe("ellipsis");
     expect(valueSpan.style.whiteSpace).toBe("nowrap");
+    expect(valueSpan.style.display).toBe("block");
   });
 });
