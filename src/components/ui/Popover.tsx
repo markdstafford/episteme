@@ -8,15 +8,14 @@ export const PopoverClose = RadixPopover.Close;
 export function PopoverContent({
   children,
   style,
-}: {
-  children: React.ReactNode;
-  style?: React.CSSProperties;
-}) {
+  ...props
+}: React.ComponentPropsWithoutRef<typeof RadixPopover.Content>) {
   return (
     <RadixPopover.Portal>
       <RadixPopover.Content
         className="overlay-surface"
-        sideOffset={4}
+        sideOffset={props.sideOffset ?? 4}
+        {...props}
         style={{
           backgroundColor: "var(--color-bg-overlay)",
           border: "1px solid var(--color-border-subtle)",
