@@ -1,28 +1,40 @@
 import { FolderOpen } from "lucide-react";
 import { useWorkspaceStore } from "@/stores/workspace";
+import { Button } from "@/components/ui/Button";
 
 export function WelcomeScreen() {
   const openFolder = useWorkspaceStore((s) => s.openFolder);
   const error = useWorkspaceStore((s) => s.error);
 
   return (
-    <div className="flex items-center justify-center flex-1 bg-gray-50 dark:bg-gray-900">
+    <div
+      className="flex items-center justify-center flex-1"
+      style={{ backgroundColor: "var(--color-bg-app)" }}
+    >
       <div className="text-center">
-        <h1 className="text-4xl font-bold text-gray-900 dark:text-gray-100">
+        <h1
+          className="text-4xl font-bold"
+          style={{ color: "var(--color-text-primary)" }}
+        >
           Episteme
         </h1>
-        <p className="mt-2 text-gray-600 dark:text-gray-400">
+        <p
+          className="mt-2"
+          style={{ color: "var(--color-text-secondary)" }}
+        >
           Open a folder to get started
         </p>
-        <button
-          onClick={openFolder}
-          className="mt-6 inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg text-lg cursor-pointer"
-        >
-          <FolderOpen className="w-5 h-5" />
-          Open Folder
-        </button>
+        <div className="mt-6 inline-flex">
+          <Button variant="primary" onClick={openFolder}>
+            <FolderOpen size={16} />
+            Open Folder
+          </Button>
+        </div>
         {error && (
-          <p className="mt-4 text-red-600 text-sm">
+          <p
+            className="mt-4 text-sm"
+            style={{ color: "var(--color-state-danger)" }}
+          >
             Could not open folder. Please check permissions and try again.
           </p>
         )}
