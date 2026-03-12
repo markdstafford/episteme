@@ -160,6 +160,7 @@ describe("DocumentViewer", () => {
     render(<DocumentViewer />);
     const text = screen.getByText("Select a document from the sidebar");
     expect(text.style.color).toBe("var(--color-text-tertiary)");
+    expect(text.style.fontSize).toBe("var(--font-size-ui-lg)");
   });
 
   it("loading state Loader2 icon uses --color-accent", () => {
@@ -171,6 +172,15 @@ describe("DocumentViewer", () => {
     expect(svg.style.color).toBe("var(--color-accent)");
   });
 
+  it("loading state text uses --color-text-tertiary", () => {
+    mockInvoke.mockReturnValue(new Promise(() => {}));
+    useFileTreeStore.setState({ selectedFilePath: "/workspace/doc.md" });
+
+    render(<DocumentViewer />);
+    const loadingText = screen.getByText("Loading document...");
+    expect(loadingText.style.color).toBe("var(--color-text-tertiary)");
+  });
+
   it("error state uses --color-state-danger", async () => {
     mockInvoke.mockRejectedValue(new Error("Not found"));
     useFileTreeStore.setState({ selectedFilePath: "/workspace/missing.md" });
@@ -178,6 +188,7 @@ describe("DocumentViewer", () => {
     render(<DocumentViewer />);
     const errorText = await screen.findByText(/Failed to load document/);
     expect(errorText.style.color).toBe("var(--color-state-danger)");
+    expect(errorText.style.fontSize).toBe("var(--font-size-ui-sm)");
   });
 
   it("clears content when selected file changes to null", async () => {
