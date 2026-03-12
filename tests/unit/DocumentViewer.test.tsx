@@ -156,10 +156,12 @@ describe("DocumentViewer", () => {
     expect(proseWrapper.style.lineHeight).toBe("1.7");
   });
 
-  it("empty state uses --color-text-tertiary", () => {
-    render(<DocumentViewer />);
+  it("empty state uses design system tokens matching WelcomeScreen", () => {
+    const { container } = render(<DocumentViewer />);
+    const outer = container.firstChild as HTMLElement;
+    expect(outer.style.backgroundColor).toBe("var(--color-bg-app)");
     const text = screen.getByText("Select a document from the sidebar");
-    expect(text.style.color).toBe("var(--color-text-tertiary)");
+    expect(text.style.color).toBe("var(--color-text-secondary)");
     expect(text.style.fontSize).toBe("var(--font-size-ui-lg)");
   });
 

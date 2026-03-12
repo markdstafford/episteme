@@ -82,8 +82,11 @@ export function DocumentViewer() {
 
   if (!selectedFilePath) {
     return (
-      <div className="flex-1 flex items-center justify-center">
-        <p style={{ color: "var(--color-text-tertiary)", fontSize: "var(--font-size-ui-lg)" }}>
+      <div
+        className="flex-1 flex items-center justify-center"
+        style={{ backgroundColor: "var(--color-bg-app)" }}
+      >
+        <p style={{ color: "var(--color-text-secondary)", fontSize: "var(--font-size-ui-lg)" }}>
           Select a document from the sidebar
         </p>
       </div>

@@ -158,6 +158,7 @@ describe("FrontmatterBar overflow badge", () => {
 
     const bar = container.firstChild as HTMLElement;
     Object.defineProperty(bar, "offsetWidth", { value: 50, configurable: true });
+    // All 3 pairs are always in DOM now
     Array.from(bar.querySelectorAll("[data-pair]")).forEach((el) => {
       Object.defineProperty(el, "offsetWidth", { value: 80, configurable: true });
     });
@@ -167,6 +168,34 @@ describe("FrontmatterBar overflow badge", () => {
     });
 
     expect(screen.getByText("+3 more")).toBeInTheDocument();
+  });
+
+  it("badge disappears when container becomes wide enough", async () => {
+    const { container } = render(
+      <FrontmatterBar
+        frontmatter={{ title: "Doc", status: "draft", author: "Alice" }}
+      />
+    );
+
+    const bar = container.firstChild as HTMLElement;
+    const pairEls = Array.from(bar.querySelectorAll("[data-pair]"));
+
+    // First: trigger overflow (narrow)
+    Object.defineProperty(bar, "offsetWidth", { value: 50, configurable: true });
+    pairEls.forEach((el) => {
+      Object.defineProperty(el, "offsetWidth", { value: 80, configurable: true });
+    });
+    await act(async () => {
+      (vi.mocked(ResizeObserver).mock.results[0].value as any)._trigger();
+    });
+    expect(screen.getByText("+3 more")).toBeInTheDocument();
+
+    // Then: widen container so all pairs fit
+    Object.defineProperty(bar, "offsetWidth", { value: 500, configurable: true });
+    await act(async () => {
+      (vi.mocked(ResizeObserver).mock.results[0].value as any)._trigger();
+    });
+    expect(screen.queryByText(/\+\d+ more/)).not.toBeInTheDocument();
   });
 
   it("badge uses neutral badge token styles", async () => {
@@ -186,10 +215,11 @@ describe("FrontmatterBar overflow badge", () => {
       (vi.mocked(ResizeObserver).mock.results[0].value as any)._trigger();
     });
 
-    const badge = screen.getByText("+3 more");
-    expect(badge.style.backgroundColor).toBe("var(--color-bg-hover)");
-    expect(badge.style.color).toBe("var(--color-text-secondary)");
-    expect(badge.style.fontSize).toBe("var(--font-size-ui-xs)");
-    expect(badge.style.borderRadius).toBe("var(--radius-sm)");
+    // The badge text is in the inner <span>; outer <div> has data-badge and positioning
+    const badgeText = screen.getByText("+3 more");
+    expect(badgeText.style.backgroundColor).toBe("var(--color-bg-hover)");
+    expect(badgeText.style.color).toBe("var(--color-text-secondary)");
+    expect(badgeText.style.fontSize).toBe("var(--font-size-ui-xs)");
+    expect(badgeText.style.borderRadius).toBe("var(--radius-sm)");
   });
 });

@@ -24,6 +24,7 @@ function formatValue(value: unknown): string {
 }
 
 const PAIR_GAP_PX = 24; // --space-6
+const BADGE_RESERVE_PX = 80; // badge width estimate for first-pass calculation
 
 export function calculateVisibleCount(
   containerWidth: number,
@@ -64,11 +65,27 @@ export function FrontmatterBar({ frontmatter }: FrontmatterBarProps) {
     const recalculate = () => {
       const containerWidth = container.offsetWidth;
       if (containerWidth === 0) return;
+
       const pairEls = Array.from(
         container.querySelectorAll<HTMLElement>("[data-pair]")
       );
+      // All pairs are always in DOM now — if count doesn't match, DOM isn't ready yet
+      if (pairEls.length !== sorted.length) return;
+
       const pairWidths = pairEls.map((el) => el.offsetWidth);
-      setVisibleCount(calculateVisibleCount(containerWidth, pairWidths));
+      const countFits = calculateVisibleCount(containerWidth, pairWidths);
+
+      if (countFits === sorted.length) {
+        setVisibleCount(sorted.length);
+        return;
+      }
+
+      // Some pairs overflow — reserve space for the badge
+      const badgeEl = container.querySelector<HTMLElement>("[data-badge]");
+      const reserve = badgeEl
+        ? badgeEl.offsetWidth + PAIR_GAP_PX
+        : BADGE_RESERVE_PX;
+      setVisibleCount(calculateVisibleCount(containerWidth - reserve, pairWidths));
     };
 
     const observer = new ResizeObserver(recalculate);
@@ -85,7 +102,7 @@ export function FrontmatterBar({ frontmatter }: FrontmatterBarProps) {
   return (
     <div
       ref={containerRef}
-      className="flex overflow-hidden"
+      className="relative flex overflow-hidden"
       style={{
         backgroundColor: "var(--color-bg-subtle)",
         borderBottom: "1px solid var(--color-border-subtle)",
@@ -94,8 +111,13 @@ export function FrontmatterBar({ frontmatter }: FrontmatterBarProps) {
         gap: "var(--space-6)",
       }}
     >
-      {sorted.slice(0, displayCount).map(([key, value]) => (
-        <div key={key} data-pair="" className="flex-shrink-0">
+      {sorted.map(([key, value], i) => (
+        <div
+          key={key}
+          data-pair=""
+          className="flex-shrink-0"
+          aria-hidden={visibleCount !== null && i >= visibleCount ? true : undefined}
+        >
           <span
             style={{
               display: "block",
@@ -124,20 +146,30 @@ export function FrontmatterBar({ frontmatter }: FrontmatterBarProps) {
         </div>
       ))}
       {hiddenCount > 0 && (
-        <span
-          className="flex-shrink-0 flex items-center"
+        <div
+          data-badge=""
+          className="absolute inset-y-0 right-0 flex items-center"
           style={{
-            backgroundColor: "var(--color-bg-hover)",
-            color: "var(--color-text-secondary)",
-            fontSize: "var(--font-size-ui-xs)",
-            fontWeight: "500",
-            borderRadius: "var(--radius-sm)",
-            padding: "0 8px",
-            height: "var(--height-control-sm)",
+            paddingRight: "var(--padding-content)",
+            paddingLeft: "var(--space-8)",
+            background: `linear-gradient(to right, transparent, var(--color-bg-subtle) 30%)`,
           }}
         >
-          +{hiddenCount} more
-        </span>
+          <span
+            className="flex items-center"
+            style={{
+              backgroundColor: "var(--color-bg-hover)",
+              color: "var(--color-text-secondary)",
+              fontSize: "var(--font-size-ui-xs)",
+              fontWeight: "500",
+              borderRadius: "var(--radius-sm)",
+              padding: "0 8px",
+              height: "var(--height-control-sm)",
+            }}
+          >
+            +{hiddenCount} more
+          </span>
+        </div>
       )}
     </div>
   );
