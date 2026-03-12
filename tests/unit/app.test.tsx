@@ -4,6 +4,7 @@ import App from "@/App";
 import { useWorkspaceStore } from "@/stores/workspace";
 import { useSettingsStore } from "@/stores/settings";
 import { listen } from "@tauri-apps/api/event";
+import { invoke } from "@tauri-apps/api/core";
 
 vi.mock("@tauri-apps/api/core", () => ({
   invoke: vi.fn(),
@@ -12,6 +13,7 @@ vi.mock("@tauri-apps/api/core", () => ({
 describe("App", () => {
   beforeEach(() => {
     vi.mocked(listen).mockResolvedValue(vi.fn());
+    vi.mocked(invoke).mockResolvedValue({});
     useWorkspaceStore.setState({
       folderPath: null,
       isLoading: false,
@@ -167,5 +169,28 @@ describe("App", () => {
     render(<App />);
     fireEvent.keyDown(document, { key: "Escape" });
     expect(useSettingsStore.getState().settingsOpen).toBe(false);
+  });
+
+  it("renders SettingsPanel in content area when settings is open", () => {
+    useWorkspaceStore.setState({ folderPath: "/some/path" });
+    useSettingsStore.setState({ settingsOpen: true, activeCategory: "ai" });
+    render(<App />);
+    // SettingsPanel renders the AWS profile section header from config
+    expect(screen.getByText(/credentials/i)).toBeInTheDocument();
+  });
+
+  it("does not render toolbar when settings is open", () => {
+    useWorkspaceStore.setState({ folderPath: "/some/path" });
+    useSettingsStore.setState({ settingsOpen: true });
+    render(<App />);
+    expect(screen.queryByTitle(/toggle ai assistant/i)).not.toBeInTheDocument();
+  });
+
+  it("renders normal layout when settings is closed", () => {
+    useWorkspaceStore.setState({ folderPath: "/some/path" });
+    useSettingsStore.setState({ settingsOpen: false });
+    render(<App />);
+    expect(screen.getByText("Select a document from the sidebar")).toBeInTheDocument();
+    expect(screen.queryByText(/credentials/i)).not.toBeInTheDocument();
   });
 });
