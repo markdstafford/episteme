@@ -65,6 +65,7 @@ describe("FrontmatterBar", () => {
     expect(bar.style.paddingBlock).toBe("var(--space-3)");
     expect(bar.style.paddingInline).toBe("var(--padding-content)");
     expect(bar.style.gap).toBe("var(--space-6)");
+    expect(bar.classList.contains("overflow-hidden")).toBe(true);
   });
 
   it("shows non-display fields after display fields", () => {

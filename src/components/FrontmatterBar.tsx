@@ -40,7 +40,7 @@ export function FrontmatterBar({ frontmatter }: FrontmatterBarProps) {
 
   return (
     <div
-      className="flex flex-row overflow-hidden"
+      className="flex overflow-hidden"
       style={{
         backgroundColor: "var(--color-bg-subtle)",
         borderBottom: "1px solid var(--color-border-subtle)",
