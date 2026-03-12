@@ -1,12 +1,14 @@
 import { useState, useEffect } from "react";
 import { useWorkspaceStore } from "@/stores/workspace";
 import { useAiChatStore } from "@/stores/aiChat";
+import { useSettingsStore } from "@/stores/settings";
 import { WelcomeScreen } from "@/components/WelcomeScreen";
 import { TitleBar } from "@/components/TitleBar";
 import { Sidebar } from "@/components/Sidebar";
 import { FileTree } from "@/components/FileTree";
 import { DocumentViewer } from "@/components/DocumentViewer";
 import { AiChatPanel } from "@/components/AiChatPanel";
+import { SettingsPanel } from "@/components/SettingsPanel";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { parsePreferences } from "@/lib/preferences";
@@ -21,11 +23,29 @@ function App() {
   const loadSavedFolder = useWorkspaceStore((s) => s.loadSavedFolder);
   const openFolder = useWorkspaceStore((s) => s.openFolder);
   const startAuthoring = useAiChatStore((s) => s.startAuthoring);
+  const settingsOpen = useSettingsStore((s) => s.settingsOpen);
 
   useEffect(() => {
     const unlisten = listen("menu:open-folder", () => openFolder());
     return () => { unlisten.then((f) => f()); };
   }, [openFolder]);
+
+  useEffect(() => {
+    const unlisten = listen("menu:open-settings", () =>
+      useSettingsStore.getState().openSettings()
+    );
+    return () => { unlisten.then((f) => f()); };
+  }, []);
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && useSettingsStore.getState().settingsOpen) {
+        useSettingsStore.getState().closeSettings();
+      }
+    };
+    document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
+  }, []);
 
   useEffect(() => {
     if (!import.meta.env.DEV) return;
@@ -63,10 +83,10 @@ function App() {
     return (
       <div className="flex flex-col h-screen">
         <TitleBar folderPath={null} onStartAuthoring={() => {}} />
-        <div className="flex flex-1 items-center justify-center bg-gray-50 dark:bg-gray-900">
+        <div className="flex flex-1 items-center justify-center bg-(--color-bg-app)">
           <div className="text-center">
-            <Loader2 className="w-8 h-8 animate-spin text-blue-600 mx-auto" />
-            <p className="mt-4 text-gray-600 dark:text-gray-400">
+            <Loader2 className="w-8 h-8 animate-spin text-(--color-accent) mx-auto" />
+            <p className="mt-4 text-(--color-text-secondary)">
               Loading folder...
             </p>
           </div>
@@ -97,25 +117,29 @@ function App() {
         <Sidebar>
           <FileTree />
         </Sidebar>
-        <div className="flex-1 flex flex-col min-w-0">
-          {/* Toolbar */}
-          <div className="flex items-center justify-end px-4 py-1 border-b border-gray-200 dark:border-gray-700">
-            <button
-              onClick={() => setChatPanelOpen(!chatPanelOpen)}
-              className={`p-1.5 rounded hover:bg-gray-100 dark:hover:bg-gray-800 ${
-                chatPanelOpen ? "bg-gray-100 dark:bg-gray-800 text-blue-600" : "text-gray-500"
-              }`}
-              title="Toggle AI Assistant"
-            >
-              <MessageSquare className="w-4 h-4" />
-            </button>
+        {settingsOpen ? (
+          <div className="flex-1 flex flex-col animate-fade-in">
+            <SettingsPanel />
           </div>
-          {/* Document viewer fills remaining space */}
-          <div className="flex-1 flex flex-col overflow-hidden">
-            <DocumentViewer />
+        ) : (
+          <div className="flex-1 flex flex-col min-w-0 animate-fade-in">
+            <div className="flex items-center justify-end px-4 py-1 border-b border-(--color-border-subtle)">
+              <button
+                onClick={() => setChatPanelOpen(!chatPanelOpen)}
+                className={`p-1.5 rounded hover:bg-(--color-bg-subtle) ${
+                  chatPanelOpen ? "bg-(--color-bg-hover) text-(--color-accent)" : "text-(--color-text-tertiary)"
+                }`}
+                title="Toggle AI Assistant"
+              >
+                <MessageSquare className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="flex-1 flex flex-col overflow-hidden">
+              <DocumentViewer />
+            </div>
           </div>
-        </div>
-        {chatPanelOpen && (
+        )}
+        {!settingsOpen && chatPanelOpen && (
           <AiChatPanel onClose={() => setChatPanelOpen(false)} />
         )}
       </div>

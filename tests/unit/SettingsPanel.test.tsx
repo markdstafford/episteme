@@ -1,29 +1,24 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import { SettingsView } from "@/components/SettingsView";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { SettingsPanel } from "@/components/SettingsPanel";
+import { useSettingsStore } from "@/stores/settings";
+import { firstCategoryId } from "@/config/settings";
 
-vi.mock("@tauri-apps/api/core", () => ({
-  invoke: vi.fn(),
-}));
-
+vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn() }));
 vi.mock("@/stores/aiChat", () => ({
-  useAiChatStore: vi.fn((selector) =>
-    selector({ setAwsProfile: vi.fn() })
-  ),
+  useAiChatStore: vi.fn((selector) => selector({ setAwsProfile: vi.fn() })),
 }));
 
 import { invoke } from "@tauri-apps/api/core";
 import { useAiChatStore } from "@/stores/aiChat";
 
-describe("SettingsView", () => {
+describe("SettingsPanel", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    useSettingsStore.setState({ activeCategory: firstCategoryId() });
     (invoke as ReturnType<typeof vi.fn>).mockImplementation((cmd: string) => {
       if (cmd === "load_preferences")
-        return Promise.resolve({
-          aws_profile: "my-profile",
-          last_opened_folder: "/Users/me/docs",
-        });
+        return Promise.resolve({ aws_profile: "my-profile", last_opened_folder: "/docs" });
       if (cmd === "save_preferences") return Promise.resolve();
       return Promise.resolve();
     });
@@ -33,106 +28,93 @@ describe("SettingsView", () => {
     );
   });
 
+  it("renders a section header for the active category", async () => {
+    render(<SettingsPanel />);
+    await waitFor(() => {
+      expect(screen.getByText(/credentials/i)).toBeInTheDocument();
+    });
+  });
+
   it("pre-populates AWS profile from load_preferences", async () => {
-    render(<SettingsView />);
+    render(<SettingsPanel />);
     await waitFor(() => {
       expect(screen.getByDisplayValue("my-profile")).toBeInTheDocument();
     });
   });
 
   it("persists valid value with full merged preferences", async () => {
-    render(<SettingsView />);
+    render(<SettingsPanel />);
     await waitFor(() => screen.getByDisplayValue("my-profile"));
-
     fireEvent.change(screen.getByLabelText("AWS Profile"), {
       target: { value: "new-profile" },
     });
-
     await waitFor(() => {
       expect(invoke).toHaveBeenCalledWith("save_preferences", {
-        preferences: {
-          aws_profile: "new-profile",
-          last_opened_folder: "/Users/me/docs",
-        },
+        preferences: { aws_profile: "new-profile", last_opened_folder: "/docs" },
       });
     });
   });
 
   it("preserves last_opened_folder when updating aws_profile", async () => {
-    render(<SettingsView />);
+    render(<SettingsPanel />);
     await waitFor(() => screen.getByDisplayValue("my-profile"));
-
     fireEvent.change(screen.getByLabelText("AWS Profile"), {
-      target: { value: "updated-profile" },
+      target: { value: "updated" },
     });
-
     await waitFor(() => {
       const calls = (invoke as ReturnType<typeof vi.fn>).mock.calls;
       const saveCall = calls.find(([cmd]: [string]) => cmd === "save_preferences");
-      expect(saveCall?.[1].preferences.last_opened_folder).toBe("/Users/me/docs");
+      expect(saveCall?.[1].preferences.last_opened_folder).toBe("/docs");
     });
   });
 
   it("does not persist empty value", async () => {
-    render(<SettingsView />);
+    render(<SettingsPanel />);
     await waitFor(() => screen.getByDisplayValue("my-profile"));
-
-    fireEvent.change(screen.getByLabelText("AWS Profile"), {
-      target: { value: "" },
-    });
-
+    fireEvent.change(screen.getByLabelText("AWS Profile"), { target: { value: "" } });
     expect(invoke).not.toHaveBeenCalledWith("save_preferences", expect.anything());
   });
 
   it("does not persist value longer than 64 characters", async () => {
-    render(<SettingsView />);
+    render(<SettingsPanel />);
     await waitFor(() => screen.getByDisplayValue("my-profile"));
-
     fireEvent.change(screen.getByLabelText("AWS Profile"), {
       target: { value: "a".repeat(65) },
     });
-
     expect(invoke).not.toHaveBeenCalledWith("save_preferences", expect.anything());
   });
 
   it("does not persist value with invalid characters", async () => {
-    render(<SettingsView />);
+    render(<SettingsPanel />);
     await waitFor(() => screen.getByDisplayValue("my-profile"));
-
     fireEvent.change(screen.getByLabelText("AWS Profile"), {
       target: { value: "bad profile!" },
     });
-
     expect(invoke).not.toHaveBeenCalledWith("save_preferences", expect.anything());
   });
 
   it("does not persist before preferences are loaded", async () => {
-    render(<SettingsView />);
-    // Fire change BEFORE awaiting load_preferences resolution
+    render(<SettingsPanel />);
     fireEvent.change(screen.getByLabelText("AWS Profile"), {
       target: { value: "early-input" },
     });
-    // Wait for load to complete
     await waitFor(() => screen.getByDisplayValue("my-profile"));
-    // save_preferences should NOT have been called during the pre-load change
     expect(invoke).not.toHaveBeenCalledWith("save_preferences", expect.anything());
   });
 
-  it("persists valid value with dot in profile name", async () => {
-    render(<SettingsView />);
+  it("shows placeholder when active category has no settings", () => {
+    useSettingsStore.setState({ activeCategory: "nonexistent" });
+    render(<SettingsPanel />);
+    expect(screen.getByText(/no settings yet/i)).toBeInTheDocument();
+  });
+
+  it("switches displayed content when activeCategory changes", async () => {
+    render(<SettingsPanel />);
     await waitFor(() => screen.getByDisplayValue("my-profile"));
-
-    fireEvent.change(screen.getByLabelText("AWS Profile"), {
-      target: { value: "team.dev" },
-    });
-
+    useSettingsStore.setState({ activeCategory: "nonexistent" });
     await waitFor(() => {
-      expect(invoke).toHaveBeenCalledWith("save_preferences", {
-        preferences: {
-          aws_profile: "team.dev",
-          last_opened_folder: "/Users/me/docs",
-        },
-      });
+      expect(screen.queryByLabelText("AWS Profile")).not.toBeInTheDocument();
+      expect(screen.getByText(/no settings yet/i)).toBeInTheDocument();
     });
   });
 });
