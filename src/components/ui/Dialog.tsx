@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/Button";
 export const Dialog = RadixDialog.Root;
 export const DialogTrigger = RadixDialog.Trigger;
 
-export function DialogOverlay() {
+function DialogOverlay() {
   return (
     <RadixDialog.Overlay
       className="dialog-overlay"
@@ -24,9 +24,11 @@ export function DialogOverlay() {
 export function DialogContent({
   children,
   style,
+  description,
 }: {
   children: React.ReactNode;
   style?: React.CSSProperties;
+  description?: string;
 }) {
   return (
     <RadixDialog.Portal>
@@ -38,7 +40,7 @@ export function DialogContent({
           top: "50%",
           left: "50%",
           transform: "translate(-50%, -50%)",
-          width: 480,
+          width: "min(480px, calc(100vw - var(--space-8)))",
           backgroundColor: "var(--color-bg-elevated)",
           borderRadius: "var(--radius-xl)",
           boxShadow: "var(--shadow-lg)",
@@ -47,6 +49,9 @@ export function DialogContent({
           ...style,
         }}
       >
+        <RadixDialog.Description style={{ display: "none" }}>
+          {description ?? ""}
+        </RadixDialog.Description>
         {children}
       </RadixDialog.Content>
     </RadixDialog.Portal>
@@ -84,6 +89,20 @@ export function DialogTitle({ children }: { children: React.ReactNode }) {
   );
 }
 
+export function DialogDescription({ children }: { children: React.ReactNode }) {
+  return (
+    <RadixDialog.Description
+      style={{
+        fontSize: "var(--font-size-ui-base)",
+        color: "var(--color-text-secondary)",
+        margin: 0,
+      }}
+    >
+      {children}
+    </RadixDialog.Description>
+  );
+}
+
 export function DialogBody({
   children,
   style,
@@ -113,7 +132,7 @@ export function DialogFooter({ children }: { children: React.ReactNode }) {
         justifyContent: "flex-end",
         alignItems: "center",
         gap: "var(--space-2)",
-        padding: "var(--space-4)",
+        padding: "var(--padding-panel)",
         borderTop: "1px solid var(--color-border-subtle)",
       }}
     >
