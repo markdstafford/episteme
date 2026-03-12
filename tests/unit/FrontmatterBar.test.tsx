@@ -55,6 +55,18 @@ describe("FrontmatterBar", () => {
     expect(labels[2].textContent).toBe("author");
   });
 
+  it("container uses design system token styles", () => {
+    const { container } = render(
+      <FrontmatterBar frontmatter={{ title: "Doc" }} />
+    );
+    const bar = container.firstChild as HTMLElement;
+    expect(bar.style.backgroundColor).toBe("var(--color-bg-subtle)");
+    expect(bar.style.borderBottom).toBe("1px solid var(--color-border-subtle)");
+    expect(bar.style.paddingBlock).toBe("var(--space-3)");
+    expect(bar.style.paddingInline).toBe("var(--padding-content)");
+    expect(bar.style.gap).toBe("var(--space-6)");
+  });
+
   it("shows non-display fields after display fields", () => {
     render(
       <FrontmatterBar

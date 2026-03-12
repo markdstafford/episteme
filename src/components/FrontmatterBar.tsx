@@ -39,11 +39,20 @@ export function FrontmatterBar({ frontmatter }: FrontmatterBarProps) {
   });
 
   return (
-    <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 mb-6 flex flex-wrap gap-x-0">
-      {sorted.map(([key, value], i) => (
+    <div
+      className="flex flex-row overflow-hidden"
+      style={{
+        backgroundColor: "var(--color-bg-subtle)",
+        borderBottom: "1px solid var(--color-border-subtle)",
+        paddingBlock: "var(--space-3)",
+        paddingInline: "var(--padding-content)",
+        gap: "var(--space-6)",
+      }}
+    >
+      {sorted.map(([key, value]) => (
         <div
           key={key}
-          className={`px-3 ${i < sorted.length - 1 ? "border-r border-gray-200 dark:border-gray-700" : ""}`}
+          className="flex-shrink-0"
         >
           <span className="text-xs text-gray-500 block">{key}</span>
           <span className="text-sm text-gray-700 dark:text-gray-300 font-medium">
