@@ -79,6 +79,7 @@ function App() {
   if (isLoading && !folderPath) {
     return (
       <div className="flex flex-col h-screen">
+        {/* TODO: re-wire to keyboard shortcut when AI chat panel toggle is implemented */}
         <TitleBar folderPath={null} onStartAuthoring={() => {}} />
         <div className="flex flex-1 items-center justify-center bg-(--color-bg-app)">
           <div className="text-center">
@@ -95,6 +96,7 @@ function App() {
   if (!folderPath) {
     return (
       <div className="flex flex-col h-screen">
+        {/* TODO: re-wire to keyboard shortcut when AI chat panel toggle is implemented */}
         <TitleBar folderPath={null} onStartAuthoring={() => {}} />
         <WelcomeScreen />
       </div>
@@ -103,6 +105,7 @@ function App() {
 
   return (
     <div className="flex flex-col h-screen">
+      {/* TODO: re-wire to keyboard shortcut when AI chat panel toggle is implemented */}
       <TitleBar
         folderPath={folderPath}
         onStartAuthoring={() => {}}

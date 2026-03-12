@@ -6,9 +6,6 @@ import { listen } from "@tauri-apps/api/event";
 
 vi.mock("@tauri-apps/api/core", () => ({
   invoke: vi.fn().mockResolvedValue(undefined),
-  Channel: function () {
-    this.onmessage = null;
-  },
 }));
 
 // Mock CreateNewDialog so tests can control selection without full dialog mount
@@ -44,7 +41,6 @@ describe("Document authoring flow", () => {
       openFolder: vi.fn(),
       loadSavedFolder: vi.fn(),
     });
-
   });
 
   it("New document button is visible when a folder is open", () => {
