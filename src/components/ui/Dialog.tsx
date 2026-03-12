@@ -24,17 +24,16 @@ function DialogOverlay() {
 export function DialogContent({
   children,
   style,
-  description,
 }: {
   children: React.ReactNode;
   style?: React.CSSProperties;
-  description?: string;
 }) {
   return (
     <RadixDialog.Portal>
       <DialogOverlay />
       <RadixDialog.Content
         className="dialog-content"
+        aria-describedby={undefined}
         style={{
           position: "fixed",
           top: "50%",
@@ -49,9 +48,6 @@ export function DialogContent({
           ...style,
         }}
       >
-        <RadixDialog.Description style={{ display: "none" }}>
-          {description ?? ""}
-        </RadixDialog.Description>
         {children}
       </RadixDialog.Content>
     </RadixDialog.Portal>
