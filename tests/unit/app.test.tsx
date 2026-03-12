@@ -2,7 +2,9 @@ import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import App from "@/App";
 import { useWorkspaceStore } from "@/stores/workspace";
+import { useSettingsStore } from "@/stores/settings";
 import { listen } from "@tauri-apps/api/event";
+import { invoke } from "@tauri-apps/api/core";
 
 vi.mock("@tauri-apps/api/core", () => ({
   invoke: vi.fn(),
@@ -11,6 +13,7 @@ vi.mock("@tauri-apps/api/core", () => ({
 describe("App", () => {
   beforeEach(() => {
     vi.mocked(listen).mockResolvedValue(vi.fn());
+    vi.mocked(invoke).mockResolvedValue({});
     useWorkspaceStore.setState({
       folderPath: null,
       isLoading: false,
@@ -18,6 +21,7 @@ describe("App", () => {
       openFolder: vi.fn(),
       loadSavedFolder: vi.fn(),
     });
+    useSettingsStore.setState({ settingsOpen: false, activeCategory: "ai" });
   });
 
   it("shows WelcomeScreen when no folder is open", () => {
@@ -89,7 +93,7 @@ describe("App", () => {
     await waitFor(() => expect(listen).toHaveBeenCalledWith("menu:open-folder", expect.any(Function)));
 
     unmount();
-    await waitFor(() => expect(mockUnlisten).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(mockUnlisten).toHaveBeenCalled());
   });
 
   it("does not show DesignKitchen on initial render", () => {
@@ -118,5 +122,75 @@ describe("App", () => {
 
     fireEvent.keyDown(document, { code: "KeyK", metaKey: true, shiftKey: true });
     expect(screen.queryByText("Design Kitchen")).not.toBeInTheDocument();
+  });
+
+  it("registers menu:open-settings listener on mount", async () => {
+    render(<App />);
+    await waitFor(() => {
+      expect(listen).toHaveBeenCalledWith("menu:open-settings", expect.any(Function));
+    });
+  });
+
+  it("calls openSettings when menu:open-settings event fires", async () => {
+    useWorkspaceStore.setState({ folderPath: "/some/path" });
+    let settingsHandler: (() => void) | undefined;
+    vi.mocked(listen).mockImplementation((event, handler) => {
+      if (event === "menu:open-settings") settingsHandler = handler as () => void;
+      return Promise.resolve(vi.fn());
+    });
+    render(<App />);
+    await waitFor(() => expect(settingsHandler).toBeDefined());
+    settingsHandler!();
+    expect(useSettingsStore.getState().settingsOpen).toBe(true);
+  });
+
+  it("cleans up menu:open-settings listener on unmount", async () => {
+    const mockUnlisten = vi.fn();
+    vi.mocked(listen).mockResolvedValue(mockUnlisten);
+    const { unmount } = render(<App />);
+    await waitFor(() =>
+      expect(listen).toHaveBeenCalledWith("menu:open-settings", expect.any(Function))
+    );
+    unmount();
+    await waitFor(() => expect(mockUnlisten).toHaveBeenCalled());
+  });
+
+  it("pressing Esc closes settings when settings is open", () => {
+    useWorkspaceStore.setState({ folderPath: "/some/path" });
+    useSettingsStore.setState({ settingsOpen: true });
+    render(<App />);
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(useSettingsStore.getState().settingsOpen).toBe(false);
+  });
+
+  it("pressing Esc does nothing when settings is closed", () => {
+    useWorkspaceStore.setState({ folderPath: "/some/path" });
+    useSettingsStore.setState({ settingsOpen: false });
+    render(<App />);
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(useSettingsStore.getState().settingsOpen).toBe(false);
+  });
+
+  it("renders SettingsPanel in content area when settings is open", () => {
+    useWorkspaceStore.setState({ folderPath: "/some/path" });
+    useSettingsStore.setState({ settingsOpen: true, activeCategory: "ai" });
+    render(<App />);
+    // SettingsPanel renders the AWS profile section header from config
+    expect(screen.getByText(/credentials/i)).toBeInTheDocument();
+  });
+
+  it("does not render toolbar when settings is open", () => {
+    useWorkspaceStore.setState({ folderPath: "/some/path" });
+    useSettingsStore.setState({ settingsOpen: true });
+    render(<App />);
+    expect(screen.queryByTitle(/toggle ai assistant/i)).not.toBeInTheDocument();
+  });
+
+  it("renders normal layout when settings is closed", () => {
+    useWorkspaceStore.setState({ folderPath: "/some/path" });
+    useSettingsStore.setState({ settingsOpen: false });
+    render(<App />);
+    expect(screen.getByText("Select a document from the sidebar")).toBeInTheDocument();
+    expect(screen.queryByText(/credentials/i)).not.toBeInTheDocument();
   });
 });
