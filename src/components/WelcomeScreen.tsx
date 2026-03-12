@@ -24,12 +24,10 @@ export function WelcomeScreen() {
         >
           Open a folder to get started
         </p>
-        <div className="mt-6 inline-flex">
-          <Button variant="primary" onClick={openFolder}>
-            <FolderOpen size={16} />
-            Open Folder
-          </Button>
-        </div>
+        <Button variant="primary" onClick={openFolder} className="mt-6">
+          <FolderOpen size={16} />
+          Open Folder
+        </Button>
         {error && (
           <p
             className="mt-4 text-sm"
