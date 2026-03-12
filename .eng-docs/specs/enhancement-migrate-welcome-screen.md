@@ -60,15 +60,15 @@ In `WelcomeScreen.tsx`: replace all hardcoded `gray-*`, `dark:*`, `blue-*`, and 
       - [x] All existing tests continue to pass
     - **Dependencies**: None
 
-- [ ] **Story: Migrate WelcomeScreen to design tokens**
-  - [ ] **Task: Replace hardcoded Tailwind classes with design token references**
+- [x] **Story: Migrate WelcomeScreen to design tokens**
+  - [x] **Task: Replace hardcoded Tailwind classes with design token references**
     - **Description**: In `src/components/WelcomeScreen.tsx`, replace all hardcoded color classes with inline `style` props referencing CSS custom properties, following the same pattern used in `Button.tsx` and `Dialog.tsx`. Specific replacements: `bg-gray-50 dark:bg-gray-900` → `style={{ backgroundColor: "var(--color-bg-app)" }}`; `text-gray-900 dark:text-gray-100` on the `<h1>` → `style={{ color: "var(--color-text-primary)" }}`; `text-gray-600 dark:text-gray-400` on the subtitle → `style={{ color: "var(--color-text-secondary)" }}`; `text-red-600` on the error paragraph → `style={{ color: "var(--color-state-danger)" }}`. Replace the `<button>` element (with `bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg text-lg`) with the `Button` primitive (`variant="primary"`, `size="base"`) containing the `<FolderOpen>` icon and "Open Folder" label. Remove the `className` prop from the outer container and replace with an inline style for the background. No behavior changes — visual migration only.
     - **Acceptance criteria**:
-      - [ ] No `gray-*`, `dark:*`, `blue-*`, or `red-*` Tailwind classes remain in the file
-      - [ ] Background uses `var(--color-bg-app)`
-      - [ ] Heading uses `var(--color-text-primary)`
-      - [ ] Subtitle uses `var(--color-text-secondary)`
-      - [ ] Error text uses `var(--color-state-danger)`
-      - [ ] Open Folder button uses the `Button` primitive with `variant="primary"`
-      - [ ] All existing `WelcomeScreen` tests continue to pass
+      - [x] No `gray-*`, `dark:*`, `blue-*`, or `red-*` Tailwind classes remain in the file
+      - [x] Background uses `var(--color-bg-app)`
+      - [x] Heading uses `var(--color-text-primary)`
+      - [x] Subtitle uses `var(--color-text-secondary)`
+      - [x] Error text uses `var(--color-state-danger)`
+      - [x] Open Folder button uses the `Button` primitive with `variant="primary"`
+      - [x] All existing `WelcomeScreen` tests continue to pass
     - **Dependencies**: None
