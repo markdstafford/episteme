@@ -134,6 +134,10 @@
   .titlebar-btn:hover:not(:disabled) {
     background: var(--color-bg-hover);
   }
+
+  [data-ui-input]::placeholder {
+    color: var(--color-text-tertiary);
+  }
 }
 
 @layer utilities {
