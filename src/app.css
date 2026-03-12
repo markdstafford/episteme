@@ -193,7 +193,10 @@
   .dialog-content[data-state=open]  { animation: dialog-scale-in  var(--duration-normal) var(--ease-default) both; }
   .dialog-content[data-state=closed]{ animation: dialog-scale-out var(--duration-fast)   var(--ease-default) both; }
 
-  /* ContextMenu and Popover surfaces */
+  /* ContextMenu and Popover surfaces.
+     Note: the data-state=closed rule only applies to Popover. Radix ContextMenu
+     unmounts its content immediately on close, so the exit animation never fires
+     for context menus. This is acceptable — menus don't need an exit animation. */
   .overlay-surface[data-state=open]  { animation: overlay-surface-in  var(--duration-fast) var(--ease-default) both; }
   .overlay-surface[data-state=closed]{ animation: overlay-surface-out var(--duration-fast) var(--ease-default) both; }
 

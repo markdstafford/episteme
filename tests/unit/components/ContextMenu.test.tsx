@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, it, expect, vi } from "vitest";
 import {
@@ -78,6 +78,25 @@ describe("ContextMenu", () => {
       keys: "[MouseRight]",
     });
     expect(screen.getByText("Actions")).toBeInTheDocument();
+  });
+
+  it("does not call onSelect when a disabled item is clicked", async () => {
+    const handleSelect = vi.fn();
+    render(
+      <ContextMenu>
+        <ContextMenuTrigger>Trigger</ContextMenuTrigger>
+        <ContextMenuContent>
+          <ContextMenuItem disabled onSelect={handleSelect}>Rename</ContextMenuItem>
+        </ContextMenuContent>
+      </ContextMenu>
+    );
+    await userEvent.pointer({
+      target: screen.getByText("Trigger"),
+      keys: "[MouseRight]",
+    });
+    // pointer-events: none on disabled items — use fireEvent to bypass the CSS check
+    fireEvent.click(screen.getByText("Rename"));
+    expect(handleSelect).not.toHaveBeenCalled();
   });
 
   it("renders shortcut text inside an item", async () => {
