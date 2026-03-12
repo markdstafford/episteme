@@ -138,6 +138,16 @@
   [data-ui-input]::placeholder {
     color: var(--color-text-tertiary);
   }
+
+  /* ContextMenu item highlight — covers both mouse hover and keyboard navigation */
+  .context-menu-item[data-highlighted] {
+    background-color: var(--color-bg-hover);
+    color: var(--color-text-primary);
+  }
+
+  .context-menu-item[data-highlighted][data-destructive] {
+    color: var(--color-state-danger);
+  }
 }
 
 @layer utilities {
@@ -148,5 +158,50 @@
 
   .animate-fade-in {
     animation: fade-in var(--duration-slow) var(--ease-default) both;
+  }
+
+  @keyframes fade-out {
+    from { opacity: 1; }
+    to   { opacity: 0; }
+  }
+
+  @keyframes dialog-scale-in {
+    from { opacity: 0; transform: translate(-50%, -50%) scale(0.97); }
+    to   { opacity: 1; transform: translate(-50%, -50%) scale(1.0); }
+  }
+
+  @keyframes dialog-scale-out {
+    from { opacity: 1; transform: translate(-50%, -50%) scale(1.0); }
+    to   { opacity: 0; transform: translate(-50%, -50%) scale(0.97); }
+  }
+
+  @keyframes overlay-surface-in {
+    from { opacity: 0; transform: scale(0.97); }
+    to   { opacity: 1; transform: scale(1.0); }
+  }
+
+  @keyframes overlay-surface-out {
+    from { opacity: 1; transform: scale(1.0); }
+    to   { opacity: 0; transform: scale(0.97); }
+  }
+
+  /* Dialog backdrop */
+  .dialog-overlay[data-state=open]  { animation: fade-in  var(--duration-normal) var(--ease-default) both; }
+  .dialog-overlay[data-state=closed]{ animation: fade-out var(--duration-fast)   var(--ease-default) both; }
+
+  /* Dialog container */
+  .dialog-content[data-state=open]  { animation: dialog-scale-in  var(--duration-normal) var(--ease-default) both; }
+  .dialog-content[data-state=closed]{ animation: dialog-scale-out var(--duration-fast)   var(--ease-default) both; }
+
+  /* ContextMenu and Popover surfaces.
+     Note: the data-state=closed rule only applies to Popover. Radix ContextMenu
+     unmounts its content immediately on close, so the exit animation never fires
+     for context menus. This is acceptable — menus don't need an exit animation. */
+  .overlay-surface[data-state=open]  { animation: overlay-surface-in  var(--duration-fast) var(--ease-default) both; }
+  .overlay-surface[data-state=closed]{ animation: overlay-surface-out var(--duration-fast) var(--ease-default) both; }
+
+  /* Light-mode shadow for context menus and popovers */
+  @media (prefers-color-scheme: light) {
+    .overlay-surface { box-shadow: var(--shadow-base); }
   }
 }
