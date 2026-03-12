@@ -1,3 +1,5 @@
+import { useRef, useState, useEffect } from "react";
+
 const DISPLAY_FIELDS = [
   "title",
   "status",
@@ -21,15 +23,30 @@ function formatValue(value: unknown): string {
   return String(value);
 }
 
+const PAIR_GAP_PX = 24; // --space-6
+
+export function calculateVisibleCount(
+  containerWidth: number,
+  pairWidths: number[]
+): number {
+  let used = 0;
+  for (let i = 0; i < pairWidths.length; i++) {
+    const needed = i === 0 ? pairWidths[i] : pairWidths[i] + PAIR_GAP_PX;
+    if (used + needed > containerWidth) return i;
+    used += needed;
+  }
+  return pairWidths.length;
+}
+
 export function FrontmatterBar({ frontmatter }: FrontmatterBarProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [visibleCount, setVisibleCount] = useState<number | null>(null);
+
   const entries = Object.entries(frontmatter).filter(
     ([key]) => !HIDDEN_FIELDS.has(key)
   );
 
-  if (entries.length === 0) return null;
-
-  // Prioritize display fields, then show remaining
-  const sorted = entries.sort(([a], [b]) => {
+  const sorted = [...entries].sort(([a], [b]) => {
     const aIdx = DISPLAY_FIELDS.indexOf(a);
     const bIdx = DISPLAY_FIELDS.indexOf(b);
     if (aIdx !== -1 && bIdx !== -1) return aIdx - bIdx;
@@ -38,8 +55,34 @@ export function FrontmatterBar({ frontmatter }: FrontmatterBarProps) {
     return a.localeCompare(b);
   });
 
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const recalculate = () => {
+      const containerWidth = container.offsetWidth;
+      if (containerWidth === 0) return;
+      const pairEls = Array.from(
+        container.querySelectorAll<HTMLElement>("[data-pair]")
+      );
+      const pairWidths = pairEls.map((el) => el.offsetWidth);
+      setVisibleCount(calculateVisibleCount(containerWidth, pairWidths));
+    };
+
+    const observer = new ResizeObserver(recalculate);
+    observer.observe(container);
+    recalculate();
+    return () => observer.disconnect();
+  }, [entries.length]);
+
+  if (entries.length === 0) return null;
+
+  const displayCount = visibleCount ?? sorted.length;
+  const hiddenCount = sorted.length - displayCount;
+
   return (
     <div
+      ref={containerRef}
       className="flex overflow-hidden"
       style={{
         backgroundColor: "var(--color-bg-subtle)",
@@ -49,11 +92,8 @@ export function FrontmatterBar({ frontmatter }: FrontmatterBarProps) {
         gap: "var(--space-6)",
       }}
     >
-      {sorted.map(([key, value]) => (
-        <div
-          key={key}
-          className="flex-shrink-0"
-        >
+      {sorted.slice(0, displayCount).map(([key, value]) => (
+        <div key={key} data-pair="" className="flex-shrink-0">
           <span
             style={{
               display: "block",
@@ -81,6 +121,22 @@ export function FrontmatterBar({ frontmatter }: FrontmatterBarProps) {
           </span>
         </div>
       ))}
+      {hiddenCount > 0 && (
+        <span
+          className="flex-shrink-0 flex items-center"
+          style={{
+            backgroundColor: "var(--color-bg-hover)",
+            color: "var(--color-text-secondary)",
+            fontSize: "var(--font-size-ui-xs)",
+            fontWeight: "500",
+            borderRadius: "var(--radius-sm)",
+            padding: "0 8px",
+            height: "var(--height-control-sm)",
+          }}
+        >
+          +{hiddenCount} more
+        </span>
+      )}
     </div>
   );
 }

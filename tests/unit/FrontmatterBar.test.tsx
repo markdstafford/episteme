@@ -1,6 +1,6 @@
-import { render, screen } from "@testing-library/react";
-import { describe, it, expect } from "vitest";
-import { FrontmatterBar } from "@/components/FrontmatterBar";
+import { render, screen, act } from "@testing-library/react";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { FrontmatterBar, calculateVisibleCount } from "@/components/FrontmatterBar";
 
 describe("FrontmatterBar", () => {
   it("renders frontmatter fields", () => {
@@ -102,5 +102,94 @@ describe("FrontmatterBar", () => {
     expect(valueSpan.style.textOverflow).toBe("ellipsis");
     expect(valueSpan.style.whiteSpace).toBe("nowrap");
     expect(valueSpan.style.display).toBe("block");
+  });
+});
+
+describe("calculateVisibleCount", () => {
+  it("returns total count when all pairs fit", () => {
+    // 80 + 24 + 100 + 24 + 90 = 318 <= 500
+    expect(calculateVisibleCount(500, [80, 100, 90])).toBe(3);
+  });
+
+  it("returns 2 when third pair would overflow", () => {
+    // 80 + 24 + 100 = 204 fits; + 24 + 90 = 318 > 300
+    expect(calculateVisibleCount(300, [80, 100, 90])).toBe(2);
+  });
+
+  it("returns 0 when container is narrower than first pair", () => {
+    expect(calculateVisibleCount(10, [80, 100])).toBe(0);
+  });
+
+  it("returns 1 when only first pair fits", () => {
+    // 80 fits; 80 + 24 + 100 = 204 > 100
+    expect(calculateVisibleCount(100, [80, 100])).toBe(1);
+  });
+});
+
+describe("FrontmatterBar overflow badge", () => {
+  beforeEach(() => {
+    vi.stubGlobal(
+      "ResizeObserver",
+      vi.fn().mockImplementation(function (this: any, cb: ResizeObserverCallback) {
+        this.observe = vi.fn();
+        this.disconnect = vi.fn();
+        this._trigger = () => cb([], {} as ResizeObserver);
+      })
+    );
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("shows no badge when all pairs fit (initial render)", () => {
+    render(
+      <FrontmatterBar frontmatter={{ title: "Doc", status: "draft" }} />
+    );
+    expect(screen.queryByText(/\+\d+ more/)).not.toBeInTheDocument();
+  });
+
+  it("shows +N more badge when pairs overflow", async () => {
+    const { container } = render(
+      <FrontmatterBar
+        frontmatter={{ title: "Doc", status: "draft", author: "Alice" }}
+      />
+    );
+
+    const bar = container.firstChild as HTMLElement;
+    Object.defineProperty(bar, "offsetWidth", { value: 50, configurable: true });
+    Array.from(bar.querySelectorAll("[data-pair]")).forEach((el) => {
+      Object.defineProperty(el, "offsetWidth", { value: 80, configurable: true });
+    });
+
+    await act(async () => {
+      (vi.mocked(ResizeObserver).mock.results[0].value as any)._trigger();
+    });
+
+    expect(screen.getByText("+3 more")).toBeInTheDocument();
+  });
+
+  it("badge uses neutral badge token styles", async () => {
+    const { container } = render(
+      <FrontmatterBar
+        frontmatter={{ title: "Doc", status: "draft", author: "Alice" }}
+      />
+    );
+
+    const bar = container.firstChild as HTMLElement;
+    Object.defineProperty(bar, "offsetWidth", { value: 50, configurable: true });
+    Array.from(bar.querySelectorAll("[data-pair]")).forEach((el) => {
+      Object.defineProperty(el, "offsetWidth", { value: 80, configurable: true });
+    });
+
+    await act(async () => {
+      (vi.mocked(ResizeObserver).mock.results[0].value as any)._trigger();
+    });
+
+    const badge = screen.getByText("+3 more");
+    expect(badge.style.backgroundColor).toBe("var(--color-bg-hover)");
+    expect(badge.style.color).toBe("var(--color-text-secondary)");
+    expect(badge.style.fontSize).toBe("var(--font-size-ui-xs)");
+    expect(badge.style.borderRadius).toBe("var(--radius-sm)");
   });
 });
