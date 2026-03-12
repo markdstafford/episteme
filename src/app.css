@@ -138,6 +138,16 @@
   [data-ui-input]::placeholder {
     color: var(--color-text-tertiary);
   }
+
+  /* ContextMenu item highlight — covers both mouse hover and keyboard navigation */
+  .context-menu-item[data-highlighted] {
+    background-color: var(--color-bg-hover);
+    color: var(--color-text-primary);
+  }
+
+  .context-menu-item[data-highlighted][data-destructive] {
+    color: var(--color-state-danger);
+  }
 }
 
 @layer utilities {
