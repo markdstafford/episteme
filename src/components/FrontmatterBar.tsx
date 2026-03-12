@@ -55,6 +55,8 @@ export function FrontmatterBar({ frontmatter }: FrontmatterBarProps) {
     return a.localeCompare(b);
   });
 
+  const frontmatterKey = sorted.map(([k, v]) => `${k}=${String(v)}`).join(",");
+
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
@@ -73,7 +75,7 @@ export function FrontmatterBar({ frontmatter }: FrontmatterBarProps) {
     observer.observe(container);
     recalculate();
     return () => observer.disconnect();
-  }, [entries.length]);
+  }, [frontmatterKey]);
 
   if (entries.length === 0) return null;
 
