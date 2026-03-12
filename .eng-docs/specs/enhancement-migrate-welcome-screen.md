@@ -1,7 +1,7 @@
 ---
 created: 2026-03-10
 last_updated: 2026-03-12
-status: draft
+status: approved
 issue: 35
 specced_by: markdstafford
 implemented_by: null
@@ -36,13 +36,39 @@ The toolbar currently holds a single button that will be replaced by a keyboard 
 
 ### Affected files
 
-- `src/App.tsx` — delete toolbar div and the `MessageSquare` import
+- `src/App.tsx` — delete toolbar div, `chatPanelOpen` state, `AiChatPanel` render, and associated imports
 - `src/components/WelcomeScreen.tsx` — replace hardcoded Tailwind color classes with design token references; replace the open-folder button with the `Button` primitive
 
 ### Changes
 
-Delete the toolbar `<div>` (lines 126–136 of current `App.tsx`) and remove the unused `MessageSquare` Lucide import. In `WelcomeScreen.tsx`, replace all hardcoded `gray-*`, `dark:*`, `blue-*`, and `red-*` Tailwind classes with inline style references to the appropriate semantic tokens. Replace the `<button>` element with the `Button` primitive (`variant="primary"`).
+In `App.tsx`: remove the toolbar `<div>` (the strip containing the AI chat toggle button), the `chatPanelOpen` useState declaration, the `AiChatPanel` conditional render, the `startAuthoring` store subscription, and the `MessageSquare` and `AiChatPanel` imports. Simplify `onStartAuthoring` on `TitleBar` to a no-op (`() => {}`). The `AiChatPanel` component, store, and Rust backend are left in place — only the App-level wiring is removed.
+
+In `WelcomeScreen.tsx`: replace all hardcoded `gray-*`, `dark:*`, `blue-*`, and `red-*` Tailwind classes with inline style references to semantic tokens. Replace the `<button>` element with the `Button` primitive (`variant="primary"`).
 
 ## Task list
 
-*(To be decomposed at implementation time.)*
+- [ ] **Story: Remove toolbar and AI chat wiring from App.tsx**
+  - [ ] **Task: Delete toolbar div and AI chat panel wiring**
+    - **Description**: In `src/App.tsx`, remove the following: (1) the toolbar `<div>` containing the `MessageSquare` toggle button; (2) the `const [chatPanelOpen, setChatPanelOpen] = useState(false)` declaration; (3) the `const startAuthoring = useAiChatStore(...)` subscription; (4) the `{!settingsOpen && chatPanelOpen && <AiChatPanel ... />}` conditional render; (5) the `AiChatPanel` and `MessageSquare` imports. Simplify the `onStartAuthoring` prop on all three `TitleBar` usages to `() => {}`. Do not delete `AiChatPanel.tsx`, `ChatMessage.tsx`, `stores/aiChat.ts`, or any Rust backend code — only the App-level wiring is removed here.
+    - **Acceptance criteria**:
+      - [ ] No `chatPanelOpen` state or `setChatPanelOpen` calls remain in `App.tsx`
+      - [ ] No `AiChatPanel` import or render remains in `App.tsx`
+      - [ ] No `MessageSquare` import remains in `App.tsx`
+      - [ ] No `startAuthoring` subscription remains in `App.tsx`
+      - [ ] `onStartAuthoring` on all `TitleBar` usages is `() => {}`
+      - [ ] Document area fills the full height below the title bar — no empty toolbar strip
+      - [ ] All existing tests continue to pass
+    - **Dependencies**: None
+
+- [ ] **Story: Migrate WelcomeScreen to design tokens**
+  - [ ] **Task: Replace hardcoded Tailwind classes with design token references**
+    - **Description**: In `src/components/WelcomeScreen.tsx`, replace all hardcoded color classes with inline `style` props referencing CSS custom properties, following the same pattern used in `Button.tsx` and `Dialog.tsx`. Specific replacements: `bg-gray-50 dark:bg-gray-900` → `style={{ backgroundColor: "var(--color-bg-app)" }}`; `text-gray-900 dark:text-gray-100` on the `<h1>` → `style={{ color: "var(--color-text-primary)" }}`; `text-gray-600 dark:text-gray-400` on the subtitle → `style={{ color: "var(--color-text-secondary)" }}`; `text-red-600` on the error paragraph → `style={{ color: "var(--color-state-danger)" }}`. Replace the `<button>` element (with `bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg text-lg`) with the `Button` primitive (`variant="primary"`, `size="base"`) containing the `<FolderOpen>` icon and "Open Folder" label. Remove the `className` prop from the outer container and replace with an inline style for the background. No behavior changes — visual migration only.
+    - **Acceptance criteria**:
+      - [ ] No `gray-*`, `dark:*`, `blue-*`, or `red-*` Tailwind classes remain in the file
+      - [ ] Background uses `var(--color-bg-app)`
+      - [ ] Heading uses `var(--color-text-primary)`
+      - [ ] Subtitle uses `var(--color-text-secondary)`
+      - [ ] Error text uses `var(--color-state-danger)`
+      - [ ] Open Folder button uses the `Button` primitive with `variant="primary"`
+      - [ ] All existing `WelcomeScreen` tests continue to pass
+    - **Dependencies**: None
