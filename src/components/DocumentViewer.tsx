@@ -112,9 +112,18 @@ export function DocumentViewer() {
   }
 
   return (
-    <div className="flex-1 overflow-y-auto">
-      <div className="max-w-4xl mx-auto p-8">
-        {frontmatter && <FrontmatterBar frontmatter={frontmatter} />}
+    <div
+      className="flex-1 overflow-y-auto"
+      style={{ backgroundColor: "var(--color-bg-base)" }}
+    >
+      {frontmatter && <FrontmatterBar frontmatter={frontmatter} />}
+      <div
+        className="mx-auto"
+        style={{
+          maxWidth: "var(--doc-content-width)",
+          paddingInline: "var(--padding-content)",
+        }}
+      >
         {content !== null && (
           <MarkdownRenderer content={content} onLinkClick={handleLinkClick} />
         )}

@@ -104,26 +104,39 @@ describe("DocumentViewer", () => {
     expect(screen.queryByText("status")).not.toBeInTheDocument();
   });
 
-  it("has correct layout classes", async () => {
+  it("has correct layout classes and background token", async () => {
     mockInvoke.mockResolvedValue("# Doc");
     useFileTreeStore.setState({ selectedFilePath: "/workspace/doc.md" });
 
     const { container } = render(<DocumentViewer />);
     await waitFor(() => {
-      expect(
-        screen.queryByText("Loading document...")
-      ).not.toBeInTheDocument();
+      expect(screen.queryByText("Loading document...")).not.toBeInTheDocument();
     });
 
-    // Check outer container has overflow-y-auto
     const outer = container.firstChild as HTMLElement;
     expect(outer.classList.contains("overflow-y-auto")).toBe(true);
+    expect(outer.style.backgroundColor).toBe("var(--color-bg-base)");
 
-    // Check inner container has max-w-4xl centering
-    const inner = outer.firstChild as HTMLElement;
-    expect(inner.classList.contains("max-w-4xl")).toBe(true);
-    expect(inner.classList.contains("mx-auto")).toBe(true);
-    expect(inner.classList.contains("p-8")).toBe(true);
+    const contentCol = outer.lastElementChild as HTMLElement;
+    expect(contentCol.style.maxWidth).toBe("var(--doc-content-width)");
+    expect(contentCol.classList.contains("mx-auto")).toBe(true);
+    expect(contentCol.classList.contains("max-w-4xl")).toBe(false);
+    expect(contentCol.classList.contains("p-8")).toBe(false);
+  });
+
+  it("renders FrontmatterBar outside the content column when frontmatter present", async () => {
+    mockInvoke.mockResolvedValue("---\ntitle: Test\n---\n# Content");
+    useFileTreeStore.setState({ selectedFilePath: "/workspace/doc.md" });
+
+    const { container } = render(<DocumentViewer />);
+    await waitFor(() => {
+      expect(screen.getByText("title")).toBeInTheDocument();
+    });
+
+    const outer = container.firstChild as HTMLElement;
+    expect(outer.children.length).toBe(2);
+    expect(outer.children[0].textContent).toContain("title");
+    expect((outer.children[1] as HTMLElement).style.maxWidth).toBe("var(--doc-content-width)");
   });
 
   it("clears content when selected file changes to null", async () => {
