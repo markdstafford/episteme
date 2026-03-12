@@ -1,10 +1,10 @@
 ---
 created: 2026-03-10
 last_updated: 2026-03-12
-status: approved
+status: implementing
 issue: 35
 specced_by: markdstafford
-implemented_by: null
+implemented_by: markdstafford
 superseded_by: null
 ---
 
@@ -47,17 +47,17 @@ In `WelcomeScreen.tsx`: replace all hardcoded `gray-*`, `dark:*`, `blue-*`, and 
 
 ## Task list
 
-- [ ] **Story: Remove toolbar and AI chat wiring from App.tsx**
-  - [ ] **Task: Delete toolbar div and AI chat panel wiring**
+- [x] **Story: Remove toolbar and AI chat wiring from App.tsx**
+  - [x] **Task: Delete toolbar div and AI chat panel wiring**
     - **Description**: In `src/App.tsx`, remove the following: (1) the toolbar `<div>` containing the `MessageSquare` toggle button; (2) the `const [chatPanelOpen, setChatPanelOpen] = useState(false)` declaration; (3) the `const startAuthoring = useAiChatStore(...)` subscription; (4) the `{!settingsOpen && chatPanelOpen && <AiChatPanel ... />}` conditional render; (5) the `AiChatPanel` and `MessageSquare` imports. Simplify the `onStartAuthoring` prop on all three `TitleBar` usages to `() => {}`. Do not delete `AiChatPanel.tsx`, `ChatMessage.tsx`, `stores/aiChat.ts`, or any Rust backend code — only the App-level wiring is removed here.
     - **Acceptance criteria**:
-      - [ ] No `chatPanelOpen` state or `setChatPanelOpen` calls remain in `App.tsx`
-      - [ ] No `AiChatPanel` import or render remains in `App.tsx`
-      - [ ] No `MessageSquare` import remains in `App.tsx`
-      - [ ] No `startAuthoring` subscription remains in `App.tsx`
-      - [ ] `onStartAuthoring` on all `TitleBar` usages is `() => {}`
-      - [ ] Document area fills the full height below the title bar — no empty toolbar strip
-      - [ ] All existing tests continue to pass
+      - [x] No `chatPanelOpen` state or `setChatPanelOpen` calls remain in `App.tsx`
+      - [x] No `AiChatPanel` import or render remains in `App.tsx`
+      - [x] No `MessageSquare` import remains in `App.tsx`
+      - [x] No `startAuthoring` subscription remains in `App.tsx`
+      - [x] `onStartAuthoring` on all `TitleBar` usages is `() => {}`
+      - [x] Document area fills the full height below the title bar — no empty toolbar strip
+      - [x] All existing tests continue to pass
     - **Dependencies**: None
 
 - [ ] **Story: Migrate WelcomeScreen to design tokens**
