@@ -118,11 +118,11 @@ function App() {
           <FileTree />
         </Sidebar>
         {settingsOpen ? (
-          <div key="settings" className="flex-1 animate-fade-in">
+          <div className="flex-1 flex flex-col animate-fade-in">
             <SettingsPanel />
           </div>
         ) : (
-          <div key="normal" className="flex-1 flex flex-col min-w-0 animate-fade-in">
+          <div className="flex-1 flex flex-col min-w-0 animate-fade-in">
             <div className="flex items-center justify-end px-4 py-1 border-b border-gray-200 dark:border-gray-700">
               <button
                 onClick={() => setChatPanelOpen(!chatPanelOpen)}
