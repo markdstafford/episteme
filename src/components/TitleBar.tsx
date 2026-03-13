@@ -41,10 +41,10 @@ export function TitleBar({ folderPath, onStartAuthoring }: TitleBarProps) {
             className="titlebar-no-drag"
             style={{ width: 70, height: "100%", flexShrink: 0 }}
           />
-          <Button variant="ghost" size="sm" iconOnly aria-label="Navigate back" style={{ color: "var(--color-text-tertiary)" }}>
+          <Button variant="ghost" size="sm" iconOnly aria-label="Navigate back" disabled style={{ color: "var(--color-text-tertiary)" }}>
             <ChevronLeft size={16} />
           </Button>
-          <Button variant="ghost" size="sm" iconOnly aria-label="Navigate forward" style={{ color: "var(--color-text-tertiary)" }}>
+          <Button variant="ghost" size="sm" iconOnly aria-label="Navigate forward" disabled style={{ color: "var(--color-text-tertiary)" }}>
             <ChevronRight size={16} />
           </Button>
         </div>
@@ -77,14 +77,16 @@ export function TitleBar({ folderPath, onStartAuthoring }: TitleBarProps) {
         <div
           className="titlebar-no-drag"
           style={{
+            width: 80,
             height: "100%",
             display: "flex",
             alignItems: "center",
+            justifyContent: "flex-end",
             paddingRight: "var(--space-2)",
             flexShrink: 0,
           }}
         >
-          <Button variant="ghost" size="sm" iconOnly aria-label="Share" style={{ color: "var(--color-text-tertiary)" }}>
+          <Button variant="ghost" size="sm" iconOnly aria-label="Share" disabled style={{ color: "var(--color-text-tertiary)" }}>
             <Share2 size={16} />
           </Button>
           <Button
