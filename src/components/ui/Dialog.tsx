@@ -128,7 +128,7 @@ export function DialogFooter({ children }: { children: React.ReactNode }) {
         justifyContent: "flex-end",
         alignItems: "center",
         gap: "var(--space-2)",
-        padding: "var(--padding-panel)",
+        padding: "var(--space-4)",
         borderTop: "1px solid var(--color-border-subtle)",
       }}
     >

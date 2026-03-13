@@ -39,6 +39,13 @@ const variantHoverStyles: Record<ButtonVariant, string> = {
   destructive: "var(--color-state-danger-hover)",
 };
 
+const variantActiveStyles: Record<ButtonVariant, string> = {
+  primary: "oklch(41% 0.175 230)",
+  secondary: "var(--color-bg-overlay)",
+  ghost: "var(--color-bg-hover)",
+  destructive: "oklch(54% 0.2 25)",
+};
+
 export function Button({
   variant = "secondary",
   size = "base",
@@ -48,10 +55,13 @@ export function Button({
   style,
   onMouseEnter,
   onMouseLeave,
+  onMouseDown,
+  onMouseUp,
   className,
   ...rest
 }: ButtonProps) {
   const [hovered, setHovered] = React.useState(false);
+  const [active, setActive] = React.useState(false);
 
   const isIconOnly =
     iconOnly === true ||
@@ -83,6 +93,9 @@ export function Button({
     ...(hovered && !disabled
       ? { backgroundColor: variantHoverStyles[variant] }
       : {}),
+    ...(active && !disabled
+      ? { backgroundColor: variantActiveStyles[variant] }
+      : {}),
     ...style,
   };
 
@@ -98,7 +111,16 @@ export function Button({
       }}
       onMouseLeave={(e) => {
         setHovered(false);
+        setActive(false);
         onMouseLeave?.(e);
+      }}
+      onMouseDown={(e) => {
+        setActive(true);
+        onMouseDown?.(e);
+      }}
+      onMouseUp={(e) => {
+        setActive(false);
+        onMouseUp?.(e);
       }}
     >
       {children}

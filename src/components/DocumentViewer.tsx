@@ -84,7 +84,7 @@ export function DocumentViewer() {
     return (
       <div
         className="flex-1 flex items-center justify-center"
-        style={{ backgroundColor: "var(--color-bg-app)" }}
+        style={{ backgroundColor: "var(--color-bg-base)" }}
       >
         <p style={{ color: "var(--color-text-secondary)", fontSize: "var(--font-size-ui-lg)" }}>
           Select a document from the sidebar
@@ -125,18 +125,14 @@ export function DocumentViewer() {
       style={{ backgroundColor: "var(--color-bg-base)" }}
     >
       {frontmatter && <FrontmatterBar frontmatter={frontmatter} />}
-      <div
-        className="mx-auto"
-        style={{
-          maxWidth: "var(--doc-content-width)",
-          paddingInline: "var(--padding-content)",
-        }}
-      >
-        {content !== null && (
-          <div style={{ fontSize: "var(--font-size-doc-base)", lineHeight: "1.7" }}>
-            <MarkdownRenderer content={content} onLinkClick={handleLinkClick} />
-          </div>
-        )}
+      <div style={{ paddingInline: "var(--padding-content)", paddingBlock: "var(--space-6)" }}>
+        <div className="mx-auto" style={{ maxWidth: "var(--doc-content-width)" }}>
+          {content !== null && (
+            <div style={{ fontSize: "var(--font-size-doc-base)", lineHeight: "1.7" }}>
+              <MarkdownRenderer content={content} onLinkClick={handleLinkClick} />
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
