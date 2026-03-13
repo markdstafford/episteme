@@ -43,7 +43,7 @@ export function DialogContent({
           backgroundColor: "var(--color-bg-elevated)",
           borderRadius: "var(--radius-xl)",
           boxShadow: "var(--shadow-lg)",
-          overflow: "hidden",
+          overflow: "visible",
           zIndex: 50,
           ...style,
         }}

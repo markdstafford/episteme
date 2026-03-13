@@ -45,15 +45,11 @@ export function FileTreeItem({
     ? "bg-(--color-bg-hover) text-(--color-text-primary)"
     : "";
 
-  const focusStyles = isFocused
-    ? "outline-2 outline-(--color-accent) outline-offset-2"
-    : "";
-
   return (
     <ContextMenu>
       <ContextMenuTrigger asChild>
         <button
-          className={`group flex items-center gap-2 w-full text-left h-(--height-nav-item) px-[var(--space-2)] text-[length:var(--font-size-ui-lg)] rounded-(--radius-md) cursor-pointer text-(--color-text-secondary) hover:bg-(--color-bg-subtle) hover:text-(--color-text-primary) transition-colors duration-(--duration-fast) ease-(--ease-default) ${selectedStyles} ${focusStyles}`}
+          className={`group flex items-center gap-2 w-full text-left h-(--height-nav-item) px-[var(--space-2)] text-[length:var(--font-size-ui-lg)] rounded-(--radius-md) cursor-pointer text-(--color-text-secondary) hover:bg-(--color-bg-subtle) hover:text-(--color-text-primary) transition-colors duration-(--duration-fast) ease-(--ease-default) focus-ring ${selectedStyles}`}
           style={{ paddingLeft }}
           onClick={handleClick}
           role="treeitem"
