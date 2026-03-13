@@ -2,7 +2,7 @@
 created: 2026-03-12
 last_updated: 2026-03-12
 status: approved
-issue: null
+issue: 59
 specced_by: markdstafford
 implemented_by: null
 superseded_by: null
