@@ -128,6 +128,7 @@ export function DocumentViewer() {
       <div style={{ paddingInline: "var(--padding-content)", paddingBlock: "var(--space-6)" }}>
         <div className="mx-auto" style={{ maxWidth: "var(--doc-content-width)" }}>
           {content !== null && (
+            // matches --font-size-doc-base line-height per spec
             <div style={{ fontSize: "var(--font-size-doc-base)", lineHeight: "1.7" }}>
               <MarkdownRenderer content={content} onLinkClick={handleLinkClick} />
             </div>

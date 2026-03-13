@@ -47,6 +47,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
         {...rest}
         ref={ref}
         disabled={disabled}
+        aria-invalid={error || undefined}
         data-ui-input=""
         style={baseStyle}
         onMouseEnter={(e) => {

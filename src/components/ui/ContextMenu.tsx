@@ -46,7 +46,7 @@ export function ContextMenuItem({
         display: "flex",
         alignItems: "center",
         height: "var(--height-control-base)",
-        padding: "0 8px",
+        padding: "0 var(--space-2)",
         fontSize: "var(--font-size-ui-base)",
         color: destructive
           ? "var(--color-state-danger)"
@@ -84,7 +84,7 @@ export function ContextMenuLabel({ children }: { children: React.ReactNode }) {
         fontWeight: 500,
         textTransform: "uppercase",
         color: "var(--color-text-quaternary)",
-        padding: "var(--space-1) 8px",
+        padding: "var(--space-1) var(--space-2)",
       }}
     >
       {children}

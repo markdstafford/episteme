@@ -14,7 +14,7 @@ export function PopoverContent({
     <RadixPopover.Portal>
       <RadixPopover.Content
         className="overlay-surface"
-        sideOffset={props.sideOffset ?? 4}
+        sideOffset={props.sideOffset ?? 4} // 4px = --space-1; Radix expects a number prop
         {...props}
         style={{
           backgroundColor: "var(--color-bg-overlay)",
