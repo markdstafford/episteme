@@ -72,15 +72,11 @@
   /* Accent (mode-independent) */
   --color-accent: oklch(62% 0.175 230);
   --color-accent-hover: oklch(66% 0.175 230);
-  --color-accent-subtle: oklch(62% 0.04 230);
 
   /* State colors (mode-independent) */
   --color-state-danger: oklch(58% 0.2 25);
-  --color-state-danger-subtle: oklch(58% 0.06 25);
   --color-state-warning: oklch(72% 0.16 65);
-  --color-state-warning-subtle: oklch(72% 0.05 65);
   --color-state-success: oklch(65% 0.15 155);
-  --color-state-success-subtle: oklch(65% 0.05 155);
 
   /* Shadows */
   --shadow-sm: 0 1px 2px oklch(0% 0 0 / 0.08);
@@ -107,6 +103,16 @@
     --color-border-subtle: oklch(16% 0.02 264);
     --color-border-default: oklch(20% 0.022 264);
     --color-border-strong: oklch(23% 0.022 264);
+
+    /* Badge colors (dark mode) */
+    --color-accent-subtle: oklch(24% 0.05 230);
+    --color-state-danger-subtle: oklch(24% 0.06 25);
+    --color-state-warning-subtle: oklch(24% 0.06 65);
+    --color-state-success-subtle: oklch(24% 0.06 155);
+    --color-badge-accent-text: oklch(74% 0.175 230);
+    --color-badge-danger-text: oklch(75% 0.22 25);
+    --color-badge-warning-text: oklch(82% 0.18 65);
+    --color-badge-success-text: oklch(76% 0.16 155);
   }
 
   @media (prefers-color-scheme: light) {
@@ -126,6 +132,16 @@
       --color-border-subtle: oklch(88% 0.006 264);
       --color-border-default: oklch(84% 0.007 264);
       --color-border-strong: oklch(78% 0.008 264);
+
+      /* Badge colors (light mode) */
+      --color-accent-subtle: oklch(95% 0.03 230);
+      --color-state-danger-subtle: oklch(95% 0.04 25);
+      --color-state-warning-subtle: oklch(95% 0.04 65);
+      --color-state-success-subtle: oklch(95% 0.04 155);
+      --color-badge-accent-text: oklch(42% 0.175 230);
+      --color-badge-danger-text: oklch(42% 0.22 25);
+      --color-badge-warning-text: oklch(42% 0.18 65);
+      --color-badge-success-text: oklch(40% 0.16 155);
     }
   }
 }
