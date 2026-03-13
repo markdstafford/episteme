@@ -610,8 +610,8 @@ Conventional commit sections mapped to changelog headings:
       - [ ] All tests pass
     - **Dependencies**: "Task: Add UpdateIndicator to Sidebar folder header row", "Task: Create UpdateDialog component"
 
-- [ ] **Story: Documentation**
-  - [ ] **Task: Add conventional commits guidance to CONTRIBUTING.md**
+- [x] **Story: Documentation**
+  - [x] **Task: Add conventional commits guidance to CONTRIBUTING.md**
     - **Description**: Create or update `CONTRIBUTING.md` at the repository root with a section on conventional commit format. Cover the prefixes used in this project (`feat`, `fix`, `chore`, `refactor`, `docs`, `test`), explain that `feat` and `fix` appear in release notes, and give examples of well-formed commit messages.
     - **Acceptance criteria**:
       - [ ] `CONTRIBUTING.md` exists at repository root
