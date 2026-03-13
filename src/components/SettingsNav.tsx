@@ -14,7 +14,7 @@ export function SettingsNav() {
       <button
         onClick={closeSettings}
         aria-label="Back to app"
-        className="flex items-center gap-[var(--space-2)] px-[var(--space-2)] h-[var(--height-nav-item)] w-full text-[length:var(--font-size-ui-base)] text-(--color-text-tertiary) hover:text-(--color-text-primary) transition-colors duration-(--duration-fast) focus-ring"
+        className="flex items-center gap-[var(--space-2)] px-[var(--space-2)] h-[var(--height-nav-item)] w-full text-[length:var(--font-size-ui-base)] text-(--color-text-tertiary) hover:bg-(--color-bg-subtle) hover:text-(--color-text-primary) transition-colors duration-(--duration-fast) focus-ring"
       >
         <ChevronLeft size={16} />
         Back to app

@@ -29,10 +29,6 @@ function AwsProfileSetting({ id, label }: { id: string; label: string }) {
       .catch(() => {});
   }, []);
 
-  useEffect(() => {
-    inputRef.current?.focus();
-  }, []);
-
   const handleChange = (value: string) => {
     if (!prefsLoaded) return;
     setAwsProfile(value);

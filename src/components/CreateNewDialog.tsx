@@ -172,7 +172,7 @@ export function CreateNewDialog({
                 style={{
                   display: "flex",
                   alignItems: "center",
-                  gap: 12,
+                  gap: "var(--space-3)",
                   width: "100%",
                   padding: "var(--space-2) var(--space-3)",
                   border: "none",

@@ -18,18 +18,18 @@ export function WelcomeScreen() {
           Episteme
         </h1>
         <p
-          className="mt-2"
+          className="mt-[var(--space-2)]"
           style={{ color: "var(--color-text-secondary)" }}
         >
           Open a folder to get started
         </p>
-        <Button variant="primary" onClick={openFolder} className="mt-6">
+        <Button variant="primary" onClick={openFolder} className="mt-[var(--space-6)]">
           <FolderOpen size={16} />
           Open Folder
         </Button>
         {error && (
           <p
-            className="mt-4 text-sm"
+            className="mt-[var(--space-4)] text-[length:var(--font-size-ui-sm)]"
             style={{ color: "var(--color-state-danger)" }}
           >
             Could not open folder. Please check permissions and try again.

@@ -39,6 +39,7 @@ const baseStyle: React.CSSProperties = {
   fontWeight: 500,
   borderRadius: "var(--radius-sm)",
   whiteSpace: "nowrap",
+  lineHeight: 1,
 };
 
 export function Badge({ variant = "neutral", children }: BadgeProps) {
