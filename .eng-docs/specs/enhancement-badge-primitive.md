@@ -92,13 +92,13 @@ The `Badge` component accepts a `variant` prop (`"neutral" | "accent" | "danger"
   - [x] **Task: Implement `Badge` component**
     - **Description**: Create `src/components/ui/Badge.tsx`. Export a `Badge` component accepting `variant: "neutral" | "accent" | "danger" | "warning" | "success"` (default `"neutral"`) and `children: React.ReactNode`. Apply geometry and color tokens per the design spec. All visual properties must use CSS tokens — no hardcoded values.
     - **Acceptance criteria**:
-      - [x] All five variants render with correct geometry (24px height, `--radius-sm`, `--font-size-ui-xs`, weight 500, `0 8px` padding)
+      - [x] All five variants render with correct geometry (24px height, `--radius-sm`, `--font-size-ui-xs`, weight 500, `0 var(--space-2)` padding)
       - [x] Each variant uses the correct background and text tokens
       - [x] No hardcoded color or size values in the component
       - [x] Default variant is `"neutral"` when prop is omitted
     - **Dependencies**: Task: Update badge color tokens in `app.css`
   - [x] **Task: Write unit tests for `Badge`**
-    - **Description**: Create `tests/unit/Badge.test.tsx`. Cover: each variant renders, default variant is neutral, children render correctly.
+    - **Description**: Create `tests/unit/components/Badge.test.tsx`. Cover: each variant renders, default variant is neutral, children render correctly.
     - **Acceptance criteria**:
       - [x] Each of the five variants renders without error
       - [x] Correct variant class/token is applied per variant

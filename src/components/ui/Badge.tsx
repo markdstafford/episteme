@@ -36,7 +36,7 @@ const baseStyle: React.CSSProperties = {
   height: "var(--height-control-sm)",
   padding: "0 var(--space-2)",
   fontSize: "var(--font-size-ui-xs)",
-  fontWeight: "500",
+  fontWeight: 500,
   borderRadius: "var(--radius-sm)",
   whiteSpace: "nowrap",
 };
