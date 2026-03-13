@@ -18,7 +18,7 @@ export function Sidebar({ children }: SidebarProps) {
 
   return (
     <aside className="w-[var(--width-sidebar)] h-full bg-(--color-bg-app) shrink-0 flex flex-col">
-      <div className="flex-1 overflow-y-auto py-2">
+      <div className="flex-1 overflow-y-auto py-[var(--space-2)]">
         {settingsOpen ? (
           <SettingsNav />
         ) : (
@@ -26,7 +26,7 @@ export function Sidebar({ children }: SidebarProps) {
             {folderName && (
               <div
                 data-testid="folder-header"
-                className="px-3 py-2 flex items-center justify-between border-b border-(--color-border-subtle) shrink-0 cursor-pointer hover:bg-(--color-bg-subtle) rounded"
+                className="px-[var(--space-3)] py-[var(--space-2)] flex items-center justify-between border-b border-(--color-border-subtle) shrink-0 cursor-pointer hover:bg-(--color-bg-subtle) rounded"
                 onClick={() => openFolder()}
               >
                 <button

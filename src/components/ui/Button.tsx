@@ -75,7 +75,7 @@ export function Button({
     display: "inline-flex",
     alignItems: "center",
     justifyContent: "center",
-    gap: "8px",
+    gap: "var(--space-2)",
     height,
     padding: isIconOnly ? "0" : "var(--padding-control)",
     width: isIconOnly ? height : undefined,

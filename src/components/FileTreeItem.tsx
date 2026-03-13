@@ -31,6 +31,7 @@ export function FileTreeItem({
   onToggle,
   onSelect,
 }: FileTreeItemProps) {
+  // --space-3 (12px) base + --space-4 (16px) per depth level
   const paddingLeft = 12 + depth * 16;
 
   const handleClick = () => {
