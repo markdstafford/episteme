@@ -36,7 +36,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
       ...(error && !disabled
         ? {
             borderColor: "var(--color-state-danger)",
-            boxShadow: "0 0 0 2px var(--color-state-danger-subtle)",
+            boxShadow: "0 0 0 2px color-mix(in oklch, var(--color-state-danger) 25%, transparent)",
           }
         : {}),
       ...style,
@@ -65,7 +65,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
           if (!error) {
             e.currentTarget.style.borderColor = "var(--color-accent)";
             e.currentTarget.style.boxShadow =
-              "0 0 0 2px var(--color-accent-subtle)";
+              "0 0 0 2px color-mix(in oklch, var(--color-accent) 25%, transparent)";
           }
           onFocus?.(e);
         }}
