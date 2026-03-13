@@ -33,7 +33,7 @@ describe("Button", () => {
       render(<Button variant="primary">Save</Button>);
       const btn = screen.getByRole("button");
       expect(btn.style.backgroundColor).toBe("var(--color-accent)");
-      expect(btn.style.color).toBe("white");
+      expect(btn.style.color).toBe("var(--color-text-on-accent)");
       expect(btn.style.borderStyle).toBe("none");
     });
 
@@ -57,7 +57,7 @@ describe("Button", () => {
       render(<Button variant="destructive">Delete</Button>);
       const btn = screen.getByRole("button");
       expect(btn.style.backgroundColor).toBe("var(--color-state-danger)");
-      expect(btn.style.color).toBe("white");
+      expect(btn.style.color).toBe("var(--color-text-on-danger)");
       expect(btn.style.borderStyle).toBe("none");
     });
   });
@@ -235,20 +235,17 @@ describe("Button", () => {
   });
 
   describe("focus ring", () => {
-    it("applies focus ring outline on focus", () => {
+    it("applies focus-ring CSS class", () => {
       render(<Button>Focus me</Button>);
       const btn = screen.getByRole("button");
-      fireEvent.focus(btn);
-      expect(btn.style.outline).toBe("2px solid var(--color-accent)");
-      expect(btn.style.outlineOffset).toBe("2px");
+      expect(btn.classList.contains("focus-ring")).toBe(true);
     });
 
-    it("removes focus ring on blur", () => {
-      render(<Button>Focus me</Button>);
+    it("merges focus-ring with custom className", () => {
+      render(<Button className="custom">Focus me</Button>);
       const btn = screen.getByRole("button");
-      fireEvent.focus(btn);
-      fireEvent.blur(btn);
-      expect(btn.style.outline).toBe("none");
+      expect(btn.classList.contains("focus-ring")).toBe(true);
+      expect(btn.classList.contains("custom")).toBe(true);
     });
   });
 });
