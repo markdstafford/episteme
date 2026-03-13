@@ -1,6 +1,7 @@
 import React from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
+import { Badge } from "./ui/Badge";
 import { Button } from "./ui/Button";
 import { Input } from "./ui/Input";
 
@@ -282,26 +283,10 @@ export function DesignKitchen({ onClose }: DesignKitchenProps) {
               Badges
             </div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-              {[
-                { label: "Neutral",  bg: "var(--color-bg-hover)",             color: "var(--color-text-secondary)" },
-                { label: "Accent",   bg: "var(--color-accent-subtle)",        color: "var(--color-accent)" },
-                { label: "Danger",   bg: "var(--color-state-danger-subtle)",  color: "var(--color-state-danger)" },
-                { label: "Warning",  bg: "var(--color-state-warning-subtle)", color: "var(--color-state-warning)" },
-                { label: "Success",  bg: "var(--color-state-success-subtle)", color: "var(--color-state-success)" },
-              ].map(({ label, bg, color }) => (
-                <span key={label} style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  height: "24px",
-                  padding: "0 8px",
-                  fontSize: "var(--font-size-ui-xs)",
-                  fontWeight: 500,
-                  borderRadius: "var(--radius-sm)",
-                  background: bg,
-                  color,
-                }}>
-                  {label}
-                </span>
+              {(["neutral", "accent", "danger", "warning", "success"] as const).map((variant) => (
+                <Badge key={variant} variant={variant}>
+                  {variant.charAt(0).toUpperCase() + variant.slice(1)}
+                </Badge>
               ))}
             </div>
           </div>
