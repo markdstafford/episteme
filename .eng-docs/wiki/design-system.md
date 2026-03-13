@@ -1,6 +1,6 @@
 ---
 created: 2026-03-04
-last_updated: 2026-03-10
+last_updated: 2026-03-12
 status: active
 ---
 
@@ -493,15 +493,19 @@ All dialogs are in-app. No separate OS windows.
 - **Font**: `--font-size-ui-xs` (11px), weight 500
 - **Radius**: `--radius-sm` (3px)
 
-**Variants**
+**Variants:**
 
-| Variant | Background | Text color |
-|---|---|---|
-| Neutral | `--color-bg-hover` | `--color-text-secondary` |
-| Accent | `--color-accent-subtle` | `--color-accent` |
-| Danger | `--color-state-danger-subtle` | `--color-state-danger` |
-| Warning | `--color-state-warning-subtle` | `--color-state-warning` |
-| Success | `--color-state-success-subtle` | `--color-state-success` |
+| Variant | Mode | Background | Text |
+|---|---|---|---|
+| Neutral | both | `--color-bg-hover` | `--color-text-secondary` |
+| Accent | dark | `oklch(24% 0.05 230)` (`--color-accent-subtle`) | `oklch(74% 0.175 230)` (`--color-badge-accent-text`) |
+| Accent | light | `oklch(95% 0.03 230)` (`--color-accent-subtle`) | `oklch(42% 0.175 230)` (`--color-badge-accent-text`) |
+| Danger | dark | `oklch(24% 0.06 25)` (`--color-state-danger-subtle`) | `oklch(75% 0.22 25)` (`--color-badge-danger-text`) |
+| Danger | light | `oklch(95% 0.04 25)` (`--color-state-danger-subtle`) | `oklch(42% 0.22 25)` (`--color-badge-danger-text`) |
+| Warning | dark | `oklch(24% 0.06 65)` (`--color-state-warning-subtle`) | `oklch(82% 0.18 65)` (`--color-badge-warning-text`) |
+| Warning | light | `oklch(95% 0.04 65)` (`--color-state-warning-subtle`) | `oklch(42% 0.18 65)` (`--color-badge-warning-text`) |
+| Success | dark | `oklch(24% 0.06 155)` (`--color-state-success-subtle`) | `oklch(76% 0.16 155)` (`--color-badge-success-text`) |
+| Success | light | `oklch(95% 0.04 155)` (`--color-state-success-subtle`) | `oklch(40% 0.16 155)` (`--color-badge-success-text`) |
 
 ---
 

@@ -121,10 +121,10 @@ The `Badge` component accepts a `variant` prop (`"neutral" | "accent" | "danger"
       - [x] Existing FrontmatterBar tests pass
     - **Dependencies**: Task: Implement `Badge` component
 
-- [ ] **Story: Documentation**
-  - [ ] **Task: Update `design-system.md` badge color values**
+- [x] **Story: Documentation**
+  - [x] **Task: Update `design-system.md` badge color values**
     - **Description**: In `.eng-docs/wiki/design-system.md`, update the Badges and tags component pattern section with the corrected color values from the design spec. Replace the old `-subtle` token values with the corrected pairs.
     - **Acceptance criteria**:
-      - [ ] All corrected color pairs documented for both dark and light mode
-      - [ ] No values in the spec reference the old identical-lightness pairings
+      - [x] All corrected color pairs documented for both dark and light mode
+      - [x] No values in the spec reference the old identical-lightness pairings
     - **Dependencies**: None
