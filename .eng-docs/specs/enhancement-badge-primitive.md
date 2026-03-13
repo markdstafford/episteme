@@ -1,10 +1,10 @@
 ---
 created: 2026-03-12
 last_updated: 2026-03-12
-status: approved
+status: implementing
 issue: 48
 specced_by: markdstafford
-implemented_by: null
+implemented_by: markdstafford
 superseded_by: null
 ---
 
@@ -70,7 +70,7 @@ These values replace the current `-subtle` token definitions in `design-system.m
 ### Affected files
 
 - `src/components/ui/Badge.tsx` — new primitive; exports `Badge` with `variant` prop
-- `src/app.css` — update `-subtle` token values in `@theme {}` to corrected color pairs
+- `src/app.css` — move `-subtle` tokens from mode-independent `@theme {}` to mode-specific `dark/:root {}` and `light/@media` blocks with corrected WCAG AA values; add `--color-badge-*-text` tokens
 - `src/components/DesignKitchen.tsx` — migrate badge showcase to use `<Badge>`
 - `src/components/FrontmatterBar.tsx` — migrate `+N more` overflow indicator to `<Badge variant="neutral">`
 - `.eng-docs/wiki/design-system.md` — update badge color values to match corrected tokens
@@ -82,12 +82,12 @@ The `Badge` component accepts a `variant` prop (`"neutral" | "accent" | "danger"
 ## Task list
 
 - [ ] **Story: Badge primitive**
-  - [ ] **Task: Update badge color tokens in `app.css`**
+  - [x] **Task: Update badge color tokens in `app.css`**
     - **Description**: In the `@theme {}` block in `src/app.css`, update the `-subtle` token values for accent, danger, warning, and success to the corrected dark/light mode pairs from the design spec. Neutral badge uses existing `--color-bg-hover` and `--color-text-secondary` tokens which are already correct.
     - **Acceptance criteria**:
-      - [ ] All five `-subtle` background tokens updated for dark mode
-      - [ ] All five `-subtle` background tokens updated for light mode
-      - [ ] Values match the design spec table exactly
+      - [x] All five `-subtle` background tokens updated for dark mode
+      - [x] All five `-subtle` background tokens updated for light mode
+      - [x] Values match the design spec table exactly
     - **Dependencies**: None
   - [ ] **Task: Implement `Badge` component**
     - **Description**: Create `src/components/ui/Badge.tsx`. Export a `Badge` component accepting `variant: "neutral" | "accent" | "danger" | "warning" | "success"` (default `"neutral"`) and `children: React.ReactNode`. Apply geometry and color tokens per the design spec. All visual properties must use CSS tokens — no hardcoded values.
