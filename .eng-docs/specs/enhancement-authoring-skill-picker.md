@@ -232,7 +232,7 @@ No new security surface. All file reads are within the workspace path, reusing t
       - [x] Click outside (capture layer) closes without calling `onSelect`
       - [x] Selecting a type updates `recently_used_skill_types` in preferences
       - [x] "Other" calls `onSelect(null)`
-      - [ ] Dark mode styles apply correctly
+      - [x] Dark mode styles apply correctly
       - [x] Unit tests cover: option list computation, keyboard shortcuts, MRU update, fewer than 3 types
     - **Dependencies**: "Task: Expose `list_skills` as a Tauri command", "Task: Implement `count_documents_by_type` Tauri command", "Task: Add `recently_used_skill_types` to preferences"
 
