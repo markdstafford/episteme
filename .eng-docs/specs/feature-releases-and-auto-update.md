@@ -491,8 +491,8 @@ Conventional commit sections mapped to changelog headings:
       - [ ] `cargo build` succeeds
     - **Dependencies**: "Task: Implement check_for_update Tauri command"
 
-- [ ] **Story: Update state management**
-  - [ ] **Task: Create update Zustand store**
+- [x] **Story: Update state management**
+  - [x] **Task: Create update Zustand store**
     - **Description**: Create `src/stores/update.ts` implementing the `UpdateState` interface from the tech spec: `{ available, version, notes, status, error, checkForUpdate(), installUpdate() }`. `checkForUpdate` calls the `check_for_update` Tauri command and updates store state. `installUpdate` calls the `install_update` Tauri command. Status transitions: `idle → checking → available/idle`, `available → downloading → error`.
     - **Acceptance criteria**:
       - [ ] Store shape matches the `UpdateState` interface in the tech spec
@@ -544,7 +544,7 @@ Conventional commit sections mapped to changelog headings:
     - **Dependencies**: "Task: Create update Zustand store", "Task: Add UpdateIndicator to Sidebar folder header row"
 
 - [ ] **Story: GitHub Actions release pipeline**
-  - [ ] **Task: Create cliff.toml**
+  - [x] **Task: Create cliff.toml**
     - **Description**: Create `cliff.toml` at the repository root. Configure conventional commit sections: `feat` → "Features", `fix` → "Bug fixes", breaking changes → "Breaking changes" (pinned to top). Omit `chore`, `refactor`, `docs`, `test` from user-facing output.
     - **Acceptance criteria**:
       - [ ] `cliff.toml` present at repository root
