@@ -455,7 +455,7 @@ Conventional commit sections mapped to changelog headings:
     - **Dependencies**: "Task: Generate ed25519 signing keypair"
 
 - [ ] **Story: Tauri updater plugin**
-  - [ ] **Task: Add tauri-plugin-updater dependency**
+  - [x] **Task: Add tauri-plugin-updater dependency**
     - **Description**: Add `tauri-plugin-updater = "2"` to `src-tauri/Cargo.toml` dependencies and `@tauri-apps/plugin-updater` to `package.json` dependencies.
     - **Acceptance criteria**:
       - [ ] `tauri-plugin-updater` added to `Cargo.toml`
@@ -463,7 +463,7 @@ Conventional commit sections mapped to changelog headings:
       - [ ] `cargo build` succeeds
       - [ ] `npm install` succeeds
     - **Dependencies**: None
-  - [ ] **Task: Configure tauri.conf.json updater settings**
+  - [x] **Task: Configure tauri.conf.json updater settings**
     - **Description**: Add the `plugins.updater` block to `tauri.conf.json` with the `latest.json` endpoint URL, `dialog: false`, and the ed25519 public key.
     - **Acceptance criteria**:
       - [ ] `plugins.updater.endpoints` set to `["https://github.com/markdstafford/episteme/releases/latest/download/latest.json"]`
