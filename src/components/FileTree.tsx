@@ -147,7 +147,7 @@ export function FileTree() {
 
   if (nodes.length === 0) {
     return (
-      <p className="text-(--color-text-tertiary) text-[length:var(--font-size-ui-sm)] text-center py-8">
+      <p className="text-(--color-text-tertiary) text-[length:var(--font-size-ui-sm)] text-center py-[var(--space-8)]">
         No markdown files found
       </p>
     );

@@ -24,8 +24,8 @@ function formatValue(value: unknown): string {
   return String(value);
 }
 
-const PAIR_GAP_PX = 24; // --space-6
-const BADGE_RESERVE_PX = 80; // badge width estimate for first-pass calculation
+const PAIR_GAP_PX = 24; // mirrors --space-6 (24px) — used in JS layout math
+const BADGE_RESERVE_PX = 80; // estimated badge width for first-pass overflow calculation
 
 export function calculateVisibleCount(
   containerWidth: number,
