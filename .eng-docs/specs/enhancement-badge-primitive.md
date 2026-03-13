@@ -89,21 +89,21 @@ The `Badge` component accepts a `variant` prop (`"neutral" | "accent" | "danger"
       - [x] All five `-subtle` background tokens updated for light mode
       - [x] Values match the design spec table exactly
     - **Dependencies**: None
-  - [ ] **Task: Implement `Badge` component**
+  - [x] **Task: Implement `Badge` component**
     - **Description**: Create `src/components/ui/Badge.tsx`. Export a `Badge` component accepting `variant: "neutral" | "accent" | "danger" | "warning" | "success"` (default `"neutral"`) and `children: React.ReactNode`. Apply geometry and color tokens per the design spec. All visual properties must use CSS tokens — no hardcoded values.
     - **Acceptance criteria**:
-      - [ ] All five variants render with correct geometry (24px height, `--radius-sm`, `--font-size-ui-xs`, weight 500, `0 8px` padding)
-      - [ ] Each variant uses the correct background and text tokens
-      - [ ] No hardcoded color or size values in the component
-      - [ ] Default variant is `"neutral"` when prop is omitted
+      - [x] All five variants render with correct geometry (24px height, `--radius-sm`, `--font-size-ui-xs`, weight 500, `0 8px` padding)
+      - [x] Each variant uses the correct background and text tokens
+      - [x] No hardcoded color or size values in the component
+      - [x] Default variant is `"neutral"` when prop is omitted
     - **Dependencies**: Task: Update badge color tokens in `app.css`
-  - [ ] **Task: Write unit tests for `Badge`**
+  - [x] **Task: Write unit tests for `Badge`**
     - **Description**: Create `tests/unit/Badge.test.tsx`. Cover: each variant renders, default variant is neutral, children render correctly.
     - **Acceptance criteria**:
-      - [ ] Each of the five variants renders without error
-      - [ ] Correct variant class/token is applied per variant
-      - [ ] Children render as expected
-      - [ ] All tests pass
+      - [x] Each of the five variants renders without error
+      - [x] Correct variant class/token is applied per variant
+      - [x] Children render as expected
+      - [x] All tests pass
     - **Dependencies**: Task: Implement `Badge` component
 
 - [ ] **Story: Migrate call sites**
