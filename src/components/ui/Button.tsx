@@ -12,7 +12,7 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
 const variantStyles: Record<ButtonVariant, React.CSSProperties> = {
   primary: {
     backgroundColor: "var(--color-accent)",
-    color: "white",
+    color: "var(--color-text-on-accent)",
     border: "none",
   },
   secondary: {
@@ -27,7 +27,7 @@ const variantStyles: Record<ButtonVariant, React.CSSProperties> = {
   },
   destructive: {
     backgroundColor: "var(--color-state-danger)",
-    color: "white",
+    color: "var(--color-text-on-danger)",
     border: "none",
   },
 };
@@ -36,7 +36,7 @@ const variantHoverStyles: Record<ButtonVariant, string> = {
   primary: "var(--color-accent-hover)",
   secondary: "var(--color-bg-hover)",
   ghost: "var(--color-bg-subtle)",
-  destructive: "oklch(62% 0.2 25)",
+  destructive: "var(--color-state-danger-hover)",
 };
 
 export function Button({
@@ -76,7 +76,6 @@ export function Button({
     cursor: disabled ? "not-allowed" : "pointer",
     opacity: disabled ? 0.4 : 1,
     transition: `background-color var(--duration-fast), color var(--duration-fast)`,
-    outline: "none",
     whiteSpace: "nowrap",
     flexShrink: 0,
     boxSizing: "border-box",
@@ -92,7 +91,7 @@ export function Button({
       {...rest}
       disabled={disabled}
       style={baseStyle}
-      className={className}
+      className={[className, "focus-ring"].filter(Boolean).join(" ")}
       onMouseEnter={(e) => {
         setHovered(true);
         onMouseEnter?.(e);
@@ -100,16 +99,6 @@ export function Button({
       onMouseLeave={(e) => {
         setHovered(false);
         onMouseLeave?.(e);
-      }}
-      onFocus={(e) => {
-        e.currentTarget.style.outline = "2px solid var(--color-accent)";
-        e.currentTarget.style.outlineOffset = "2px";
-        rest.onFocus?.(e);
-      }}
-      onBlur={(e) => {
-        e.currentTarget.style.outline = "none";
-        e.currentTarget.style.outlineOffset = "";
-        rest.onBlur?.(e);
       }}
     >
       {children}

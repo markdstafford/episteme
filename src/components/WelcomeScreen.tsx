@@ -13,8 +13,7 @@ export function WelcomeScreen() {
     >
       <div className="text-center">
         <h1
-          className="text-4xl font-bold"
-          style={{ color: "var(--color-text-primary)" }}
+          style={{ color: "var(--color-text-primary)", fontSize: "var(--font-size-doc-h1)", fontWeight: 700 }}
         >
           Episteme
         </h1>

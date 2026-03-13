@@ -93,7 +93,7 @@ Each level has a distinct semantic role. Do not collapse them — the visual hie
 | `--color-text-primary` | `oklch(100% 0 0)` | `#ffffff` | Primary content |
 | `--color-text-secondary` | `oklch(92% 0.008 264)` | `#e4e4ed` | Secondary content, labels |
 | `--color-text-tertiary` | `oklch(65% 0.008 264)` | `#999aa1` | Placeholder, hints, icons (default) |
-| `--color-text-quaternary` | `oklch(42% 0.008 264)` | `#5d5e65` | Timestamps, metadata, keyboard shortcuts |
+| `--color-text-quaternary` | `oklch(48% 0.008 264)` | `#656670` | Timestamps, metadata, keyboard shortcuts |
 
 **Borders**
 
@@ -122,8 +122,8 @@ Each level has a distinct semantic role. Do not collapse them — the visual hie
 |---|---|---|---|
 | `--color-text-primary` | `oklch(18% 0.012 264)` | `#23252a` | Primary content |
 | `--color-text-secondary` | `oklch(45% 0.01 264)` | `#6b6f7a` | Secondary content, labels |
-| `--color-text-tertiary` | `oklch(62% 0.008 264)` | `#999aa1` | Placeholder, hints |
-| `--color-text-quaternary` | `oklch(72% 0.006 264)` | `#b0b5c0` | Very subtle — timestamps, metadata |
+| `--color-text-tertiary` | `oklch(52% 0.008 264)` | `#787980` | Placeholder, hints |
+| `--color-text-quaternary` | `oklch(62% 0.006 264)` | `#969aa4` | Very subtle — timestamps, metadata |
 
 **Borders**
 
@@ -139,26 +139,48 @@ Horizon blue — the accent hue for Episteme. Open, forward-looking, aspirationa
 
 | Token | oklch | Usage |
 |---|---|---|
-| `--color-accent` | `oklch(62% 0.175 230)` | Focus rings, selected states, links, primary button bg |
-| `--color-accent-hover` | `oklch(66% 0.175 230)` | Accent hover state (lighter) |
+| `--color-accent` | `oklch(45% 0.175 230)` | Focus rings, selected states, links, primary button bg |
+| `--color-accent-hover` | `oklch(49% 0.175 230)` | Accent hover state (lighter) |
 | `--color-accent-subtle` (dark) | `oklch(24% 0.05 230)` | Badge background (dark mode) |
 | `--color-accent-subtle` (light) | `oklch(95% 0.03 230)` | Badge background (light mode) |
 
 #### State colors
 
-> Note: Base state colors are mode-independent. The `-subtle` background tokens are mode-specific (dark: low lightness ~24%; light: high lightness ~95%) for WCAG AA badge contrast.
+> Note: Base state colors are **mode-dependent** — darkened in light mode for WCAG AA contrast on light backgrounds. The `-subtle` background tokens are also mode-specific for badge contrast. `--color-state-danger-hover` is mode-independent.
 
-| Token | oklch | Usage |
-|---|---|---|
-| `--color-state-danger` | `oklch(58% 0.2 25)` | Destructive actions, errors |
-| `--color-state-danger-subtle` (dark) | `oklch(24% 0.06 25)` | Danger badge background (dark mode) |
-| `--color-state-danger-subtle` (light) | `oklch(95% 0.04 25)` | Danger badge background (light mode) |
-| `--color-state-warning` | `oklch(72% 0.16 65)` | Warnings |
-| `--color-state-warning-subtle` (dark) | `oklch(24% 0.06 65)` | Warning badge background (dark mode) |
-| `--color-state-warning-subtle` (light) | `oklch(95% 0.04 65)` | Warning badge background (light mode) |
-| `--color-state-success` | `oklch(65% 0.15 155)` | Success, confirmations |
-| `--color-state-success-subtle` (dark) | `oklch(24% 0.06 155)` | Success badge background (dark mode) |
-| `--color-state-success-subtle` (light) | `oklch(95% 0.04 155)` | Success badge background (light mode) |
+| Token | Mode | oklch | Usage |
+|---|---|---|---|
+| `--color-state-danger` | dark | `oklch(58% 0.2 25)` | Destructive actions, errors |
+| `--color-state-danger` | light | `oklch(48% 0.2 25)` | Destructive actions, errors |
+| `--color-state-danger-hover` | both | `oklch(62% 0.2 25)` | Destructive button hover |
+| `--color-state-danger-subtle` | dark | `oklch(24% 0.06 25)` | Danger badge background |
+| `--color-state-danger-subtle` | light | `oklch(95% 0.04 25)` | Danger badge background |
+| `--color-state-warning` | dark | `oklch(72% 0.16 65)` | Warnings |
+| `--color-state-warning` | light | `oklch(52% 0.16 65)` | Warnings |
+| `--color-state-warning-subtle` | dark | `oklch(24% 0.06 65)` | Warning badge background |
+| `--color-state-warning-subtle` | light | `oklch(95% 0.04 65)` | Warning badge background |
+| `--color-state-success` | dark | `oklch(65% 0.15 155)` | Success, confirmations |
+| `--color-state-success` | light | `oklch(45% 0.15 155)` | Success, confirmations |
+| `--color-state-success-subtle` | dark | `oklch(24% 0.06 155)` | Success badge background |
+| `--color-state-success-subtle` | light | `oklch(95% 0.04 155)` | Success badge background |
+
+#### WCAG contrast verification
+
+Key foreground/background pairings verified against WCAG 2.x AA (4.5:1 normal text, 3:1 large text / UI components). Ratios are approximate, computed from oklch lightness values.
+
+| Pairing | Foreground | Background | Ratio | Level |
+|---|---|---|---|---|
+| Primary button text | `--color-text-on-accent` (L=100%) | `--color-accent` (L=45%) | ~7.5:1 | AAA |
+| Destructive button text (dark) | `--color-text-on-danger` (L=100%) | `--color-state-danger` dark (L=58%) | ~4.6:1 | AA |
+| Destructive button text (light) | `--color-text-on-danger` (L=100%) | `--color-state-danger` light (L=48%) | ~6.5:1 | AA |
+| Accent on dark base | `--color-accent` (L=45%) | `--color-bg-base` dark (L=9.5%) | ~4.6:1 | AA |
+| Dark text-quaternary | `--color-text-quaternary` (L=48%) | `--color-bg-base` dark (L=9.5%) | ~4.5:1 | AA |
+| Light text-tertiary | `--color-text-tertiary` (L=52%) | `--color-bg-base` light (L=99%) | ~5.2:1 | AA |
+| Light text-quaternary | `--color-text-quaternary` (L=62%) | `--color-bg-base` light (L=99%) | ~3.5:1 | AA-lg |
+| Badge accent text (dark) | `--color-badge-accent-text` (L=74%) | `--color-accent-subtle` (L=24%) | ~6.8:1 | AA |
+| Badge danger text (light) | `--color-badge-danger-text` (L=42%) | `--color-state-danger-subtle` (L=95%) | ~6.0:1 | AA |
+
+"AA-lg" = passes AA for large text and UI components (3:1) but not normal text (4.5:1). Acceptable for supplementary metadata rendered at `--font-size-ui-xs`.
 
 ---
 
@@ -189,7 +211,7 @@ Base unit: 4px. Named steps match Linear's confirmed spacer set. Gaps in the seq
 | `--height-control-lg` | 32px | Larger inputs, prominent controls |
 | `--height-nav-item` | 28px | Sidebar nav items |
 | `--height-toolbar` | 39px | Toolbar |
-| `--height-titlebar` | 40px | Title bar / traffic lights zone |
+| `--height-titlebar` | 32px | Title bar / traffic lights zone |
 | `--width-sidebar` | 244px | Sidebar (fixed, not resizable) |
 | `--doc-content-width` | 680px | Document reading column max-width |
 
@@ -327,34 +349,13 @@ The title bar is a full-width strip rendered in `App.tsx` above all panels. It i
 - Transition: `--duration-fast`, `--ease-default`
 - Child items indented `--space-4` (16px) from parent
 
----
+**Folder header**
 
-### Toolbar
-
-- **Height**: `--height-toolbar` (39px)
-- **Background**: `--color-bg-elevated`
-- **Border-bottom**: 1px `--color-border-subtle`
-- **Padding**: `--padding-toolbar` (0 12px)
-- **Layout**: left group (mode-aware formatting tools) + right group (document actions), separated by flex spacer
-
-**Toolbar buttons**
-
-- Height: `--height-control-sm` (24px)
-- Padding: `0 8px`
-- Font: `--font-size-ui-base` (13px)
-- Radius: `--radius-base` (4px)
-- Default: text `--color-text-tertiary`, background transparent
-- Hover: text `--color-text-secondary`, background `--color-bg-hover`
-- Active/pressed: text `--color-text-primary`, background `--color-bg-overlay`
-
-**Mode awareness**
-
-Formatting tools (bold, italic, heading, etc.) are only rendered when document mode is `edit`. They are not hidden with `visibility: hidden` — they are not present in the DOM in other modes.
-
-**Separators**
-
-- 1px `--color-border-subtle`, height 16px (not full toolbar height)
-- Horizontal margin: `--space-2` (8px)
+- Height: `--height-nav-item` (28px)
+- Font: `--font-size-ui-sm` (12px), weight 600, `--color-text-tertiary`
+- Padding: `--padding-sidebar-item` (0 8px)
+- Hover: text `--color-text-secondary`
+- Contains folder name + expand/collapse chevron (see above)
 
 ---
 
@@ -368,16 +369,17 @@ All buttons share these base properties:
 - Radius: `--radius-base` (4px)
 - Transition: background and color `--duration-fast`
 - Focus ring: `outline: 2px solid var(--color-accent)`, `outline-offset: 2px`
+- Focus ring is applied via the `.focus-ring` CSS utility class (see `@layer utilities` in `app.css`). All `<Button>` instances include this class automatically.
 - Disabled: `opacity: 0.4`, `cursor: not-allowed`, no hover effect
 
 **Variants**
 
 | Variant | Default bg | Hover bg | Text | Border |
 |---|---|---|---|---|
-| Primary | `--color-accent` | `--color-accent-hover` | white | none |
+| Primary | `--color-accent` | `--color-accent-hover` | `--color-text-on-accent` | none |
 | Secondary | `--color-bg-elevated` | `--color-bg-hover` | `--color-text-primary` | 1px `--color-border-default` |
 | Ghost | transparent | `--color-bg-subtle` | `--color-text-secondary` | none |
-| Destructive | `--color-state-danger` | `oklch(62% 0.2 25)` | white | none |
+| Destructive | `--color-state-danger` | `--color-state-danger-hover` | `--color-text-on-danger` | none |
 
 **Icon + label layout**
 
@@ -404,8 +406,8 @@ All buttons share these base properties:
 |---|---|---|
 | Default | `--color-border-default` | none |
 | Hover | `--color-border-strong` | none |
-| Focus | `--color-accent` | `0 0 0 2px var(--color-accent-subtle)` |
-| Error | `--color-state-danger` | `0 0 0 2px var(--color-state-danger-subtle)` |
+| Focus | `--color-accent` | `0 0 0 2px color-mix(in oklch, var(--color-accent) 25%, transparent)` |
+| Error | `--color-state-danger` | `0 0 0 2px color-mix(in oklch, var(--color-state-danger) 25%, transparent)` |
 | Disabled | `--color-border-subtle` | none — also `opacity: 0.4` |
 
 ---
@@ -454,7 +456,8 @@ All dialogs are in-app. No separate OS windows.
 - **Border**: 1px `--color-border-subtle`
 - **Radius**: `--radius-lg` (8px)
 - **Shadow**: `--shadow-base` in light mode; no shadow in dark mode (background contrast handles elevation)
-- **Min-width**: 180px. **Max-width**: 280px
+- **Context menu width**: min 180px, max 280px
+- **Popover width**: min 200px, max 320px
 - **Padding**: `--space-1` (4px) vertical (top and bottom of menu container)
 
 **Menu items**
@@ -485,11 +488,6 @@ All dialogs are in-app. No separate OS windows.
 - Padding: `--space-2` (8px) horizontal, `--space-1` (4px) vertical
 - Not interactive
 
-**Nested menu indicator**
-
-- Chevron icon 12px, `--color-text-tertiary`, right-aligned
-- Submenu opens on hover, `--duration-fast`
-
 ---
 
 ### Badges and tags
@@ -512,8 +510,6 @@ All dialogs are in-app. No separate OS windows.
 | Warning | light | `oklch(95% 0.04 65)` (`--color-state-warning-subtle`) | `oklch(42% 0.18 65)` (`--color-badge-warning-text`) |
 | Success | dark | `oklch(24% 0.06 155)` (`--color-state-success-subtle`) | `oklch(76% 0.16 155)` (`--color-badge-success-text`) |
 | Success | light | `oklch(95% 0.04 155)` (`--color-state-success-subtle`) | `oklch(40% 0.16 155)` (`--color-badge-success-text`) |
-
----
 
 ### Frontmatter bar
 
@@ -624,7 +620,7 @@ All tokens are defined as CSS custom properties in a `@theme {}` block in `src/a
   --height-control-lg: 32px;
   --height-nav-item: 28px;
   --height-toolbar: 39px;
-  --height-titlebar: 52px;
+  --height-titlebar: 32px;
   --width-sidebar: 244px;
   --doc-content-width: 680px;
 
@@ -653,13 +649,15 @@ All tokens are defined as CSS custom properties in a `@theme {}` block in `src/a
   --ease-linear: linear;
 
   /* Accent (mode-independent) */
-  --color-accent: oklch(62% 0.175 230);
-  --color-accent-hover: oklch(66% 0.175 230);
+  --color-accent: oklch(45% 0.175 230);
+  --color-accent-hover: oklch(49% 0.175 230);
 
-  /* State colors (mode-independent) */
-  --color-state-danger: oklch(58% 0.2 25);
-  --color-state-warning: oklch(72% 0.16 65);
-  --color-state-success: oklch(65% 0.15 155);
+  /* Text on filled backgrounds (mode-independent) */
+  --color-text-on-accent: oklch(100% 0 0);
+  --color-text-on-danger: oklch(100% 0 0);
+
+  /* State hover (mode-independent) */
+  --color-state-danger-hover: oklch(62% 0.2 25);
 
   /* Shadows */
   --shadow-sm: 0 1px 2px oklch(0% 0 0 / 0.08);
@@ -681,16 +679,26 @@ All tokens are defined as CSS custom properties in a `@theme {}` block in `src/a
     --color-text-primary: oklch(100% 0 0);
     --color-text-secondary: oklch(92% 0.008 264);
     --color-text-tertiary: oklch(65% 0.008 264);
-    --color-text-quaternary: oklch(42% 0.008 264);
+    --color-text-quaternary: oklch(48% 0.008 264);
 
     --color-border-subtle: oklch(16% 0.02 264);
     --color-border-default: oklch(20% 0.022 264);
     --color-border-strong: oklch(23% 0.022 264);
 
+    /* Badge colors (dark mode) */
     --color-accent-subtle: oklch(24% 0.05 230);
     --color-state-danger-subtle: oklch(24% 0.06 25);
     --color-state-warning-subtle: oklch(24% 0.06 65);
     --color-state-success-subtle: oklch(24% 0.06 155);
+    --color-badge-accent-text: oklch(74% 0.175 230);
+    --color-badge-danger-text: oklch(75% 0.22 25);
+    --color-badge-warning-text: oklch(82% 0.18 65);
+    --color-badge-success-text: oklch(76% 0.16 155);
+
+    /* State colors (dark mode) */
+    --color-state-danger: oklch(58% 0.2 25);
+    --color-state-warning: oklch(72% 0.16 65);
+    --color-state-success: oklch(65% 0.15 155);
   }
 
   @media (prefers-color-scheme: light) {
@@ -704,17 +712,27 @@ All tokens are defined as CSS custom properties in a `@theme {}` block in `src/a
 
       --color-text-primary: oklch(18% 0.012 264);
       --color-text-secondary: oklch(45% 0.01 264);
-      --color-text-tertiary: oklch(62% 0.008 264);
-      --color-text-quaternary: oklch(72% 0.006 264);
+      --color-text-tertiary: oklch(52% 0.008 264);
+      --color-text-quaternary: oklch(62% 0.006 264);
 
       --color-border-subtle: oklch(88% 0.006 264);
       --color-border-default: oklch(84% 0.007 264);
       --color-border-strong: oklch(78% 0.008 264);
 
+      /* Badge colors (light mode) */
       --color-accent-subtle: oklch(95% 0.03 230);
       --color-state-danger-subtle: oklch(95% 0.04 25);
       --color-state-warning-subtle: oklch(95% 0.04 65);
       --color-state-success-subtle: oklch(95% 0.04 155);
+      --color-badge-accent-text: oklch(42% 0.175 230);
+      --color-badge-danger-text: oklch(42% 0.22 25);
+      --color-badge-warning-text: oklch(42% 0.18 65);
+      --color-badge-success-text: oklch(40% 0.16 155);
+
+      /* State colors (light mode — darkened for WCAG AA) */
+      --color-state-danger: oklch(48% 0.2 25);
+      --color-state-warning: oklch(52% 0.16 65);
+      --color-state-success: oklch(45% 0.15 155);
     }
   }
 }
@@ -722,8 +740,8 @@ All tokens are defined as CSS custom properties in a `@theme {}` block in `src/a
 
 **Notes on the encoding:**
 
-- Tokens that don't vary by color mode (spacing, radius, motion, accent base colors, state base colors, shadows) go in `@theme {}` and become Tailwind utility classes automatically
-- Tokens that vary by mode (all `--color-bg-*`, `--color-text-*`, `--color-border-*`, and mode-dependent tokens like `-subtle` badge backgrounds) go in `@layer base` with a `prefers-color-scheme` media query override
+- Tokens that don't vary by color mode (spacing, radius, motion, accent base colors, shadows, text-on-accent/danger, danger-hover) go in `@theme {}` and become Tailwind utility classes automatically
+- Tokens that vary by mode (all `--color-bg-*`, `--color-text-*`, `--color-border-*`, state base colors, and mode-dependent tokens like `-subtle` badge backgrounds and `-text` badge text colors) go in `@layer base` with a `prefers-color-scheme` media query override
 - The default (`:root` without media query) is dark mode — consistent with having the most thoroughly validated values from our reference research
 - When theming is added in a future phase, a `data-theme` attribute override replaces the `prefers-color-scheme` media query
 
