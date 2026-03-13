@@ -2,6 +2,7 @@ import { useState } from "react";
 import { ArrowUpCircle } from "lucide-react";
 import { useUpdateStore } from "@/stores/update";
 import { UpdateDialog } from "@/components/UpdateDialog";
+import { Button } from "@/components/ui/Button";
 
 export function UpdateIndicator() {
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -12,23 +13,16 @@ export function UpdateIndicator() {
 
   return (
     <>
-      <button
+      <Button
+        variant="ghost"
+        iconOnly
         onClick={() => setDialogOpen(true)}
-        title={`Version ${version} available`}
+        title={`Version ${version ?? "unknown"} available`}
         aria-label="Update available"
-        style={{
-          background: "none",
-          border: "none",
-          padding: 0,
-          cursor: "pointer",
-          color: "var(--color-accent)",
-          display: "flex",
-          alignItems: "center",
-          flexShrink: 0,
-        }}
+        style={{ color: "var(--color-accent)" }}
       >
         <ArrowUpCircle size={14} />
-      </button>
+      </Button>
       <UpdateDialog open={dialogOpen} onOpenChange={setDialogOpen} />
     </>
   );
