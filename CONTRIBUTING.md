@@ -1,7 +1,40 @@
-# Contributing
+# Contributing to Episteme
 
-Thanks for your interest in Episteme!
+## Commit messages
 
-The project is in early development and we're not ready to accept external contributions yet. The codebase is changing rapidly and we haven't established the stability or conventions needed to collaborate effectively.
+Episteme uses [Conventional Commits](https://www.conventionalcommits.org/) for all commit messages. This format is used to auto-generate release notes via git-cliff when a new version is published.
 
-If you've found a bug or have an idea, feel free to open an issue — we read them. We'll update this file when we're ready to open up.
+### Format
+
+```
+<type>: <description>
+
+[optional body]
+```
+
+### Types
+
+| Type | Appears in release notes? | When to use |
+|---|---|---|
+| `feat` | Yes — "Features" | New user-facing functionality |
+| `fix` | Yes — "Bug fixes" | Bug fixes |
+| `chore` | No | Maintenance, dependency updates |
+| `refactor` | No | Code changes with no behavior change |
+| `docs` | No | Documentation only |
+| `test` | No | Adding or updating tests |
+| `ci` | No | CI/CD changes |
+
+Breaking changes: append `!` after the type (e.g. `feat!:`) — these appear at the top of release notes under "Breaking changes".
+
+### Examples
+
+```
+feat: add update notification to sidebar
+fix: prevent duplicate intervals in App.tsx
+chore: bump tauri to 2.10.1
+feat!: remove legacy file format support
+```
+
+### Why this matters
+
+`feat` and `fix` commits are what users see in release notes. Write them as if the user is reading them directly — short, clear, in plain language.
