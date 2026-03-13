@@ -90,6 +90,7 @@
 /* Dark mode tokens */
 @layer base {
   :root {
+    font-family: var(--font-ui);
     --color-bg-app: oklch(7% 0.01 264);
     --color-bg-base: oklch(9.5% 0.012 264);
     --color-bg-subtle: oklch(12% 0.015 264);
@@ -161,6 +162,10 @@
 @layer components {
   [data-ui-input]::placeholder {
     color: var(--color-text-tertiary);
+  }
+
+  .context-menu-item {
+    transition: background-color var(--duration-fast), color var(--duration-fast);
   }
 
   /* ContextMenu item highlight — covers both mouse hover and keyboard navigation */
