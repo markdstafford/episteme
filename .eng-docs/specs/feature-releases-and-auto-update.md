@@ -502,7 +502,7 @@ Conventional commit sections mapped to changelog headings:
       - [ ] Unit tests cover all state transitions (see testing story)
     - **Dependencies**: "Task: Implement check_for_update Tauri command", "Task: Implement install_update Tauri command"
 
-- [ ] **Story: Update UI components**
+- [x] **Story: Update UI components**
   - [x] **Task: Create UpdateIndicator component**
     - **Description**: Create `src/components/UpdateIndicator.tsx`. Renders an `ArrowUpCircle` Lucide icon in the accent color when `update.available` is true; renders nothing otherwise. Shows a tooltip "Version X.Y.Z available" on hover. Clicking opens the `UpdateDialog`.
     - **Acceptance criteria**:
@@ -524,7 +524,7 @@ Conventional commit sections mapped to changelog headings:
       - [ ] "Dismiss" closes the dialog without changing `available` state
       - [ ] Unit tests pass (see testing story)
     - **Dependencies**: "Task: Create UpdateIndicator component"
-  - [ ] **Task: Add UpdateIndicator to Sidebar folder header row**
+  - [x] **Task: Add UpdateIndicator to Sidebar folder header row**
     - **Description**: Modify `src/components/Sidebar.tsx` to render `<UpdateIndicator />` right-aligned in the folder header row (the div at line ~27 that already uses `flex items-center justify-between`). The indicator should only render when a folder is open (inside the `folderName &&` block).
     - **Acceptance criteria**:
       - [ ] `UpdateIndicator` renders right-aligned in the folder header row when a folder is open
