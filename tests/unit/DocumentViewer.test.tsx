@@ -117,7 +117,11 @@ describe("DocumentViewer", () => {
     expect(outer.classList.contains("overflow-y-auto")).toBe(true);
     expect(outer.style.backgroundColor).toBe("var(--color-bg-base)");
 
-    const contentCol = outer.lastElementChild as HTMLElement;
+    // Outer → lastElementChild is padding wrapper → firstElementChild is content column
+    const paddingWrapper = outer.lastElementChild as HTMLElement;
+    expect(paddingWrapper.style.paddingInline).toBe("var(--padding-content)");
+    expect(paddingWrapper.style.paddingBlock).toBe("var(--space-6)");
+    const contentCol = paddingWrapper.firstElementChild as HTMLElement;
     expect(contentCol.style.maxWidth).toBe("var(--doc-content-width)");
     expect(contentCol.classList.contains("mx-auto")).toBe(true);
     expect(contentCol.classList.contains("max-w-4xl")).toBe(false);
@@ -136,7 +140,10 @@ describe("DocumentViewer", () => {
     const outer = container.firstChild as HTMLElement;
     expect(outer.children.length).toBe(2);
     expect(outer.children[0].textContent).toContain("title");
-    expect((outer.children[1] as HTMLElement).style.maxWidth).toBe("var(--doc-content-width)");
+    // children[1] is the padding wrapper; its first child is the content column
+    const paddingWrapper = outer.children[1] as HTMLElement;
+    const contentCol = paddingWrapper.firstElementChild as HTMLElement;
+    expect(contentCol.style.maxWidth).toBe("var(--doc-content-width)");
   });
 
   it("applies doc-scale typography to prose container", async () => {
@@ -148,9 +155,10 @@ describe("DocumentViewer", () => {
       expect(screen.queryByText("Loading document...")).not.toBeInTheDocument();
     });
 
-    // Outer → lastElementChild is content column → firstElementChild is prose wrapper
+    // Outer → lastElementChild is padding wrapper → firstElementChild is content column → firstElementChild is prose wrapper
     const outer = container.firstChild as HTMLElement;
-    const contentCol = outer.lastElementChild as HTMLElement;
+    const paddingWrapper = outer.lastElementChild as HTMLElement;
+    const contentCol = paddingWrapper.firstElementChild as HTMLElement;
     const proseWrapper = contentCol.firstElementChild as HTMLElement;
     expect(proseWrapper.style.fontSize).toBe("var(--font-size-doc-base)");
     expect(proseWrapper.style.lineHeight).toBe("1.7");
@@ -159,7 +167,7 @@ describe("DocumentViewer", () => {
   it("empty state uses design system tokens matching WelcomeScreen", () => {
     const { container } = render(<DocumentViewer />);
     const outer = container.firstChild as HTMLElement;
-    expect(outer.style.backgroundColor).toBe("var(--color-bg-app)");
+    expect(outer.style.backgroundColor).toBe("var(--color-bg-base)");
     const text = screen.getByText("Select a document from the sidebar");
     expect(text.style.color).toBe("var(--color-text-secondary)");
     expect(text.style.fontSize).toBe("var(--font-size-ui-lg)");
