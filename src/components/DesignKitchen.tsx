@@ -82,15 +82,15 @@ export function DesignKitchen({ onClose }: DesignKitchenProps) {
           <ColorGroup label="Accent" tokens={[
             { name: "--color-accent",        dark: "oklch(62% 0.175 230)", light: "oklch(62% 0.175 230)" },
             { name: "--color-accent-hover",  dark: "oklch(66% 0.175 230)", light: "oklch(66% 0.175 230)" },
-            { name: "--color-accent-subtle", dark: "oklch(62% 0.04 230)",  light: "oklch(62% 0.04 230)" },
+            { name: "--color-accent-subtle", dark: "oklch(24% 0.05 230)",  light: "oklch(95% 0.03 230)" },
           ]} />
           <ColorGroup label="State" tokens={[
             { name: "--color-state-danger",         dark: "oklch(58% 0.2 25)",   light: "oklch(58% 0.2 25)" },
-            { name: "--color-state-danger-subtle",  dark: "oklch(58% 0.06 25)",  light: "oklch(58% 0.06 25)" },
+            { name: "--color-state-danger-subtle",  dark: "oklch(24% 0.06 25)",  light: "oklch(95% 0.04 25)" },
             { name: "--color-state-warning",        dark: "oklch(72% 0.16 65)",  light: "oklch(72% 0.16 65)" },
-            { name: "--color-state-warning-subtle", dark: "oklch(72% 0.05 65)",  light: "oklch(72% 0.05 65)" },
+            { name: "--color-state-warning-subtle", dark: "oklch(24% 0.06 65)",  light: "oklch(95% 0.04 65)" },
             { name: "--color-state-success",        dark: "oklch(65% 0.15 155)", light: "oklch(65% 0.15 155)" },
-            { name: "--color-state-success-subtle", dark: "oklch(65% 0.05 155)", light: "oklch(65% 0.05 155)" },
+            { name: "--color-state-success-subtle", dark: "oklch(24% 0.06 155)", light: "oklch(95% 0.04 155)" },
           ]} />
         </Section>
         <Section title="Typography">

@@ -81,7 +81,7 @@ The `Badge` component accepts a `variant` prop (`"neutral" | "accent" | "danger"
 
 ## Task list
 
-- [ ] **Story: Badge primitive**
+- [x] **Story: Badge primitive**
   - [x] **Task: Update badge color tokens in `app.css`**
     - **Description**: In the `@theme {}` block in `src/app.css`, update the `-subtle` token values for accent, danger, warning, and success to the corrected dark/light mode pairs from the design spec. Neutral badge uses existing `--color-bg-hover` and `--color-text-secondary` tokens which are already correct.
     - **Acceptance criteria**:
@@ -106,19 +106,19 @@ The `Badge` component accepts a `variant` prop (`"neutral" | "accent" | "danger"
       - [x] All tests pass
     - **Dependencies**: Task: Implement `Badge` component
 
-- [ ] **Story: Migrate call sites**
-  - [ ] **Task: Migrate DesignKitchen badge showcase to `<Badge>`**
+- [x] **Story: Migrate call sites**
+  - [x] **Task: Migrate DesignKitchen badge showcase to `<Badge>`**
     - **Description**: In `src/components/DesignKitchen.tsx`, replace the hardcoded badge `<span>` elements in the Components section with `<Badge variant="...">` for all five variants. Remove the inline style objects they replaced.
     - **Acceptance criteria**:
-      - [ ] All five variants rendered via `<Badge>` in the kitchen sink
-      - [ ] No hardcoded badge-like inline styles remain in the showcase
+      - [x] All five variants rendered via `<Badge>` in the kitchen sink
+      - [x] No hardcoded badge-like inline styles remain in the showcase
     - **Dependencies**: Task: Implement `Badge` component
-  - [ ] **Task: Migrate `FrontmatterBar` overflow indicator to `<Badge>`**
+  - [x] **Task: Migrate `FrontmatterBar` overflow indicator to `<Badge>`**
     - **Description**: In `src/components/FrontmatterBar.tsx`, replace the hardcoded `+N more` overflow `<span>` with `<Badge variant="neutral">+{hiddenCount} more</Badge>`. Remove the inline style block it replaces.
     - **Acceptance criteria**:
-      - [ ] `+N more` indicator uses `<Badge variant="neutral">`
-      - [ ] No hardcoded inline styles remain for this element
-      - [ ] Existing FrontmatterBar tests pass
+      - [x] `+N more` indicator uses `<Badge variant="neutral">`
+      - [x] No hardcoded inline styles remain for this element
+      - [x] Existing FrontmatterBar tests pass
     - **Dependencies**: Task: Implement `Badge` component
 
 - [ ] **Story: Documentation**
