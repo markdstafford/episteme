@@ -55,7 +55,7 @@ function AwsProfileSetting({ id, label }: { id: string; label: string }) {
         type="text"
         value={awsProfile}
         onChange={(e) => handleChange(e.target.value)}
-        className="h-[var(--height-control-base)] px-[10px] text-[length:var(--font-size-ui-base)] bg-(--color-bg-subtle) border border-(--color-border-default) rounded-[var(--radius-base)] text-(--color-text-primary) placeholder:text-(--color-text-tertiary) focus:border-(--color-accent) focus:shadow-[0_0_0_2px_var(--color-accent-subtle)] outline-none transition-[border-color,box-shadow] duration-(--duration-fast)"
+        className="h-[var(--height-control-base)] px-[10px] text-[length:var(--font-size-ui-base)] bg-(--color-bg-subtle) border border-(--color-border-default) rounded-[var(--radius-base)] text-(--color-text-primary) placeholder:text-(--color-text-tertiary) focus:border-(--color-accent) focus:shadow-[0_0_0_2px_color-mix(in_oklch,var(--color-accent)_25%,transparent)] outline-none transition-[border-color,box-shadow] duration-(--duration-fast)"
         placeholder="e.g. default"
       />
     </div>
