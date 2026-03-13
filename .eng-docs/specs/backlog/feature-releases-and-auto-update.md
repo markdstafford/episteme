@@ -39,7 +39,7 @@ The pipeline generates a `latest.json` update manifest pointing to the new insta
 
 ### Receiving and applying an update
 
-Patricia is mid-session on a Tuesday morning when a small notification badge appears in the bottom corner of the app: "Version 0.2.0 is available." She's in the middle of a document, so she dismisses it for now. An hour later, at a natural stopping point, she clicks the notification. A small dialog appears showing the version number and the release notes — she can see that this release includes a fix for the editor behavior she'd found annoying.
+Patricia is mid-session on a Tuesday morning when an accent-colored update icon appears in the sidebar next to the folder name. She's in the middle of a document, so she ignores it for now. An hour later, at a natural stopping point, she clicks the icon. A dialog appears centered in the app showing the version number and the release notes — she can see that this release includes a fix for the editor behavior she'd found annoying.
 
 Patricia clicks "Update and restart." Episteme downloads the new version in the background, verifies the update signature, and applies it. The app restarts and opens back to the document she was working on. The notification is gone, and she's now running 0.2.0 without having visited a website, run a command, or manually moved any files.
 
@@ -78,11 +78,362 @@ Patricia clicks "Update and restart." Episteme downloads the new version in the 
 
 ## Design spec
 
-*(Added by design specs stage)*
+### User flows
+
+**Flow 1: Publishing a release (Marcus)**
+
+```mermaid
+graph TD
+    A[Push version tag to GitHub] --> B[GitHub Actions triggered]
+    B --> C[Build jobs run in parallel: macOS / Windows / Linux]
+    C --> D{All jobs pass?}
+    D -->|No| E[Build fails — Marcus investigates Actions logs]
+    D -->|Yes| F[git-cliff generates changelog from commits]
+    F --> G[latest.json manifest generated and signed]
+    G --> H[GitHub Release created as draft]
+    H --> I[Installers and manifest uploaded as release assets]
+    I --> J[Marcus reviews and edits release notes]
+    J --> K[Marcus publishes release]
+```
+
+**Flow 2: Receiving and applying an update (Patricia)**
+
+```mermaid
+graph TD
+    A[App launches or periodic check fires] --> B[Fetch latest.json from GitHub]
+    B --> C{Newer version available?}
+    C -->|No| D[No indicator shown]
+    C -->|Yes| E[Update icon appears in sidebar, accent colored]
+    E --> F{User clicks icon?}
+    F -->|Not yet| E
+    F -->|Yes| G[Dialog opens: version, release notes, CTA]
+    G --> H{User decision}
+    H -->|Dismiss| I[Dialog closes, icon remains]
+    H -->|Update and restart| J[Download and verify update signature]
+    J --> K[Install update]
+    K --> L[App restarts into previous document context]
+```
+
+### Key UI components
+
+#### Update indicator icon
+
+- Appears right-aligned on the sidebar folder name row when an update is available; hidden otherwise
+- Rendered in the accent color to distinguish it from surrounding monochrome icons
+- Uses an "up arrow" or similar update-connoting icon (e.g. `ArrowUpCircle` from Lucide, which is already in the project)
+- Tooltip on hover: "Version X.Y.Z available"
+- Clicking opens the update dialog
+- Acknowledged as a temporary placement — will move to sidebar header when sidebar redesign ships
+
+#### Update dialog
+
+- Centered in the app window regardless of trigger icon position
+- Contains:
+  - Version number ("Version 0.2.0 available")
+  - Release notes — the git-cliff changelog rendered as markdown using the same renderer as the main document viewer, scrollable if long
+  - "Update and restart" primary button
+  - "Dismiss" secondary action (closes dialog; icon remains visible)
+- Uses the existing Radix `Dialog` primitive (ADR-010)
+- Standard design system surface styling — no custom chrome needed
 
 ## Tech spec
 
-*(Added by tech specs stage)*
+### System design and architecture
+
+**High-level architecture**
+
+This feature has two independent subsystems: a CI/CD pipeline that runs on GitHub, and an in-app updater that runs inside Episteme.
+
+```mermaid
+graph TD
+    subgraph GitHub
+        TAG[Git tag pushed] --> GHA[GitHub Actions workflow]
+        GHA --> BUILD[Platform build jobs]
+        BUILD --> CLIFF[git-cliff changelog]
+        CLIFF --> MANIFEST[latest.json manifest]
+        MANIFEST --> RELEASE[GitHub Release]
+    end
+
+    subgraph Episteme App
+        LAUNCH[App launch / timer] --> CMD[check_for_update Tauri command]
+        CMD --> STORE[update Zustand store]
+        STORE --> ICON[UpdateIndicator in Sidebar]
+        ICON --> DIALOG[UpdateDialog]
+        DIALOG --> INSTALL[tauri-plugin-updater installs update]
+        INSTALL --> RESTART[App restarts]
+    end
+
+    RELEASE -- latest.json URL --> CMD
+```
+
+**Component breakdown**
+
+| Component | Type | New / Modified |
+|---|---|---|
+| `.github/workflows/release.yml` | GitHub Actions workflow | New |
+| `cliff.toml` | git-cliff config | New |
+| `tauri-plugin-updater` | Rust dependency | New |
+| `check_for_update` Tauri command | Rust | New |
+| `src/stores/update.ts` | Zustand store | New |
+| `src/components/UpdateIndicator.tsx` | React component | New |
+| `src/components/UpdateDialog.tsx` | React component | New |
+| `src/components/Sidebar.tsx` | React component | Modified — add indicator to folder header row |
+| `src-tauri/lib.rs` | Rust | Modified — register plugin and command |
+| `tauri.conf.json` | Config | Modified — add updater endpoint URL |
+
+**Sequence diagrams**
+
+*Update check and install:*
+
+```mermaid
+sequenceDiagram
+    participant App
+    participant UpdateStore
+    participant Tauri
+    participant GitHub
+
+    App->>Tauri: check_for_update (on launch + every 4h)
+    Tauri->>GitHub: GET latest.json
+    GitHub-->>Tauri: { version, notes, platforms }
+    Tauri-->>UpdateStore: { available: true, version, notes }
+    UpdateStore-->>Sidebar: renders UpdateIndicator
+    Note over Sidebar: User clicks icon
+    Sidebar->>UpdateDialog: open
+    Note over UpdateDialog: User clicks "Update and restart"
+    UpdateDialog->>Tauri: install update
+    Tauri->>GitHub: download platform installer
+    GitHub-->>Tauri: signed binary
+    Tauri->>Tauri: verify ed25519 signature
+    Tauri->>App: apply update + restart
+```
+
+*Release pipeline:*
+
+```mermaid
+sequenceDiagram
+    participant Marcus
+    participant GitHub
+    participant Actions
+    participant Release
+
+    Marcus->>GitHub: git push tag v0.2.0
+    GitHub->>Actions: trigger release workflow
+    Actions->>Actions: build macOS arm64 + x86_64
+    Actions->>Actions: build Windows x86_64
+    Actions->>Actions: build Linux x86_64
+    Actions->>Actions: git-cliff generates changelog
+    Actions->>Actions: sign installers, generate latest.json
+    Actions->>Release: create draft release with assets
+    Actions-->>Marcus: workflow complete
+    Marcus->>Release: review notes, publish
+```
+
+### Risks
+
+**macOS update re-approval friction**
+
+Without notarization, each update applied by the auto-updater will be quarantined by macOS Gatekeeper, requiring the user to right-click → Open on next launch. This is a known, accepted limitation per the non-goals. Mitigation: document clearly in release notes and README; revisit when/if Apple Developer Program enrollment happens.
+
+**Build matrix complexity**
+
+macOS cross-compilation (arm64 and x86_64 in one job) can be unreliable on GitHub Actions. Mitigation: use separate matrix jobs per target rather than cross-compiling, accepting slightly longer build times.
+
+**Rust compile time in CI**
+
+Cold Rust builds on GitHub Actions can take 20–40 minutes per platform. Mitigation: use `Swatinem/rust-cache` to cache the Cargo registry and build artifacts between runs; subsequent builds should complete within the 30-minute goal.
+
+**ed25519 key loss**
+
+If the private signing key is lost, no future updates can be delivered to existing installs — users would need to manually reinstall. Mitigation: store a backup of the private key securely outside GitHub (e.g., a password manager) at key generation time.
+
+**Conventional commit discipline**
+
+git-cliff produces useful changelogs only if commit messages follow conventional commit format. Poorly formatted messages produce empty or misleading release notes. Mitigation: document the convention in CONTRIBUTING.md; this is low-risk for a single-maintainer project.
+
+### Alternatives considered
+
+**Alternative updater: Squirrel (Electron-style)**
+
+Squirrel is the update framework used by Electron apps. It was not considered seriously — Episteme is a Tauri app and `tauri-plugin-updater` is the native, first-party solution. Squirrel would require significant custom integration work with no meaningful benefit.
+
+**Alternative manifest host: self-hosted update server**
+
+Rather than hosting `latest.json` as a GitHub Release asset, a custom update server (e.g., a small Cloudflare Worker) could serve the manifest dynamically. This would enable features like staged rollouts or A/B update targeting. Rejected for now as unnecessary complexity — GitHub Releases is sufficient for the current distribution scale and requires no additional infrastructure.
+
+**Alternative changelog tool: release-please**
+
+release-please automates the full release cycle including version bump PRs. Rejected because it inverts the release workflow — it drives releases via merged PRs rather than manual tags, which conflicts with the chosen strategy of the maintainer controlling release timing. See ADR-011.
+
+### Testing plan
+
+**Unit tests**
+
+- `update` Zustand store: test state transitions for `idle → checking → available`, `idle → checking → unavailable`, and `available → downloading → error`
+- `UpdateIndicator`: renders when `available: true`, hidden when `available: false`
+- `UpdateDialog`: renders version and notes correctly; "Dismiss" closes dialog; "Update and restart" calls `installUpdate`
+
+**Integration tests**
+
+The Tauri command layer (`check_for_update`) is not unit-testable in isolation without a running Tauri runtime. Manual verification against a test release is the practical approach here.
+
+**E2E tests**
+
+Full update flow E2E is not feasible in CI without a real signed release to update to. The UI states (indicator visible, dialog opens, dismiss works) can be tested by seeding the update store with mock data in Playwright tests.
+
+**Pipeline verification**
+
+The Actions workflow itself is verified by creating a test tag (`v0.0.1-test`) on a branch before the first real release, confirming all jobs pass, assets upload correctly, and the manifest is well-formed.
+
+### Observability
+
+**Logging**
+
+All update lifecycle events logged via `tauri-plugin-log` at `Info` level:
+- Update check initiated
+- Update found: version X.Y.Z
+- No update available
+- Update download started
+- Update download complete
+- Update install initiated
+
+Errors (network failure, signature mismatch, install failure) logged at `Error` level with the error message.
+
+**Metrics**
+
+No application-level metrics infrastructure exists yet. No metrics are collected for this feature.
+
+**Alerting**
+
+No alerting infrastructure exists yet. Build failures in GitHub Actions send email notifications to the repository owner by default — no additional configuration needed.
+
+### Security, privacy, and compliance
+
+**Update integrity**
+
+All update packages are signed with a Tauri ed25519 keypair. The private key is stored as a GitHub Actions secret and never committed to the repository. The public key is embedded in `tauri.conf.json`. `tauri-plugin-updater` verifies the signature before installing any update — a tampered or unsigned package will be rejected.
+
+**Secret management**
+
+Two secrets are required in GitHub Actions:
+- `TAURI_SIGNING_PRIVATE_KEY` — the ed25519 private key for signing update packages
+- `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` — the password protecting the private key (if set)
+
+These are set once in the repository's GitHub Actions secrets and never appear in source code or logs.
+
+**Data privacy**
+
+The update check sends a GET request to GitHub's public release endpoint. No user data, device identifiers, or telemetry is transmitted. The only information exchanged is the app fetching a public JSON file.
+
+**Input validation**
+
+The `latest.json` manifest is consumed by `tauri-plugin-updater`, which validates the signature and version format. The `notes` field (release notes) is rendered via the existing `MarkdownRenderer` component, which already handles untrusted markdown safely.
+
+### Detailed design
+
+**Update store (`src/stores/update.ts`)**
+
+```ts
+interface UpdateState {
+  available: boolean;
+  version: string | null;
+  notes: string | null;
+  status: 'idle' | 'checking' | 'downloading' | 'error';
+  error: string | null;
+  checkForUpdate: () => Promise<void>;
+  installUpdate: () => Promise<void>;
+}
+```
+
+**Tauri command: `check_for_update`**
+
+Called by the frontend on launch and every 4 hours via `setInterval`. Uses `tauri-plugin-updater` internally. Returns:
+
+```ts
+// Success — update available
+{ available: true, version: "0.2.0", notes: "## What's new\n..." }
+
+// Success — no update
+{ available: false, version: null, notes: null }
+
+// Error propagated to store.error
+```
+
+**`tauri.conf.json` updater config**
+
+```json
+"plugins": {
+  "updater": {
+    "endpoints": [
+      "https://github.com/markdstafford/episteme/releases/latest/download/latest.json"
+    ],
+    "dialog": false,
+    "pubkey": "<ed25519-public-key>"
+  }
+}
+```
+
+`dialog: false` disables Tauri's built-in update UI so the custom `UpdateDialog` is used instead.
+
+**`latest.json` manifest format** (generated by the Actions workflow)
+
+```json
+{
+  "version": "0.2.0",
+  "notes": "## What's new\n...",
+  "pub_date": "2026-03-13T00:00:00Z",
+  "platforms": {
+    "darwin-aarch64": { "url": "...", "signature": "..." },
+    "darwin-x86_64":  { "url": "...", "signature": "..." },
+    "linux-x86_64":   { "url": "...", "signature": "..." },
+    "windows-x86_64": { "url": "...", "signature": "..." }
+  }
+}
+```
+
+**GitHub Actions workflow structure (`.github/workflows/release.yml`)**
+
+- Trigger: `push` to tags matching `v*`
+- Jobs: matrix across `[macos-latest, ubuntu-latest, windows-latest]`
+- Each job: checkout → install Node deps → install Rust → **`Swatinem/rust-cache`** (cache Cargo registry and compiled deps) → `tauri build` → sign with ed25519 private key from GitHub Actions secret
+- Post-build job: run git-cliff, generate `latest.json`, create GitHub Release as draft, upload all assets
+- The release is created as a **draft** so Marcus can review notes before publishing
+
+**`cliff.toml` configuration**
+
+Conventional commit sections mapped to changelog headings:
+- `feat` → "Features"
+- `fix` → "Bug fixes"
+- `chore`, `refactor`, `docs` → omitted from user-facing notes
+- Breaking changes → "Breaking changes" (top of notes)
+
+### Introduction and overview
+
+**Prerequisites and assumptions**
+
+- ADR-001: Tauri desktop framework — defines the app's native platform
+- ADR-003: Zustand — update check state will be managed here
+- ADR-010: Radix UI primitives — Dialog used for the update UI
+- ADR-011: git-cliff — changelog generation in the release pipeline
+- `tauri-plugin-updater` (Tauri v2 first-party plugin) is the update implementation; no meaningful alternative exists within the Tauri ecosystem
+- GitHub Releases serves as both distribution endpoint and update manifest host — no separate server required
+- The app is signed with Tauri's own ed25519 keypair but not OS-notarized (per non-goals)
+- Version is maintained manually in both `tauri.conf.json` and `package.json` as part of the release commit
+
+**Goals and objectives**
+
+- Tag push → GitHub Release published within 30 minutes
+- Update check completes in under 5 seconds on a reasonable connection
+- Update applies and app restarts within 2 minutes of user confirmation
+
+**Non-goals**
+
+- Same as feature non-goals: no OS code signing, no delta updates, no forced or silent updates
+
+**Glossary**
+
+- **ed25519**: Tauri's own cryptographic signing for update packages — separate from and independent of OS code signing (Apple notarization, Windows Authenticode)
+- **latest.json**: The update manifest file hosted as a GitHub Release asset, consumed by `tauri-plugin-updater` to discover available versions
+- **tauri-plugin-updater**: First-party Tauri v2 plugin that handles update checking, download, signature verification, and installation
 
 ## Task list
 
