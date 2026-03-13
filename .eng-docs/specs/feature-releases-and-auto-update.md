@@ -454,7 +454,7 @@ Conventional commit sections mapped to changelog headings:
       - [ ] Neither value appears in any source file or commit
     - **Dependencies**: "Task: Generate ed25519 signing keypair"
 
-- [ ] **Story: Tauri updater plugin**
+- [x] **Story: Tauri updater plugin**
   - [x] **Task: Add tauri-plugin-updater dependency**
     - **Description**: Add `tauri-plugin-updater = "2"` to `src-tauri/Cargo.toml` dependencies and `@tauri-apps/plugin-updater` to `package.json` dependencies.
     - **Acceptance criteria**:
@@ -471,7 +471,7 @@ Conventional commit sections mapped to changelog headings:
       - [ ] `plugins.updater.pubkey` set to the generated public key
       - [ ] `tauri build` succeeds with the updated config
     - **Dependencies**: "Task: Generate ed25519 signing keypair", "Task: Add tauri-plugin-updater dependency"
-  - [ ] **Task: Implement check_for_update Tauri command**
+  - [x] **Task: Implement check_for_update Tauri command**
     - **Description**: Create `src-tauri/src/commands/updater.rs` with a `check_for_update` command that uses `tauri-plugin-updater` to check the manifest endpoint. Returns `{ available, version, notes }`. Register the command in `commands/mod.rs` and the invoke handler in `lib.rs`. Log all update lifecycle events via `tauri-plugin-log`.
     - **Acceptance criteria**:
       - [ ] `check_for_update` command returns `{ available: false, version: null, notes: null }` when no update is available
@@ -481,7 +481,7 @@ Conventional commit sections mapped to changelog headings:
       - [ ] Network errors logged at `Error` level and returned as Err
       - [ ] `cargo build` succeeds
     - **Dependencies**: "Task: Configure tauri.conf.json updater settings"
-  - [ ] **Task: Implement install_update Tauri command**
+  - [x] **Task: Implement install_update Tauri command**
     - **Description**: Create an `install_update` command in `src-tauri/src/commands/updater.rs` that triggers the download and installation of the pending update using `tauri-plugin-updater`. Logs download started, download complete, and install initiated events. Register in `lib.rs`.
     - **Acceptance criteria**:
       - [ ] `install_update` command triggers download and installation
