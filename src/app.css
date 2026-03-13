@@ -70,13 +70,15 @@
   --ease-linear: linear;
 
   /* Accent (mode-independent) */
-  --color-accent: oklch(62% 0.175 230);
-  --color-accent-hover: oklch(66% 0.175 230);
+  --color-accent: oklch(45% 0.175 230);
+  --color-accent-hover: oklch(49% 0.175 230);
 
-  /* State colors (mode-independent) */
-  --color-state-danger: oklch(58% 0.2 25);
-  --color-state-warning: oklch(72% 0.16 65);
-  --color-state-success: oklch(65% 0.15 155);
+  /* Text on filled backgrounds (mode-independent) */
+  --color-text-on-accent: oklch(100% 0 0);
+  --color-text-on-danger: oklch(100% 0 0);
+
+  /* State hover (mode-independent) */
+  --color-state-danger-hover: oklch(62% 0.2 25);
 
   /* Shadows */
   --shadow-sm: 0 1px 2px oklch(0% 0 0 / 0.08);
@@ -98,7 +100,7 @@
     --color-text-primary: oklch(100% 0 0);
     --color-text-secondary: oklch(92% 0.008 264);
     --color-text-tertiary: oklch(65% 0.008 264);
-    --color-text-quaternary: oklch(42% 0.008 264);
+    --color-text-quaternary: oklch(48% 0.008 264);
 
     --color-border-subtle: oklch(16% 0.02 264);
     --color-border-default: oklch(20% 0.022 264);
@@ -113,6 +115,11 @@
     --color-badge-danger-text: oklch(75% 0.22 25);
     --color-badge-warning-text: oklch(82% 0.18 65);
     --color-badge-success-text: oklch(76% 0.16 155);
+
+    /* State colors (dark mode) */
+    --color-state-danger: oklch(58% 0.2 25);
+    --color-state-warning: oklch(72% 0.16 65);
+    --color-state-success: oklch(65% 0.15 155);
   }
 
   @media (prefers-color-scheme: light) {
@@ -126,8 +133,8 @@
 
       --color-text-primary: oklch(18% 0.012 264);
       --color-text-secondary: oklch(45% 0.01 264);
-      --color-text-tertiary: oklch(62% 0.008 264);
-      --color-text-quaternary: oklch(72% 0.006 264);
+      --color-text-tertiary: oklch(52% 0.008 264);
+      --color-text-quaternary: oklch(62% 0.006 264);
 
       --color-border-subtle: oklch(88% 0.006 264);
       --color-border-default: oklch(84% 0.007 264);
@@ -142,6 +149,11 @@
       --color-badge-danger-text: oklch(42% 0.22 25);
       --color-badge-warning-text: oklch(42% 0.18 65);
       --color-badge-success-text: oklch(40% 0.16 155);
+
+      /* State colors (light mode — darkened for WCAG AA) */
+      --color-state-danger: oklch(48% 0.2 25);
+      --color-state-warning: oklch(52% 0.16 65);
+      --color-state-success: oklch(45% 0.15 155);
     }
   }
 }
@@ -219,5 +231,10 @@
   /* Light-mode shadow for context menus and popovers */
   @media (prefers-color-scheme: light) {
     .overlay-surface { box-shadow: var(--shadow-base); }
+  }
+
+  .focus-ring:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
   }
 }
