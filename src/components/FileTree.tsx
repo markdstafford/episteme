@@ -57,6 +57,14 @@ export function FileTree() {
   const focusedPathRef = useRef<string | null>(null);
   const treeRef = useRef<HTMLDivElement>(null);
 
+  // Ensure exactly one item always has tabIndex={0} (roving tabindex)
+  if (focusedPathRef.current === null && nodes.length > 0) {
+    const visiblePaths = getVisiblePaths(nodes, expandedPaths);
+    if (visiblePaths.length > 0) {
+      focusedPathRef.current = visiblePaths[0];
+    }
+  }
+
   const setFocusedPath = useCallback(
     (path: string) => {
       focusedPathRef.current = path;
@@ -169,10 +177,20 @@ export function FileTree() {
     <div
       ref={treeRef}
       role="tree"
+      tabIndex={0}
       onKeyDown={handleKeyDown}
       onFocus={(e) => {
-        const path = (e.target as HTMLElement).dataset?.path;
-        if (path) handleFocus(path);
+        // Only handle focus on the tree root itself, not bubbled from children
+        if (e.target === e.currentTarget) {
+          const visiblePaths = getVisiblePaths(nodes, expandedPaths);
+          const targetPath = focusedPathRef.current && visiblePaths.includes(focusedPathRef.current)
+            ? focusedPathRef.current
+            : visiblePaths[0];
+          if (targetPath) setFocusedPath(targetPath);
+        } else {
+          const path = (e.target as HTMLElement).dataset?.path;
+          if (path) handleFocus(path);
+        }
       }}
     >
       {renderNodes(nodes, 0)}
