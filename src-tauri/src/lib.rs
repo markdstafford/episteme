@@ -4,12 +4,14 @@ mod skill_loader;
 
 use tauri::menu::{Menu, MenuItem, Submenu};
 use tauri::Emitter;
+use tauri::Manager;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
   tauri::Builder::default()
     .plugin(tauri_plugin_dialog::init())
     .plugin(tauri_plugin_shell::init())
+    .plugin(tauri_plugin_updater::Builder::new().build())
     .invoke_handler(tauri::generate_handler![
       commands::folder::open_folder,
       commands::preferences::save_preferences,
@@ -21,6 +23,8 @@ pub fn run() {
       commands::ai::ai_chat,
       commands::skills::list_skills,
       commands::skills::count_documents_by_type,
+      commands::updater::check_for_update,
+      commands::updater::install_update,
     ])
     .setup(|app| {
       if cfg!(debug_assertions) {
@@ -45,6 +49,8 @@ pub fn run() {
           app.emit("menu:open-settings", ()).ok();
         }
       });
+
+      app.manage(commands::updater::PendingUpdate(std::sync::Mutex::new(None)));
 
       Ok(())
     })

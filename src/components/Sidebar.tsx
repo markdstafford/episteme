@@ -2,6 +2,7 @@ import { ReactNode } from "react";
 import { useWorkspaceStore } from "@/stores/workspace";
 import { useSettingsStore } from "@/stores/settings";
 import { SettingsNav } from "@/components/SettingsNav";
+import { UpdateIndicator } from "@/components/UpdateIndicator";
 
 interface SidebarProps {
   children: ReactNode;
@@ -35,6 +36,7 @@ export function Sidebar({ children }: SidebarProps) {
                 >
                   {folderName}
                 </button>
+                <UpdateIndicator />
               </div>
             )}
             {children}
