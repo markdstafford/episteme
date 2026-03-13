@@ -553,7 +553,7 @@ Conventional commit sections mapped to changelog headings:
       - [ ] `fix` commits appear under "Bug fixes"
       - [ ] `chore`/`refactor`/`docs` commits do not appear in output
     - **Dependencies**: None
-  - [ ] **Task: Create release.yml GitHub Actions workflow**
+  - [x] **Task: Create release.yml GitHub Actions workflow**
     - **Description**: Create `.github/workflows/release.yml`. Trigger on `push` to tags matching `v*`. Matrix jobs across `macos-latest` (targets: `aarch64-apple-darwin` and `x86_64-apple-darwin`), `ubuntu-latest`, and `windows-latest`. Each job: checkout → setup Node → setup Rust → `Swatinem/rust-cache` → `tauri-apps/tauri-action` to build and sign. Post-build job: run git-cliff to generate changelog, generate `latest.json` manifest, use `softprops/action-gh-release` to create a draft GitHub Release with all platform installers and `latest.json` as assets and the git-cliff output as the release body.
     - **Acceptance criteria**:
       - [ ] Workflow triggers on `v*` tags
