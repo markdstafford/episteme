@@ -468,8 +468,8 @@ Conventional commit sections mapped to changelog headings:
     - **Acceptance criteria**:
       - [x] `plugins.updater.endpoints` set to `["https://github.com/markdstafford/episteme/releases/latest/download/latest.json"]`
       - [x] `plugins.updater.dialog` set to `false`
-      - [ ] `plugins.updater.pubkey` set to the generated public key
-      - [ ] `tauri build` succeeds with the updated config
+      - [x] `plugins.updater.pubkey` set to the generated public key
+      - [x] `tauri build` succeeds with the updated config
     - **Dependencies**: "Task: Generate ed25519 signing keypair", "Task: Add tauri-plugin-updater dependency"
   - [x] **Task: Implement check_for_update Tauri command**
     - **Description**: Create `src-tauri/src/commands/updater.rs` with a `check_for_update` command that uses `tauri-plugin-updater` to check the manifest endpoint. Returns `{ available, version, notes }`. Register the command in `commands/mod.rs` and the invoke handler in `lib.rs`. Log all update lifecycle events via `tauri-plugin-log`.
