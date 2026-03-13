@@ -94,14 +94,13 @@ jobs:
           path: artifacts
           merge-multiple: true
 
+      - name: Install git-cliff
+        run: |
+          curl -L "https://github.com/orhun/git-cliff/releases/download/v2.4.0/git-cliff-v2.4.0-x86_64-unknown-linux-musl.tar.gz" | tar xz
+          sudo mv git-cliff-v2.4.0/git-cliff /usr/local/bin/git-cliff
+
       - name: Generate changelog
-        id: changelog
-        uses: orhun/git-cliff-action@v3
-        with:
-          config: cliff.toml
-          args: --latest --strip header
-        env:
-          OUTPUT: CHANGELOG_LATEST.md
+        run: git cliff --config cliff.toml --latest --strip header > CHANGELOG_LATEST.md
 
       - name: Generate latest.json
         run: |
