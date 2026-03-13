@@ -503,7 +503,7 @@ Conventional commit sections mapped to changelog headings:
     - **Dependencies**: "Task: Implement check_for_update Tauri command", "Task: Implement install_update Tauri command"
 
 - [ ] **Story: Update UI components**
-  - [ ] **Task: Create UpdateIndicator component**
+  - [x] **Task: Create UpdateIndicator component**
     - **Description**: Create `src/components/UpdateIndicator.tsx`. Renders an `ArrowUpCircle` Lucide icon in the accent color when `update.available` is true; renders nothing otherwise. Shows a tooltip "Version X.Y.Z available" on hover. Clicking opens the `UpdateDialog`.
     - **Acceptance criteria**:
       - [ ] Component renders the icon when `available: true`
@@ -513,7 +513,7 @@ Conventional commit sections mapped to changelog headings:
       - [ ] Clicking the icon opens `UpdateDialog`
       - [ ] Unit tests pass (see testing story)
     - **Dependencies**: "Task: Create update Zustand store"
-  - [ ] **Task: Create UpdateDialog component**
+  - [x] **Task: Create UpdateDialog component**
     - **Description**: Create `src/components/UpdateDialog.tsx` using the existing Radix `Dialog` primitive. Dialog is centered in the window. Contains: version heading ("Version X.Y.Z available"), release notes rendered via the existing `MarkdownRenderer` component in a scrollable container, a primary "Update and restart" button that calls `installUpdate()`, and a "Dismiss" secondary action that closes the dialog. Dialog remains dismissible (icon stays visible after dismiss).
     - **Acceptance criteria**:
       - [ ] Dialog is centered in the app window
