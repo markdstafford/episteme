@@ -1,26 +1,12 @@
-import { CSSProperties, useState } from "react";
+import { useState } from "react";
 import { ChevronLeft, ChevronRight, Share2, Plus, Aperture } from "lucide-react";
+import { Button } from "@/components/ui/Button";
 import { CreateNewDialog } from "@/components/CreateNewDialog";
 
 interface TitleBarProps {
   folderPath: string | null;
   onStartAuthoring: (skillName: string | null) => void;
 }
-
-const iconBtnBase: CSSProperties = {
-  width: 28,
-  height: 28,
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  background: "transparent",
-  border: "none",
-  borderRadius: "var(--radius-base)",
-  color: "var(--color-text-tertiary)",
-  cursor: "pointer",
-  padding: 0,
-  flexShrink: 0,
-};
 
 export function TitleBar({ folderPath, onStartAuthoring }: TitleBarProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -55,20 +41,12 @@ export function TitleBar({ folderPath, onStartAuthoring }: TitleBarProps) {
             className="titlebar-no-drag"
             style={{ width: 70, height: "100%", flexShrink: 0 }}
           />
-          <button
-            className="titlebar-btn"
-            style={iconBtnBase}
-            aria-label="Navigate back"
-          >
+          <Button variant="ghost" size="sm" iconOnly aria-label="Navigate back" style={{ color: "var(--color-text-tertiary)" }}>
             <ChevronLeft size={16} />
-          </button>
-          <button
-            className="titlebar-btn"
-            style={iconBtnBase}
-            aria-label="Navigate forward"
-          >
+          </Button>
+          <Button variant="ghost" size="sm" iconOnly aria-label="Navigate forward" style={{ color: "var(--color-text-tertiary)" }}>
             <ChevronRight size={16} />
-          </button>
+          </Button>
         </div>
 
         {/* Section 2: title — flex:1, centered icon + text, entire section is drag region */}
@@ -106,25 +84,20 @@ export function TitleBar({ folderPath, onStartAuthoring }: TitleBarProps) {
             flexShrink: 0,
           }}
         >
-          <button
-            className="titlebar-btn"
-            style={iconBtnBase}
-            aria-label="Share"
-          >
+          <Button variant="ghost" size="sm" iconOnly aria-label="Share" style={{ color: "var(--color-text-tertiary)" }}>
             <Share2 size={16} />
-          </button>
-          <button
-            className="titlebar-btn"
-            style={{
-              ...iconBtnBase,
-              ...(folderPath === null ? { opacity: 0.4, cursor: "not-allowed" } : {}),
-            }}
-            disabled={folderPath === null}
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            iconOnly
             aria-label="New document"
+            disabled={folderPath === null}
             onClick={() => setDialogOpen(true)}
+            style={{ color: "var(--color-text-tertiary)" }}
           >
             <Plus size={16} />
-          </button>
+          </Button>
         </div>
       </div>
       {dialogOpen && folderPath && (

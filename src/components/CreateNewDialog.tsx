@@ -168,25 +168,16 @@ export function CreateNewDialog({
                 key={opt.skillName ?? "other"}
                 data-option="true"
                 onClick={() => handleSelect(opt)}
+                className="focus-ring hover:bg-(--color-bg-hover) rounded-[var(--radius-md)] transition-colors duration-(--duration-fast)"
                 style={{
                   display: "flex",
                   alignItems: "center",
                   gap: 12,
                   width: "100%",
                   padding: "var(--space-2) var(--space-3)",
-                  borderRadius: "var(--radius-md)",
-                  background: "transparent",
                   border: "none",
                   cursor: "pointer",
                   textAlign: "left",
-                  transition: `background-color var(--duration-fast)`,
-                }}
-                onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLElement).style.backgroundColor =
-                    "var(--color-bg-hover)";
-                }}
-                onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLElement).style.backgroundColor = "";
                 }}
               >
                 <span style={{ flexShrink: 0 }}>
