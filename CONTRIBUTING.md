@@ -22,6 +22,7 @@ Episteme uses [Conventional Commits](https://www.conventionalcommits.org/) for a
 | `refactor` | No | Code changes with no behavior change |
 | `docs` | No | Documentation only |
 | `test` | No | Adding or updating tests |
+| `style` | No | CSS/formatting changes only |
 | `ci` | No | CI/CD changes |
 
 Breaking changes: append `!` after the type (e.g. `feat!:`) — these appear at the top of release notes under "Breaking changes".
