@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useWorkspaceStore } from "@/stores/workspace";
 import { useAiChatStore } from "@/stores/aiChat";
 import { useSettingsStore } from "@/stores/settings";
+import { useUpdateStore } from "@/stores/update";
 import { WelcomeScreen } from "@/components/WelcomeScreen";
 import { TitleBar } from "@/components/TitleBar";
 import { Sidebar } from "@/components/Sidebar";
@@ -71,6 +72,14 @@ function App() {
     };
     init();
   }, [loadSavedFolder]);
+
+  const checkForUpdate = useUpdateStore((s) => s.checkForUpdate);
+
+  useEffect(() => {
+    checkForUpdate();
+    const interval = setInterval(checkForUpdate, 14_400_000); // 4 hours
+    return () => clearInterval(interval);
+  }, [checkForUpdate]);
 
   if (import.meta.env.DEV && showKitchenSink) {
     return <DesignKitchen onClose={() => setShowKitchenSink(false)} />;
