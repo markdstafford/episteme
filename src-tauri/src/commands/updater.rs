@@ -49,3 +49,28 @@ pub async fn check_for_update(
         }
     }
 }
+
+#[tauri::command]
+pub async fn install_update(
+    state: tauri::State<'_, PendingUpdate>,
+) -> Result<(), String> {
+    let update = state.0.lock().unwrap().take();
+
+    match update {
+        Some(update) => {
+            log::info!("Update download started");
+            update
+                .download_and_install(|_, _| {}, || {
+                    log::info!("Update install initiated");
+                })
+                .await
+                .map_err(|e| {
+                    log::error!("Update install failed: {}", e);
+                    e.to_string()
+                })?;
+            log::info!("Update download complete");
+            Ok(())
+        }
+        None => Err("No pending update".to_string()),
+    }
+}

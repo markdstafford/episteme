@@ -24,6 +24,7 @@ pub fn run() {
       commands::skills::list_skills,
       commands::skills::count_documents_by_type,
       commands::updater::check_for_update,
+      commands::updater::install_update,
     ])
     .setup(|app| {
       if cfg!(debug_assertions) {
