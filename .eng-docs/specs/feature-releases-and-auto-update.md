@@ -533,8 +533,8 @@ Conventional commit sections mapped to changelog headings:
       - [ ] Sidebar unit tests still pass
     - **Dependencies**: "Task: Create UpdateIndicator component"
 
-- [ ] **Story: App wiring**
-  - [ ] **Task: Wire update checks in App.tsx**
+- [x] **Story: App wiring**
+  - [x] **Task: Wire update checks in App.tsx**
     - **Description**: In `src/App.tsx`, call `checkForUpdate()` from the update store on app mount. Set up a `setInterval` to call `checkForUpdate()` every 4 hours (14,400,000ms). Clear the interval on unmount.
     - **Acceptance criteria**:
       - [ ] `checkForUpdate()` called once on app mount
