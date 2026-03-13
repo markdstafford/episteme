@@ -133,7 +133,7 @@ Each level has a distinct semantic role. Do not collapse them — the visual hie
 | `--color-border-default` | `oklch(84% 0.007 264)` | `#d5d5d8` | Component borders |
 | `--color-border-strong` | `oklch(78% 0.008 264)` | `#c4c4cc` | Emphasized borders |
 
-#### Accent (both modes)
+#### Accent
 
 Horizon blue — the accent hue for Episteme. Open, forward-looking, aspirational. Used for focus rings, selected states, links, and primary button backgrounds.
 
@@ -141,18 +141,24 @@ Horizon blue — the accent hue for Episteme. Open, forward-looking, aspirationa
 |---|---|---|
 | `--color-accent` | `oklch(62% 0.175 230)` | Focus rings, selected states, links, primary button bg |
 | `--color-accent-hover` | `oklch(66% 0.175 230)` | Accent hover state (lighter) |
-| `--color-accent-subtle` | `oklch(62% 0.04 230)` | Tinted background for selected rows, badges |
+| `--color-accent-subtle` (dark) | `oklch(24% 0.05 230)` | Badge background (dark mode) |
+| `--color-accent-subtle` (light) | `oklch(95% 0.03 230)` | Badge background (light mode) |
 
-#### State colors (both modes)
+#### State colors
+
+> Note: Base state colors are mode-independent. The `-subtle` background tokens are mode-specific (dark: low lightness ~24%; light: high lightness ~95%) for WCAG AA badge contrast.
 
 | Token | oklch | Usage |
 |---|---|---|
 | `--color-state-danger` | `oklch(58% 0.2 25)` | Destructive actions, errors |
-| `--color-state-danger-subtle` | `oklch(58% 0.06 25)` | Danger badge background |
+| `--color-state-danger-subtle` (dark) | `oklch(24% 0.06 25)` | Danger badge background (dark mode) |
+| `--color-state-danger-subtle` (light) | `oklch(95% 0.04 25)` | Danger badge background (light mode) |
 | `--color-state-warning` | `oklch(72% 0.16 65)` | Warnings |
-| `--color-state-warning-subtle` | `oklch(72% 0.05 65)` | Warning badge background |
+| `--color-state-warning-subtle` (dark) | `oklch(24% 0.06 65)` | Warning badge background (dark mode) |
+| `--color-state-warning-subtle` (light) | `oklch(95% 0.04 65)` | Warning badge background (light mode) |
 | `--color-state-success` | `oklch(65% 0.15 155)` | Success, confirmations |
-| `--color-state-success-subtle` | `oklch(65% 0.05 155)` | Success badge background |
+| `--color-state-success-subtle` (dark) | `oklch(24% 0.06 155)` | Success badge background (dark mode) |
+| `--color-state-success-subtle` (light) | `oklch(95% 0.04 155)` | Success badge background (light mode) |
 
 ---
 
@@ -649,15 +655,11 @@ All tokens are defined as CSS custom properties in a `@theme {}` block in `src/a
   /* Accent (mode-independent) */
   --color-accent: oklch(62% 0.175 230);
   --color-accent-hover: oklch(66% 0.175 230);
-  --color-accent-subtle: oklch(62% 0.04 230);
 
   /* State colors (mode-independent) */
   --color-state-danger: oklch(58% 0.2 25);
-  --color-state-danger-subtle: oklch(58% 0.06 25);
   --color-state-warning: oklch(72% 0.16 65);
-  --color-state-warning-subtle: oklch(72% 0.05 65);
   --color-state-success: oklch(65% 0.15 155);
-  --color-state-success-subtle: oklch(65% 0.05 155);
 
   /* Shadows */
   --shadow-sm: 0 1px 2px oklch(0% 0 0 / 0.08);
@@ -684,6 +686,11 @@ All tokens are defined as CSS custom properties in a `@theme {}` block in `src/a
     --color-border-subtle: oklch(16% 0.02 264);
     --color-border-default: oklch(20% 0.022 264);
     --color-border-strong: oklch(23% 0.022 264);
+
+    --color-accent-subtle: oklch(24% 0.05 230);
+    --color-state-danger-subtle: oklch(24% 0.06 25);
+    --color-state-warning-subtle: oklch(24% 0.06 65);
+    --color-state-success-subtle: oklch(24% 0.06 155);
   }
 
   @media (prefers-color-scheme: light) {
@@ -703,6 +710,11 @@ All tokens are defined as CSS custom properties in a `@theme {}` block in `src/a
       --color-border-subtle: oklch(88% 0.006 264);
       --color-border-default: oklch(84% 0.007 264);
       --color-border-strong: oklch(78% 0.008 264);
+
+      --color-accent-subtle: oklch(95% 0.03 230);
+      --color-state-danger-subtle: oklch(95% 0.04 25);
+      --color-state-warning-subtle: oklch(95% 0.04 65);
+      --color-state-success-subtle: oklch(95% 0.04 155);
     }
   }
 }
@@ -710,8 +722,8 @@ All tokens are defined as CSS custom properties in a `@theme {}` block in `src/a
 
 **Notes on the encoding:**
 
-- Tokens that don't vary by color mode (spacing, radius, motion, accent, state colors, shadows) go in `@theme {}` and become Tailwind utility classes automatically
-- Tokens that vary by mode (all `--color-bg-*`, `--color-text-*`, `--color-border-*`) go in `@layer base` with a `prefers-color-scheme` media query override
+- Tokens that don't vary by color mode (spacing, radius, motion, accent base colors, state base colors, shadows) go in `@theme {}` and become Tailwind utility classes automatically
+- Tokens that vary by mode (all `--color-bg-*`, `--color-text-*`, `--color-border-*`, and mode-dependent tokens like `-subtle` badge backgrounds) go in `@layer base` with a `prefers-color-scheme` media query override
 - The default (`:root` without media query) is dark mode — consistent with having the most thoroughly validated values from our reference research
 - When theming is added in a future phase, a `data-theme` attribute override replaces the `prefers-color-scheme` media query
 
