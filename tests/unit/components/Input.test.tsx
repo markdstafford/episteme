@@ -93,7 +93,7 @@ describe("Input", () => {
       const input = screen.getByRole("textbox");
       fireEvent.focus(input);
       expect(input.style.borderColor).toBe("var(--color-accent)");
-      expect(input.style.boxShadow).toBe("0 0 0 2px var(--color-accent-subtle)");
+      expect(input.style.boxShadow).toBe("0 0 0 2px color-mix(in oklch, var(--color-accent) 25%, transparent)");
     });
 
     it("removes focus styles on blur", () => {
@@ -112,7 +112,7 @@ describe("Input", () => {
       const input = screen.getByRole("textbox");
       expect(input.style.borderColor).toBe("var(--color-state-danger)");
       expect(input.style.boxShadow).toBe(
-        "0 0 0 2px var(--color-state-danger-subtle)",
+        "0 0 0 2px color-mix(in oklch, var(--color-state-danger) 25%, transparent)",
       );
     });
 
@@ -122,7 +122,7 @@ describe("Input", () => {
       fireEvent.focus(input);
       expect(input.style.borderColor).toBe("var(--color-state-danger)");
       expect(input.style.boxShadow).toBe(
-        "0 0 0 2px var(--color-state-danger-subtle)",
+        "0 0 0 2px color-mix(in oklch, var(--color-state-danger) 25%, transparent)",
       );
     });
 

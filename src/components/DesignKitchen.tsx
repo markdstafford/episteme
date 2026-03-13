@@ -1,6 +1,7 @@
 import React from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
+import { Badge } from "./ui/Badge";
 import { Button } from "./ui/Button";
 import { Input } from "./ui/Input";
 
@@ -81,15 +82,15 @@ export function DesignKitchen({ onClose }: DesignKitchenProps) {
           <ColorGroup label="Accent" tokens={[
             { name: "--color-accent",        dark: "oklch(62% 0.175 230)", light: "oklch(62% 0.175 230)" },
             { name: "--color-accent-hover",  dark: "oklch(66% 0.175 230)", light: "oklch(66% 0.175 230)" },
-            { name: "--color-accent-subtle", dark: "oklch(62% 0.04 230)",  light: "oklch(62% 0.04 230)" },
+            { name: "--color-accent-subtle", dark: "oklch(24% 0.05 230)",  light: "oklch(95% 0.03 230)" },
           ]} />
           <ColorGroup label="State" tokens={[
             { name: "--color-state-danger",         dark: "oklch(58% 0.2 25)",   light: "oklch(58% 0.2 25)" },
-            { name: "--color-state-danger-subtle",  dark: "oklch(58% 0.06 25)",  light: "oklch(58% 0.06 25)" },
+            { name: "--color-state-danger-subtle",  dark: "oklch(24% 0.06 25)",  light: "oklch(95% 0.04 25)" },
             { name: "--color-state-warning",        dark: "oklch(72% 0.16 65)",  light: "oklch(72% 0.16 65)" },
-            { name: "--color-state-warning-subtle", dark: "oklch(72% 0.05 65)",  light: "oklch(72% 0.05 65)" },
+            { name: "--color-state-warning-subtle", dark: "oklch(24% 0.06 65)",  light: "oklch(95% 0.04 65)" },
             { name: "--color-state-success",        dark: "oklch(65% 0.15 155)", light: "oklch(65% 0.15 155)" },
-            { name: "--color-state-success-subtle", dark: "oklch(65% 0.05 155)", light: "oklch(65% 0.05 155)" },
+            { name: "--color-state-success-subtle", dark: "oklch(24% 0.06 155)", light: "oklch(95% 0.04 155)" },
           ]} />
         </Section>
         <Section title="Typography">
@@ -282,26 +283,10 @@ export function DesignKitchen({ onClose }: DesignKitchenProps) {
               Badges
             </div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-              {[
-                { label: "Neutral",  bg: "var(--color-bg-hover)",             color: "var(--color-text-secondary)" },
-                { label: "Accent",   bg: "var(--color-accent-subtle)",        color: "var(--color-accent)" },
-                { label: "Danger",   bg: "var(--color-state-danger-subtle)",  color: "var(--color-state-danger)" },
-                { label: "Warning",  bg: "var(--color-state-warning-subtle)", color: "var(--color-state-warning)" },
-                { label: "Success",  bg: "var(--color-state-success-subtle)", color: "var(--color-state-success)" },
-              ].map(({ label, bg, color }) => (
-                <span key={label} style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  height: "24px",
-                  padding: "0 8px",
-                  fontSize: "var(--font-size-ui-xs)",
-                  fontWeight: 500,
-                  borderRadius: "var(--radius-sm)",
-                  background: bg,
-                  color,
-                }}>
-                  {label}
-                </span>
+              {(["neutral", "accent", "danger", "warning", "success"] as const).map((variant) => (
+                <Badge key={variant} variant={variant}>
+                  {variant.charAt(0).toUpperCase() + variant.slice(1)}
+                </Badge>
               ))}
             </div>
           </div>

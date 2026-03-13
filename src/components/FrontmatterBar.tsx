@@ -1,4 +1,5 @@
 import { useRef, useState, useEffect } from "react";
+import { Badge } from "./ui/Badge";
 
 const DISPLAY_FIELDS = [
   "title",
@@ -155,20 +156,7 @@ export function FrontmatterBar({ frontmatter }: FrontmatterBarProps) {
             background: `linear-gradient(to right, transparent, var(--color-bg-subtle) 30%)`,
           }}
         >
-          <span
-            className="flex items-center"
-            style={{
-              backgroundColor: "var(--color-bg-hover)",
-              color: "var(--color-text-secondary)",
-              fontSize: "var(--font-size-ui-xs)",
-              fontWeight: "500",
-              borderRadius: "var(--radius-sm)",
-              padding: "0 8px",
-              height: "var(--height-control-sm)",
-            }}
-          >
-            +{hiddenCount} more
-          </span>
+          <Badge variant="neutral">+{hiddenCount} more</Badge>
         </div>
       )}
     </div>
