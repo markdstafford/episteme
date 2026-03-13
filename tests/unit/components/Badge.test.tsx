@@ -53,6 +53,8 @@ describe("Badge", () => {
   it("applies correct geometry styles", () => {
     render(<Badge>X</Badge>);
     const el = screen.getByText("X");
+    expect(el.style.display).toBe("inline-flex");
+    expect(el.style.padding).toBe("0 var(--space-2)");
     expect(el.style.height).toBe("var(--height-control-sm)");
     expect(el.style.fontSize).toBe("var(--font-size-ui-xs)");
     expect(el.style.borderRadius).toBe("var(--radius-sm)");

@@ -34,7 +34,7 @@ const baseStyle: React.CSSProperties = {
   display: "inline-flex",
   alignItems: "center",
   height: "var(--height-control-sm)",
-  padding: "0 8px",
+  padding: "0 var(--space-2)",
   fontSize: "var(--font-size-ui-xs)",
   fontWeight: "500",
   borderRadius: "var(--radius-sm)",
