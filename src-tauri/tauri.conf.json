@@ -36,5 +36,14 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ]
+  },
+  "plugins": {
+    "updater": {
+      "endpoints": [
+        "https://github.com/markdstafford/episteme/releases/latest/download/latest.json"
+      ],
+      "dialog": false,
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IERDRkUwRThCOUY4RDU2MDIKUldRQ1ZvMmZpdzcrM0FvUXkyUFNuUkVoanhQV0sxaFBMTmpVbGxSQlJtaXU1WFozT3FFNHdGelUK"
+    }
   }
 }

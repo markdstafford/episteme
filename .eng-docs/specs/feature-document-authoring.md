@@ -579,7 +579,7 @@ You are currently helping the user create a new document.
       - [x] `Plus` icon from Lucide with "New document" label
       - [x] Click calls `startAuthoring()` on the chat store
       - [x] Chat panel opens if not already open
-      - [ ] Button disabled during active streaming
+      - [ ] Button disabled during active streaming -- deferred, streaming mode not yet in use
     - **Dependencies**: "Task: Add authoring state to `useAiChatStore`"
   - [x] **Task: Wire DocumentViewer to reload on `DocumentUpdated`**
     - **Description**: Modify `DocumentViewer.tsx` to subscribe to `authoringFilePath` from `useAiChatStore`. When the file path changes or a `DocumentUpdated` event triggers a reload, re-invoke `read_file` to refresh the displayed content. Use a counter or timestamp to force re-render even when the path hasn't changed (same file, new content).
