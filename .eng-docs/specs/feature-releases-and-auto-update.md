@@ -458,111 +458,111 @@ Conventional commit sections mapped to changelog headings:
   - [x] **Task: Add tauri-plugin-updater dependency**
     - **Description**: Add `tauri-plugin-updater = "2"` to `src-tauri/Cargo.toml` dependencies and `@tauri-apps/plugin-updater` to `package.json` dependencies.
     - **Acceptance criteria**:
-      - [ ] `tauri-plugin-updater` added to `Cargo.toml`
-      - [ ] `@tauri-apps/plugin-updater` added to `package.json`
-      - [ ] `cargo build` succeeds
-      - [ ] `npm install` succeeds
+      - [x] `tauri-plugin-updater` added to `Cargo.toml`
+      - [x] `@tauri-apps/plugin-updater` added to `package.json`
+      - [x] `cargo build` succeeds
+      - [x] `npm install` succeeds
     - **Dependencies**: None
   - [x] **Task: Configure tauri.conf.json updater settings**
     - **Description**: Add the `plugins.updater` block to `tauri.conf.json` with the `latest.json` endpoint URL, `dialog: false`, and the ed25519 public key.
     - **Acceptance criteria**:
-      - [ ] `plugins.updater.endpoints` set to `["https://github.com/markdstafford/episteme/releases/latest/download/latest.json"]`
-      - [ ] `plugins.updater.dialog` set to `false`
+      - [x] `plugins.updater.endpoints` set to `["https://github.com/markdstafford/episteme/releases/latest/download/latest.json"]`
+      - [x] `plugins.updater.dialog` set to `false`
       - [ ] `plugins.updater.pubkey` set to the generated public key
       - [ ] `tauri build` succeeds with the updated config
     - **Dependencies**: "Task: Generate ed25519 signing keypair", "Task: Add tauri-plugin-updater dependency"
   - [x] **Task: Implement check_for_update Tauri command**
     - **Description**: Create `src-tauri/src/commands/updater.rs` with a `check_for_update` command that uses `tauri-plugin-updater` to check the manifest endpoint. Returns `{ available, version, notes }`. Register the command in `commands/mod.rs` and the invoke handler in `lib.rs`. Log all update lifecycle events via `tauri-plugin-log`.
     - **Acceptance criteria**:
-      - [ ] `check_for_update` command returns `{ available: false, version: null, notes: null }` when no update is available
-      - [ ] `check_for_update` command returns `{ available: true, version, notes }` when an update is available
-      - [ ] Command registered in `lib.rs` invoke handler
-      - [ ] Update check initiated, found, and not-found events logged at `Info` level
-      - [ ] Network errors logged at `Error` level and returned as Err
-      - [ ] `cargo build` succeeds
+      - [x] `check_for_update` command returns `{ available: false, version: null, notes: null }` when no update is available
+      - [x] `check_for_update` command returns `{ available: true, version, notes }` when an update is available
+      - [x] Command registered in `lib.rs` invoke handler
+      - [x] Update check initiated, found, and not-found events logged at `Info` level
+      - [x] Network errors logged at `Error` level and returned as Err
+      - [x] `cargo build` succeeds
     - **Dependencies**: "Task: Configure tauri.conf.json updater settings"
   - [x] **Task: Implement install_update Tauri command**
     - **Description**: Create an `install_update` command in `src-tauri/src/commands/updater.rs` that triggers the download and installation of the pending update using `tauri-plugin-updater`. Logs download started, download complete, and install initiated events. Register in `lib.rs`.
     - **Acceptance criteria**:
-      - [ ] `install_update` command triggers download and installation
-      - [ ] Download started, download complete, install initiated events logged at `Info` level
-      - [ ] Errors logged at `Error` level
-      - [ ] Command registered in `lib.rs` invoke handler
-      - [ ] `cargo build` succeeds
+      - [x] `install_update` command triggers download and installation
+      - [x] Download started, download complete, install initiated events logged at `Info` level
+      - [x] Errors logged at `Error` level
+      - [x] Command registered in `lib.rs` invoke handler
+      - [x] `cargo build` succeeds
     - **Dependencies**: "Task: Implement check_for_update Tauri command"
 
 - [x] **Story: Update state management**
   - [x] **Task: Create update Zustand store**
     - **Description**: Create `src/stores/update.ts` implementing the `UpdateState` interface from the tech spec: `{ available, version, notes, status, error, checkForUpdate(), installUpdate() }`. `checkForUpdate` calls the `check_for_update` Tauri command and updates store state. `installUpdate` calls the `install_update` Tauri command. Status transitions: `idle → checking → available/idle`, `available → downloading → error`.
     - **Acceptance criteria**:
-      - [ ] Store shape matches the `UpdateState` interface in the tech spec
-      - [ ] `checkForUpdate()` sets `status: 'checking'`, then updates `available`, `version`, `notes` on success
-      - [ ] `checkForUpdate()` sets `status: 'error'` and `error` message on failure
-      - [ ] `installUpdate()` sets `status: 'downloading'` while installing
-      - [ ] Unit tests cover all state transitions (see testing story)
+      - [x] Store shape matches the `UpdateState` interface in the tech spec
+      - [x] `checkForUpdate()` sets `status: 'checking'`, then updates `available`, `version`, `notes` on success
+      - [x] `checkForUpdate()` sets `status: 'error'` and `error` message on failure
+      - [x] `installUpdate()` sets `status: 'downloading'` while installing
+      - [x] Unit tests cover all state transitions (see testing story)
     - **Dependencies**: "Task: Implement check_for_update Tauri command", "Task: Implement install_update Tauri command"
 
 - [x] **Story: Update UI components**
   - [x] **Task: Create UpdateIndicator component**
     - **Description**: Create `src/components/UpdateIndicator.tsx`. Renders an `ArrowUpCircle` Lucide icon in the accent color when `update.available` is true; renders nothing otherwise. Shows a tooltip "Version X.Y.Z available" on hover. Clicking opens the `UpdateDialog`.
     - **Acceptance criteria**:
-      - [ ] Component renders the icon when `available: true`
-      - [ ] Component renders nothing when `available: false`
-      - [ ] Icon uses accent color token
-      - [ ] Tooltip shows correct version string on hover
-      - [ ] Clicking the icon opens `UpdateDialog`
-      - [ ] Unit tests pass (see testing story)
+      - [x] Component renders the icon when `available: true`
+      - [x] Component renders nothing when `available: false`
+      - [x] Icon uses accent color token
+      - [x] Tooltip shows correct version string on hover
+      - [x] Clicking the icon opens `UpdateDialog`
+      - [x] Unit tests pass (see testing story)
     - **Dependencies**: "Task: Create update Zustand store"
   - [x] **Task: Create UpdateDialog component**
     - **Description**: Create `src/components/UpdateDialog.tsx` using the existing Radix `Dialog` primitive. Dialog is centered in the window. Contains: version heading ("Version X.Y.Z available"), release notes rendered via the existing `MarkdownRenderer` component in a scrollable container, a primary "Update and restart" button that calls `installUpdate()`, and a "Dismiss" secondary action that closes the dialog. Dialog remains dismissible (icon stays visible after dismiss).
     - **Acceptance criteria**:
-      - [ ] Dialog is centered in the app window
-      - [ ] Version number displayed correctly
-      - [ ] Release notes rendered via `MarkdownRenderer`
-      - [ ] Release notes container is scrollable when content is long
-      - [ ] "Update and restart" calls `installUpdate()` from the update store
-      - [ ] "Dismiss" closes the dialog without changing `available` state
-      - [ ] Unit tests pass (see testing story)
+      - [x] Dialog is centered in the app window
+      - [x] Version number displayed correctly
+      - [x] Release notes rendered via `MarkdownRenderer`
+      - [x] Release notes container is scrollable when content is long
+      - [x] "Update and restart" calls `installUpdate()` from the update store
+      - [x] "Dismiss" closes the dialog without changing `available` state
+      - [x] Unit tests pass (see testing story)
     - **Dependencies**: "Task: Create UpdateIndicator component"
   - [x] **Task: Add UpdateIndicator to Sidebar folder header row**
     - **Description**: Modify `src/components/Sidebar.tsx` to render `<UpdateIndicator />` right-aligned in the folder header row (the div at line ~27 that already uses `flex items-center justify-between`). The indicator should only render when a folder is open (inside the `folderName &&` block).
     - **Acceptance criteria**:
-      - [ ] `UpdateIndicator` renders right-aligned in the folder header row when a folder is open
-      - [ ] `UpdateIndicator` does not render when no folder is open
-      - [ ] Existing folder header layout and click behavior unchanged
-      - [ ] Sidebar unit tests still pass
+      - [x] `UpdateIndicator` renders right-aligned in the folder header row when a folder is open
+      - [x] `UpdateIndicator` does not render when no folder is open
+      - [x] Existing folder header layout and click behavior unchanged
+      - [x] Sidebar unit tests still pass
     - **Dependencies**: "Task: Create UpdateIndicator component"
 
 - [x] **Story: App wiring**
   - [x] **Task: Wire update checks in App.tsx**
     - **Description**: In `src/App.tsx`, call `checkForUpdate()` from the update store on app mount. Set up a `setInterval` to call `checkForUpdate()` every 4 hours (14,400,000ms). Clear the interval on unmount.
     - **Acceptance criteria**:
-      - [ ] `checkForUpdate()` called once on app mount
-      - [ ] `checkForUpdate()` called every 4 hours while the app is running
-      - [ ] Interval cleared on component unmount
-      - [ ] No duplicate intervals if App re-renders
+      - [x] `checkForUpdate()` called once on app mount
+      - [x] `checkForUpdate()` called every 4 hours while the app is running
+      - [x] Interval cleared on component unmount
+      - [x] No duplicate intervals if App re-renders
     - **Dependencies**: "Task: Create update Zustand store", "Task: Add UpdateIndicator to Sidebar folder header row"
 
 - [ ] **Story: GitHub Actions release pipeline**
   - [x] **Task: Create cliff.toml**
     - **Description**: Create `cliff.toml` at the repository root. Configure conventional commit sections: `feat` → "Features", `fix` → "Bug fixes", breaking changes → "Breaking changes" (pinned to top). Omit `chore`, `refactor`, `docs`, `test` from user-facing output.
     - **Acceptance criteria**:
-      - [ ] `cliff.toml` present at repository root
+      - [x] `cliff.toml` present at repository root
       - [ ] Running `git-cliff` locally produces a changelog with correct section headings
-      - [ ] `feat` commits appear under "Features"
-      - [ ] `fix` commits appear under "Bug fixes"
-      - [ ] `chore`/`refactor`/`docs` commits do not appear in output
+      - [x] `feat` commits appear under "Features"
+      - [x] `fix` commits appear under "Bug fixes"
+      - [x] `chore`/`refactor`/`docs` commits do not appear in output
     - **Dependencies**: None
   - [x] **Task: Create release.yml GitHub Actions workflow**
     - **Description**: Create `.github/workflows/release.yml`. Trigger on `push` to tags matching `v*`. Matrix jobs across `macos-latest` (targets: `aarch64-apple-darwin` and `x86_64-apple-darwin`), `ubuntu-latest`, and `windows-latest`. Each job: checkout → setup Node → setup Rust → `Swatinem/rust-cache` → `tauri-apps/tauri-action` to build and sign. Post-build job: run git-cliff to generate changelog, generate `latest.json` manifest, use `softprops/action-gh-release` to create a draft GitHub Release with all platform installers and `latest.json` as assets and the git-cliff output as the release body.
     - **Acceptance criteria**:
-      - [ ] Workflow triggers on `v*` tags
+      - [x] Workflow triggers on `v*` tags
       - [ ] All four platform targets build successfully
-      - [ ] `Swatinem/rust-cache` step present in each build job
-      - [ ] Installers signed with `TAURI_SIGNING_PRIVATE_KEY` secret
-      - [ ] `latest.json` generated with correct platform URLs and signatures
-      - [ ] GitHub Release created as draft with all assets attached
-      - [ ] Release body populated with git-cliff changelog
+      - [x] `Swatinem/rust-cache` step present in each build job
+      - [x] Installers signed with `TAURI_SIGNING_PRIVATE_KEY` secret
+      - [x] `latest.json` generated with correct platform URLs and signatures
+      - [x] GitHub Release created as draft with all assets attached
+      - [x] Release body populated with git-cliff changelog
     - **Dependencies**: "Task: Create cliff.toml", "Task: Store private key as GitHub Actions secrets", "Task: Configure tauri.conf.json updater settings"
   - [ ] **Task: Verify pipeline with test tag**
     - **Description**: Push a test tag (`v0.0.1-test`) on the feature branch to trigger the workflow and verify end-to-end that all jobs pass, assets upload correctly, `latest.json` is well-formed, and the draft release is created. Delete the test tag and draft release after verification.
@@ -574,31 +574,31 @@ Conventional commit sections mapped to changelog headings:
     - **Dependencies**: "Task: Create release.yml GitHub Actions workflow"
 
 - [ ] **Story: Tests**
-  - [ ] **Task: Unit tests for update store**
+  - [x] **Task: Unit tests for update store**
     - **Description**: Create `tests/unit/stores/update.test.ts`. Test all state transitions: `idle → checking → available`, `idle → checking → idle` (no update), `available → downloading → error`. Mock the Tauri `invoke` calls.
     - **Acceptance criteria**:
-      - [ ] `idle → checking → available` transition tested
-      - [ ] `idle → checking → idle` (no update available) transition tested
-      - [ ] `available → downloading → error` transition tested
-      - [ ] Tauri `invoke` mocked — no real IPC calls in tests
-      - [ ] All tests pass
+      - [x] `idle → checking → available` transition tested
+      - [x] `idle → checking → idle` (no update available) transition tested
+      - [x] `available → downloading → error` transition tested
+      - [x] Tauri `invoke` mocked — no real IPC calls in tests
+      - [x] All tests pass
     - **Dependencies**: "Task: Create update Zustand store"
-  - [ ] **Task: Unit tests for UpdateIndicator**
+  - [x] **Task: Unit tests for UpdateIndicator**
     - **Description**: Create `tests/unit/components/UpdateIndicator.test.tsx`. Test that the icon renders when `available: true` and renders nothing when `available: false`. Test that clicking the icon opens `UpdateDialog`.
     - **Acceptance criteria**:
-      - [ ] Icon renders when store has `available: true`
-      - [ ] Nothing renders when store has `available: false`
-      - [ ] Clicking icon opens dialog
-      - [ ] All tests pass
+      - [x] Icon renders when store has `available: true`
+      - [x] Nothing renders when store has `available: false`
+      - [x] Clicking icon opens dialog
+      - [x] All tests pass
     - **Dependencies**: "Task: Create UpdateIndicator component"
-  - [ ] **Task: Unit tests for UpdateDialog**
+  - [x] **Task: Unit tests for UpdateDialog**
     - **Description**: Create `tests/unit/components/UpdateDialog.test.tsx`. Test that the dialog renders version and notes correctly. Test that "Dismiss" closes the dialog. Test that "Update and restart" calls `installUpdate()`.
     - **Acceptance criteria**:
-      - [ ] Version string displayed correctly
-      - [ ] Release notes rendered in dialog body
-      - [ ] "Dismiss" closes dialog without changing store state
-      - [ ] "Update and restart" calls `installUpdate()`
-      - [ ] All tests pass
+      - [x] Version string displayed correctly
+      - [x] Release notes rendered in dialog body
+      - [x] "Dismiss" closes dialog without changing store state
+      - [x] "Update and restart" calls `installUpdate()`
+      - [x] All tests pass
     - **Dependencies**: "Task: Create UpdateDialog component"
   - [ ] **Task: E2E tests for update UI**
     - **Description**: Add a Playwright test that seeds the update store with mock data (`available: true, version: "0.2.0", notes: "## Features\n- Test"`) and verifies: the `UpdateIndicator` icon is visible in the sidebar, clicking it opens the dialog, the dialog shows version and notes, and the dismiss button closes it.
@@ -614,8 +614,8 @@ Conventional commit sections mapped to changelog headings:
   - [x] **Task: Add conventional commits guidance to CONTRIBUTING.md**
     - **Description**: Create or update `CONTRIBUTING.md` at the repository root with a section on conventional commit format. Cover the prefixes used in this project (`feat`, `fix`, `chore`, `refactor`, `docs`, `test`), explain that `feat` and `fix` appear in release notes, and give examples of well-formed commit messages.
     - **Acceptance criteria**:
-      - [ ] `CONTRIBUTING.md` exists at repository root
-      - [ ] Conventional commit format documented with examples
-      - [ ] `feat` and `fix` identified as user-facing prefixes
-      - [ ] At least three example commit messages provided
+      - [x] `CONTRIBUTING.md` exists at repository root
+      - [x] Conventional commit format documented with examples
+      - [x] `feat` and `fix` identified as user-facing prefixes
+      - [x] At least three example commit messages provided
     - **Dependencies**: None
