@@ -14,7 +14,6 @@ export function TitleBar({ folderPath, onStartAuthoring }: TitleBarProps) {
   return (
     <>
       <div
-        data-tauri-drag-region
         style={{
           height: "var(--height-titlebar)",
           background: "var(--color-bg-app)",
@@ -22,10 +21,12 @@ export function TitleBar({ folderPath, onStartAuthoring }: TitleBarProps) {
           display: "flex",
           alignItems: "center",
           flexShrink: 0,
+          userSelect: "none",
         }}
       >
         {/* Section 1: sidebar — width tracks --width-sidebar via CSS variable */}
         <div
+          data-tauri-drag-region
           style={{
             width: "var(--width-sidebar)",
             height: "100%",
@@ -49,8 +50,12 @@ export function TitleBar({ folderPath, onStartAuthoring }: TitleBarProps) {
           </Button>
         </div>
 
-        {/* Section 2: title — flex:1, centered icon + text, entire section is drag region */}
+        {/* Section 2: title — flex:1, centered icon + text, entire section is drag region.
+            data-tauri-drag-region is on this div (not the root) so that drag.js sees it as
+            e.target when the section itself is clicked. Children use pointerEvents:none so
+            clicks on the icon/label fall through to this div rather than targeting them. */}
         <div
+          data-tauri-drag-region
           style={{
             flex: 1,
             height: "100%",
@@ -60,13 +65,14 @@ export function TitleBar({ folderPath, onStartAuthoring }: TitleBarProps) {
             gap: "var(--space-2)",
           }}
         >
-          <Aperture size={14} style={{ color: "var(--color-text-tertiary)", flexShrink: 0 }} />
+          <Aperture size={14} style={{ color: "var(--color-text-tertiary)", flexShrink: 0, pointerEvents: "none" }} />
           <span
             style={{
               fontFamily: "var(--font-ui)",
               fontSize: "var(--font-size-ui-base)",
               fontWeight: 500,
               color: "var(--color-text-secondary)",
+              pointerEvents: "none",
             }}
           >
             Episteme

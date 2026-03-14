@@ -4,6 +4,12 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Episteme</title>
+    <!-- Tailwind v4 uses Lightning CSS which strips -webkit-app-region as non-standard.
+         Injecting here bypasses the CSS pipeline entirely. -->
+    <style>
+      [data-tauri-drag-region] { -webkit-app-region: drag; }
+      .titlebar-no-drag         { -webkit-app-region: no-drag; }
+    </style>
   </head>
   <body>
     <div id="root"></div>
