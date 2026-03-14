@@ -294,11 +294,28 @@ The title bar is a full-width strip rendered in `App.tsx` above all panels. It i
 - **Section 3 (actions)** — fixed width, right-aligned global action buttons (Share, New Document).
 
 **Tokens and styling:**
-- **Height**: `--height-titlebar` (40px)
+- **Height**: `--height-titlebar` (32px)
 - **Background**: `--color-bg-app`
 - **Bottom border**: `1px solid --color-border-subtle`
-- **Drag region**: root element (`-webkit-app-region: drag`); all interactive controls override to `-webkit-app-region: no-drag`
-- **Traffic lights no-drag zone**: left 70px of Section 1 (`-webkit-app-region: no-drag`)
+- **Drag region**: Section 2 div carries `data-tauri-drag-region`. Its decorative children (icon, label) use `pointerEvents: "none"` so clicks on them fall through to Section 2 rather than landing on those elements directly.
+- **No-drag zones**: `className="titlebar-no-drag"` on the traffic lights placeholder and action buttons section.
+- **Root div**: `userSelect: "none"` via inline style.
+
+**Important: how Tauri drag regions work on macOS**
+
+Tauri's drag JS (`drag.js`) checks `e.target.getAttribute('data-tauri-drag-region')` — the **direct** event target, not any ancestor. Placing the attribute on a container whose children cover its entire surface does nothing; the children will always be the event target and they don't carry the attribute.
+
+Two rules to follow:
+1. Put `data-tauri-drag-region` on the specific element that should be the hit target — the div that the pointer lands on, not a wrapper around it.
+2. If that element has decorative (non-interactive) children that would intercept clicks, set `pointerEvents: "none"` on those children.
+
+**Important: Lightning CSS and `-webkit-app-region`**
+
+Tailwind v4 uses Lightning CSS, which strips `-webkit-app-region` as non-standard. Additionally, `-webkit-app-region` set on an ancestor does not appear to propagate to WKWebView hit-testing — the wry project's own examples use only the JS approach for macOS drag.
+
+The `index.html` `<style>` block defines `.titlebar-no-drag { -webkit-app-region: no-drag; }` as belt-and-suspenders for no-drag zones (bypasses Lightning CSS). `src-tauri/capabilities/default.json` must include `"core:window:allow-start-dragging"` for the double-click-to-maximize IPC call.
+
+- **Traffic lights no-drag zone**: left 70px of Section 1, `className="titlebar-no-drag"`
 
 #### Windows (Phase 2)
 
