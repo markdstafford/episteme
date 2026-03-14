@@ -70,13 +70,11 @@ jobs:
           path: |
             src-tauri/target/${{ matrix.target }}/release/bundle/**/*.dmg
             src-tauri/target/${{ matrix.target }}/release/bundle/**/*.app.tar.gz
-            src-tauri/target/${{ matrix.target }}/release/bundle/**/*.app.tar.gz.sig
             src-tauri/target/${{ matrix.target }}/release/bundle/**/*.msi
-            src-tauri/target/${{ matrix.target }}/release/bundle/**/*.msi.zip
-            src-tauri/target/${{ matrix.target }}/release/bundle/**/*.msi.zip.sig
             src-tauri/target/${{ matrix.target }}/release/bundle/**/*.AppImage
-            src-tauri/target/${{ matrix.target }}/release/bundle/**/*.AppImage.tar.gz
-            src-tauri/target/${{ matrix.target }}/release/bundle/**/*.AppImage.tar.gz.sig
+            src-tauri/target/${{ matrix.target }}/release/bundle/**/*.tar.gz
+            src-tauri/target/${{ matrix.target }}/release/bundle/**/*.zip
+            src-tauri/target/${{ matrix.target }}/release/bundle/**/*.sig
 
   publish:
     needs: build
@@ -111,11 +109,16 @@ jobs:
           REPO="markdstafford/episteme"
           BASE_URL="https://github.com/${REPO}/releases/download/${TAG}"
 
-          # Find signature files
-          DARWIN_AARCH64_SIG=$(cat artifacts/*aarch64-apple-darwin*.app.tar.gz.sig 2>/dev/null || echo "")
-          DARWIN_X86_64_SIG=$(cat artifacts/*x86_64-apple-darwin*.app.tar.gz.sig 2>/dev/null || echo "")
-          LINUX_SIG=$(cat artifacts/*.AppImage.tar.gz.sig 2>/dev/null || echo "")
-          WINDOWS_SIG=$(cat artifacts/*.msi.zip.sig 2>/dev/null || echo "")
+          # Find signature files (use find to handle nested artifact directory structure)
+          DARWIN_AARCH64_SIG=$(find artifacts -name 'Episteme.app.tar.gz.sig' | head -1 | xargs -r cat 2>/dev/null || echo "")
+          DARWIN_X86_64_SIG="$DARWIN_AARCH64_SIG"
+          LINUX_SIG=$(find artifacts -name '*AppImage*.tar.gz.sig' | head -1 | xargs -r cat 2>/dev/null || echo "")
+          WINDOWS_SIG=$(find artifacts -name '*.msi.zip.sig' | head -1 | xargs -r cat 2>/dev/null || echo "")
+
+          # Find updater payload filenames (used as release asset names)
+          DARWIN_TAR=$(find artifacts -name 'Episteme.app.tar.gz' | head -1 | xargs -r basename)
+          LINUX_TAR=$(find artifacts -name '*AppImage*.tar.gz' | head -1 | xargs -r basename)
+          WINDOWS_ZIP=$(find artifacts -name '*.msi.zip' | head -1 | xargs -r basename)
 
           cat > latest.json << EOF
           {
@@ -124,19 +127,19 @@ jobs:
             "pub_date": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
             "platforms": {
               "darwin-aarch64": {
-                "url": "${BASE_URL}/$(ls artifacts/*aarch64-apple-darwin*.app.tar.gz | xargs basename)",
+                "url": "${BASE_URL}/${DARWIN_TAR}",
                 "signature": "${DARWIN_AARCH64_SIG}"
               },
               "darwin-x86_64": {
-                "url": "${BASE_URL}/$(ls artifacts/*x86_64-apple-darwin*.app.tar.gz | xargs basename)",
+                "url": "${BASE_URL}/${DARWIN_TAR}",
                 "signature": "${DARWIN_X86_64_SIG}"
               },
               "linux-x86_64": {
-                "url": "${BASE_URL}/$(ls artifacts/*.AppImage.tar.gz | xargs basename)",
+                "url": "${BASE_URL}/${LINUX_TAR}",
                 "signature": "${LINUX_SIG}"
               },
               "windows-x86_64": {
-                "url": "${BASE_URL}/$(ls artifacts/*.msi.zip | xargs basename)",
+                "url": "${BASE_URL}/${WINDOWS_ZIP}",
                 "signature": "${WINDOWS_SIG}"
               }
             }
@@ -147,11 +150,10 @@ jobs:
 
       - name: Rename installers
         run: |
-          shopt -s nullglob
-          for f in artifacts/*aarch64-apple-darwin*.dmg; do mv "$f" "artifacts/Episteme - Mac (M1+).dmg"; done
-          for f in artifacts/*x86_64-apple-darwin*.dmg; do mv "$f" "artifacts/Episteme - Mac (Intel).dmg"; done
-          for f in artifacts/*.AppImage; do mv "$f" "artifacts/Episteme - Linux (x64).AppImage"; done
-          for f in artifacts/*_en-US.msi; do mv "$f" "artifacts/Episteme - Windows (x64).msi"; done
+          find artifacts -name '*aarch64*.dmg' -exec mv {} "artifacts/Episteme - Mac (M1+).dmg" \;
+          find artifacts -name '*_x64.dmg' -exec mv {} "artifacts/Episteme - Mac (Intel).dmg" \;
+          find artifacts -name '*.AppImage' -exec mv {} "artifacts/Episteme - Linux (x64).AppImage" \;
+          find artifacts -name '*_en-US.msi' -exec mv {} "artifacts/Episteme - Windows (x64).msi" \;
 
       - name: Create draft release
         uses: softprops/action-gh-release@v2
