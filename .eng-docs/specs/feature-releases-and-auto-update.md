@@ -438,20 +438,20 @@ Conventional commit sections mapped to changelog headings:
 
 ## Task list
 
-- [ ] **Story: Signing key setup**
-  - [ ] **Task: Generate ed25519 signing keypair**
+- [x] **Story: Signing key setup**
+  - [x] **Task: Generate ed25519 signing keypair**
     - **Description**: Run `npm run tauri signer generate` to produce the ed25519 keypair used to sign update packages. Save the private key and password to a secure location outside the repository (e.g., a password manager) before proceeding.
     - **Acceptance criteria**:
-      - [ ] Keypair generated successfully
-      - [ ] Private key and password stored securely outside the repository
-      - [ ] Public key noted for use in `tauri.conf.json`
+      - [x] Keypair generated successfully
+      - [x] Private key and password stored securely outside the repository
+      - [x] Public key noted for use in `tauri.conf.json`
     - **Dependencies**: None
-  - [ ] **Task: Store private key as GitHub Actions secrets**
+  - [x] **Task: Store private key as GitHub Actions secrets**
     - **Description**: Add `TAURI_SIGNING_PRIVATE_KEY` and `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` to the repository's GitHub Actions secrets (Settings → Secrets and variables → Actions).
     - **Acceptance criteria**:
-      - [ ] `TAURI_SIGNING_PRIVATE_KEY` secret created in GitHub Actions
-      - [ ] `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` secret created in GitHub Actions
-      - [ ] Neither value appears in any source file or commit
+      - [x] `TAURI_SIGNING_PRIVATE_KEY` secret created in GitHub Actions
+      - [x] `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` secret created in GitHub Actions
+      - [x] Neither value appears in any source file or commit
     - **Dependencies**: "Task: Generate ed25519 signing keypair"
 
 - [x] **Story: Tauri updater plugin**
@@ -543,7 +543,7 @@ Conventional commit sections mapped to changelog headings:
       - [x] No duplicate intervals if App re-renders
     - **Dependencies**: "Task: Create update Zustand store", "Task: Add UpdateIndicator to Sidebar folder header row"
 
-- [ ] **Story: GitHub Actions release pipeline**
+- [x] **Story: GitHub Actions release pipeline**
   - [x] **Task: Create cliff.toml**
     - **Description**: Create `cliff.toml` at the repository root. Configure conventional commit sections: `feat` → "Features", `fix` → "Bug fixes", breaking changes → "Breaking changes" (pinned to top). Omit `chore`, `refactor`, `docs`, `test` from user-facing output.
     - **Acceptance criteria**:
@@ -557,20 +557,20 @@ Conventional commit sections mapped to changelog headings:
     - **Description**: Create `.github/workflows/release.yml`. Trigger on `push` to tags matching `v*`. Matrix jobs across `macos-latest` (targets: `aarch64-apple-darwin` and `x86_64-apple-darwin`), `ubuntu-latest`, and `windows-latest`. Each job: checkout → setup Node → setup Rust → `Swatinem/rust-cache` → `tauri-apps/tauri-action` to build and sign. Post-build job: run git-cliff to generate changelog, generate `latest.json` manifest, use `softprops/action-gh-release` to create a draft GitHub Release with all platform installers and `latest.json` as assets and the git-cliff output as the release body.
     - **Acceptance criteria**:
       - [x] Workflow triggers on `v*` tags
-      - [ ] All four platform targets build successfully
+      - [x] All four platform targets build successfully
       - [x] `Swatinem/rust-cache` step present in each build job
       - [x] Installers signed with `TAURI_SIGNING_PRIVATE_KEY` secret
       - [x] `latest.json` generated with correct platform URLs and signatures
       - [x] GitHub Release created as draft with all assets attached
       - [x] Release body populated with git-cliff changelog
     - **Dependencies**: "Task: Create cliff.toml", "Task: Store private key as GitHub Actions secrets", "Task: Configure tauri.conf.json updater settings"
-  - [ ] **Task: Verify pipeline with test tag**
+  - [x] **Task: Verify pipeline with test tag**
     - **Description**: Push a test tag (`v0.0.1-test`) on the feature branch to trigger the workflow and verify end-to-end that all jobs pass, assets upload correctly, `latest.json` is well-formed, and the draft release is created. Delete the test tag and draft release after verification.
     - **Acceptance criteria**:
-      - [ ] All platform build jobs pass in GitHub Actions
-      - [ ] Draft GitHub Release created with four platform installers attached
-      - [ ] `latest.json` attached and contains valid JSON with correct platform keys
-      - [ ] Test tag and draft release deleted after verification
+      - [x] All platform build jobs pass in GitHub Actions
+      - [x] Draft GitHub Release created with four platform installers attached
+      - [x] `latest.json` attached and contains valid JSON with correct platform keys
+      - [x] Test tag and draft release deleted after verification
     - **Dependencies**: "Task: Create release.yml GitHub Actions workflow"
 
 - [ ] **Story: Tests**
