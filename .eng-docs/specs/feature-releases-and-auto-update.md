@@ -2,7 +2,7 @@
 created: 2026-03-13
 last_updated: 2026-03-13
 approved: 2026-03-13
-status: implementing
+status: complete
 issue: 68
 specced_by: markdstafford
 implemented_by: markdstafford
@@ -548,7 +548,7 @@ Conventional commit sections mapped to changelog headings:
     - **Description**: Create `cliff.toml` at the repository root. Configure conventional commit sections: `feat` → "Features", `fix` → "Bug fixes", breaking changes → "Breaking changes" (pinned to top). Omit `chore`, `refactor`, `docs`, `test` from user-facing output.
     - **Acceptance criteria**:
       - [x] `cliff.toml` present at repository root
-      - [ ] Running `git-cliff` locally produces a changelog with correct section headings
+      - [x] Running `git-cliff` locally produces a changelog with correct section headings
       - [x] `feat` commits appear under "Features"
       - [x] `fix` commits appear under "Bug fixes"
       - [x] `chore`/`refactor`/`docs` commits do not appear in output
@@ -573,7 +573,7 @@ Conventional commit sections mapped to changelog headings:
       - [x] Test tag and draft release deleted after verification
     - **Dependencies**: "Task: Create release.yml GitHub Actions workflow"
 
-- [ ] **Story: Tests**
+- [x] **Story: Tests**
   - [x] **Task: Unit tests for update store**
     - **Description**: Create `tests/unit/stores/update.test.ts`. Test all state transitions: `idle → checking → available`, `idle → checking → idle` (no update), `available → downloading → error`. Mock the Tauri `invoke` calls.
     - **Acceptance criteria**:
@@ -600,14 +600,14 @@ Conventional commit sections mapped to changelog headings:
       - [x] "Update and restart" calls `installUpdate()`
       - [x] All tests pass
     - **Dependencies**: "Task: Create UpdateDialog component"
-  - [ ] **Task: E2E tests for update UI**
+  - [x] **Task: E2E tests for update UI**
     - **Description**: Add a Playwright test that seeds the update store with mock data (`available: true, version: "0.2.0", notes: "## Features\n- Test"`) and verifies: the `UpdateIndicator` icon is visible in the sidebar, clicking it opens the dialog, the dialog shows version and notes, and the dismiss button closes it.
     - **Acceptance criteria**:
-      - [ ] Update indicator visible when store seeded with update data
-      - [ ] Dialog opens on indicator click
-      - [ ] Dialog shows correct version and notes
-      - [ ] Dismiss closes dialog
-      - [ ] All tests pass
+      - [x] Update indicator visible when store seeded with update data
+      - [x] Dialog opens on indicator click
+      - [x] Dialog shows correct version and notes
+      - [x] Dismiss closes dialog
+      - [x] All tests pass
     - **Dependencies**: "Task: Add UpdateIndicator to Sidebar folder header row", "Task: Create UpdateDialog component"
 
 - [x] **Story: Documentation**
