@@ -147,10 +147,11 @@ jobs:
 
       - name: Rename installers
         run: |
-          for f in artifacts/*aarch64-apple-darwin*.dmg; do [ -f "$f" ] && mv "$f" "artifacts/Episteme - Mac (M1+).dmg"; done
-          for f in artifacts/*x86_64-apple-darwin*.dmg; do [ -f "$f" ] && mv "$f" "artifacts/Episteme - Mac (Intel).dmg"; done
-          for f in artifacts/*.AppImage; do [ -f "$f" ] && mv "$f" "artifacts/Episteme - Linux (x64).AppImage"; done
-          for f in artifacts/*_en-US.msi; do [ -f "$f" ] && mv "$f" "artifacts/Episteme - Windows (x64).msi"; done
+          shopt -s nullglob
+          for f in artifacts/*aarch64-apple-darwin*.dmg; do mv "$f" "artifacts/Episteme - Mac (M1+).dmg"; done
+          for f in artifacts/*x86_64-apple-darwin*.dmg; do mv "$f" "artifacts/Episteme - Mac (Intel).dmg"; done
+          for f in artifacts/*.AppImage; do mv "$f" "artifacts/Episteme - Linux (x64).AppImage"; done
+          for f in artifacts/*_en-US.msi; do mv "$f" "artifacts/Episteme - Windows (x64).msi"; done
 
       - name: Create draft release
         uses: softprops/action-gh-release@v2
