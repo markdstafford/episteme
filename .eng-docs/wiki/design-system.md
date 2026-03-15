@@ -536,15 +536,15 @@ A single public component that renders one or more keys as a keyboard shortcut h
 
 | Property | Value |
 |---|---|
-| Element | Outer `<kbd>` wrapping one inner `<kbd>` per key |
-| Background | `--color-bg-hover` |
-| Border | `1px solid var(--color-border-default)` |
-| Border radius | `--radius-sm` (3px) |
-| Font size | `--font-size-ui-xs` (11px) |
-| Font weight | 500 |
-| Padding (per key chip) | `2px 5px` |
-| Display | `inline-flex`, `align-items: center` |
-| Separator | `+` between key chips (default; configurable via `separator` prop) |
+| Element | Outer `<kbd>` (layout only) wrapping one inner `<kbd>` per key (all visual styling) |
+| Background | `--color-bg-hover` (inner `<kbd>` only) |
+| Border | `1px solid var(--color-border-default)` (inner `<kbd>` only) |
+| Border radius | `--radius-sm` (3px) (inner `<kbd>` only) |
+| Font size | `--font-size-ui-xs` (11px) (inner `<kbd>` only) |
+| Font weight | 500 (inner `<kbd>` only) |
+| Padding (per key chip) | `2px 5px` (inner `<kbd>` only) |
+| Display | Outer: `inline-flex`, `align-items: center` (layout only). Inner `<kbd>` also `inline-flex`, `align-items: center`. |
+| Separator | `+` between key chips (default; configurable via `separator` prop). The separator text and each key chip share a `<span>` wrapper per key position. |
 
 **API:**
 ```tsx
@@ -557,8 +557,8 @@ A single public component that renders one or more keys as a keyboard shortcut h
 // Custom separator
 <KbdShortcut keys={["⌘", ","]} separator="-" />
 
-// From store (user-assignable)
-<KbdShortcut keys={shortcut.keys} />
+// Dynamic keys from any string array
+<KbdShortcut keys={combo.split("+")} />
 ```
 
 ### Frontmatter bar
