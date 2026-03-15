@@ -3,6 +3,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import App from "@/App";
 import { useWorkspaceStore } from "@/stores/workspace";
 import { useSettingsStore } from "@/stores/settings";
+import { useShortcutsStore } from "@/stores/shortcuts";
 import { listen } from "@tauri-apps/api/event";
 import { invoke } from "@tauri-apps/api/core";
 
@@ -22,6 +23,7 @@ describe("App", () => {
       loadSavedFolder: vi.fn(),
     });
     useSettingsStore.setState({ settingsOpen: false, activeCategory: "ai" });
+    useShortcutsStore.setState({ actions: {}, actionsRestricted: false });
   });
 
   it("shows WelcomeScreen when no folder is open", () => {
@@ -193,5 +195,41 @@ describe("App", () => {
     render(<App />);
     expect(screen.getByText("Select a document from the sidebar")).toBeInTheDocument();
     expect(screen.queryByText(/credentials/i)).not.toBeInTheDocument();
+  });
+
+  it("pressing Meta+Slash opens shortcuts panel", () => {
+    render(<App />);
+    fireEvent.keyDown(document, { code: "Slash", metaKey: true });
+    expect(screen.getByRole("complementary", { name: /keyboard shortcuts/i })).toBeInTheDocument();
+  });
+
+  it("pressing Meta+Slash opens shortcuts panel even when actionsRestricted is true", () => {
+    render(<App />);
+    // Actions register on mount, so we set restricted AFTER render
+    useShortcutsStore.getState().setActionsRestricted(true);
+    fireEvent.keyDown(document, { code: "Slash", metaKey: true });
+    expect(screen.getByRole("complementary", { name: /keyboard shortcuts/i })).toBeInTheDocument();
+  });
+
+  it("Escape closes most recently opened overlay (LIFO)", () => {
+    useWorkspaceStore.setState({ folderPath: "/some/path" });
+    render(<App />);
+
+    // Open settings via shortcut
+    fireEvent.keyDown(document, { code: "Comma", metaKey: true });
+    expect(useSettingsStore.getState().settingsOpen).toBe(true);
+
+    // Open shortcuts panel
+    fireEvent.keyDown(document, { code: "Slash", metaKey: true });
+    expect(screen.getByRole("complementary", { name: /keyboard shortcuts/i })).toBeInTheDocument();
+
+    // Escape closes shortcuts panel (most recent), settings stays open
+    fireEvent.keyDown(document, { code: "Escape" });
+    expect(screen.queryByRole("complementary", { name: /keyboard shortcuts/i })).not.toBeInTheDocument();
+    expect(useSettingsStore.getState().settingsOpen).toBe(true);
+
+    // Escape again closes settings
+    fireEvent.keyDown(document, { code: "Escape" });
+    expect(useSettingsStore.getState().settingsOpen).toBe(false);
   });
 });
