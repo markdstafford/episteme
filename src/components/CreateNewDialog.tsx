@@ -10,6 +10,7 @@ import {
   DialogClose,
   DialogBody,
 } from "@/components/ui/Dialog";
+import { KbdShortcut } from "@/components/ui/Kbd";
 
 interface SkillInfo {
   id: string;
@@ -203,18 +204,7 @@ export function CreateNewDialog({
                 >
                   {opt.label}
                 </span>
-                <span
-                  style={{
-                    flexShrink: 0,
-                    fontSize: "var(--font-size-ui-xs)",
-                    color: "var(--color-text-quaternary)",
-                    backgroundColor: "var(--color-bg-hover)",
-                    borderRadius: "var(--radius-sm)",
-                    padding: "2px 6px",
-                  }}
-                >
-                  {i + 1}
-                </span>
+                <KbdShortcut keys={[String(i + 1)]} />
               </button>
             ))
           )}

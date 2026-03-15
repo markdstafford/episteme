@@ -4,6 +4,7 @@ import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { Badge } from "./ui/Badge";
 import { Button } from "./ui/Button";
 import { Input } from "./ui/Input";
+import { KbdShortcut } from "./ui/Kbd";
 
 interface DesignKitchenProps {
   onClose: () => void;
@@ -274,6 +275,18 @@ export function DesignKitchen({ onClose }: DesignKitchenProps) {
                 <div style={{ fontSize: "var(--font-size-ui-xs)", color: "var(--color-text-tertiary)" }}>Disabled</div>
                 <Input placeholder="Disabled input" disabled />
               </div>
+            </div>
+          </div>
+
+          {/* KbdShortcut */}
+          <div style={{ marginBottom: "48px" }}>
+            <div style={{ fontSize: "var(--font-size-ui-xs)", color: "var(--color-text-quaternary)", marginBottom: "16px", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+              KbdShortcut
+            </div>
+            <div style={{ display: "flex", gap: "var(--space-4)", alignItems: "center" }}>
+              <KbdShortcut keys={["1"]} />
+              <KbdShortcut keys={["K"]} />
+              <KbdShortcut keys={["⌘", ","]} />
             </div>
           </div>
 
