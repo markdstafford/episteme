@@ -159,7 +159,7 @@ describe("App", () => {
     useWorkspaceStore.setState({ folderPath: "/some/path" });
     useSettingsStore.setState({ settingsOpen: true });
     render(<App />);
-    fireEvent.keyDown(document, { key: "Escape" });
+    fireEvent.keyDown(document, { code: "Escape" });
     expect(useSettingsStore.getState().settingsOpen).toBe(false);
   });
 
@@ -167,8 +167,15 @@ describe("App", () => {
     useWorkspaceStore.setState({ folderPath: "/some/path" });
     useSettingsStore.setState({ settingsOpen: false });
     render(<App />);
-    fireEvent.keyDown(document, { key: "Escape" });
+    fireEvent.keyDown(document, { code: "Escape" });
     expect(useSettingsStore.getState().settingsOpen).toBe(false);
+  });
+
+  it("pressing Meta+Slash opens the quick reference dialog", async () => {
+    render(<App />);
+    await waitFor(() => { /* preferences loaded */ });
+    fireEvent.keyDown(document, { code: "Slash", metaKey: true });
+    await waitFor(() => expect(screen.getByRole("dialog", { name: /keyboard shortcuts/i })).toBeTruthy());
   });
 
   it("renders SettingsPanel in content area when settings is open", () => {

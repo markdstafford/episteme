@@ -25,6 +25,7 @@ export function QuickReferenceDialog({ onClose }: Props) {
   return (
     <div
       role="dialog"
+      aria-label="Keyboard shortcuts"
       style={{
         position: "fixed",
         inset: 0,
