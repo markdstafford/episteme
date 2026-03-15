@@ -1,10 +1,10 @@
 ---
 created: 2026-03-14
-last_updated: 2026-03-14
-status: approved
+last_updated: 2026-03-15
+status: complete
 issue: 26
 specced_by: markdstafford
-implemented_by: null
+implemented_by: markdstafford
 superseded_by: null
 ---
 
@@ -483,161 +483,161 @@ Each component owns its `onKeyDown`. Simple, zero infrastructure. Rejected becau
 
 ## Task list
 
-- [ ] **Story: Shortcut registry**
-  - [ ] **Task: Implement `useShortcutsStore`**
+- [x] **Story: Shortcut registry**
+  - [x] **Task: Implement `useShortcutsStore`**
     - **Description**: Create `src/stores/shortcuts.ts`. Define `ShortcutAction`, `ShortcutScope`, `ShortcutArea` types. Implement the Zustand store with: `registerAction`, `applyCustomBindings`, `setBinding`, `resetBinding`, `checkConflict`, `resolveAction`, `getBinding`. Export `normalizeCombo` as a standalone utility function. `bindings` and `comboToAction` are always derived from `defaultBindings` merged with `customBindings` — recomputed on every mutation. Conflict detection applies to global-scoped actions only. `setBinding` and `resetBinding` both call `save_preferences` with the updated `customBindings` after recomputing derived state.
     - **Acceptance criteria**:
-      - [ ] `normalizeCombo` produces `Meta+Comma` for Cmd+,, `Shift+Slash` for ?, `Escape` for Escape, `Meta+Shift+KeyK` for Cmd+Shift+K
-      - [ ] `resolveAction` returns `null` when a text input is focused and `firesThroughInputs` is `false`
-      - [ ] `resolveAction` returns the actionId when `firesThroughInputs` is `true` regardless of focus
-      - [ ] `checkConflict` returns the conflicting actionId when a combo is already bound to a different global action
-      - [ ] `checkConflict` returns `null` when `excludeActionId` matches the existing binding
-      - [ ] `setBinding` updates `bindings` and `comboToAction` immediately
-      - [ ] `resetBinding` removes from `customBindings` and reverts to default in `bindings`
-      - [ ] `applyCustomBindings` merges saved overrides onto defaults without mutating `defaultBindings`
+      - [x] `normalizeCombo` produces `Meta+Comma` for Cmd+,, `Shift+Slash` for ?, `Escape` for Escape, `Meta+Shift+KeyK` for Cmd+Shift+K
+      - [x] `resolveAction` returns `null` when a text input is focused and `firesThroughInputs` is `false`
+      - [x] `resolveAction` returns the actionId when `firesThroughInputs` is `true` regardless of focus
+      - [x] `checkConflict` returns the conflicting actionId when a combo is already bound to a different global action
+      - [x] `checkConflict` returns `null` when `excludeActionId` matches the existing binding
+      - [x] `setBinding` updates `bindings` and `comboToAction` immediately
+      - [x] `resetBinding` removes from `customBindings` and reverts to default in `bindings`
+      - [x] `applyCustomBindings` merges saved overrides onto defaults without mutating `defaultBindings`
     - **Dependencies**: None
-  - [ ] **Task: Write unit tests for `useShortcutsStore`**
+  - [x] **Task: Write unit tests for `useShortcutsStore`**
     - **Description**: Create `tests/unit/stores/shortcuts.test.ts`. Cover all algorithms: `normalizeCombo` (modifiers, alphabetical sort, `e.code`), `resolveAction` (suppression, `firesThroughInputs`, no match), `checkConflict` (conflict, no conflict, `excludeActionId`), `setBinding`/`resetBinding` (merge, `comboToAction` update), `applyCustomBindings` (merge on load).
     - **Acceptance criteria**:
-      - [ ] All acceptance criteria from "Implement `useShortcutsStore`" are covered by tests
-      - [ ] All tests pass
+      - [x] All acceptance criteria from "Implement `useShortcutsStore`" are covered by tests
+      - [x] All tests pass
     - **Dependencies**: Task: Implement `useShortcutsStore`
 
-- [ ] **Story: Preferences extension**
-  - [ ] **Task: Extend Rust `Preferences` struct with `keyboard_shortcuts`**
+- [x] **Story: Preferences extension**
+  - [x] **Task: Extend Rust `Preferences` struct with `keyboard_shortcuts`**
     - **Description**: In `src-tauri/src/commands/preferences.rs`, add `pub keyboard_shortcuts: std::collections::HashMap<String, String>` with `#[serde(default)]` to the `Preferences` struct and return an empty `HashMap::new()` in the `Default` impl.
     - **Acceptance criteria**:
-      - [ ] `preferences.json` files without `keyboard_shortcuts` deserialize cleanly to an empty map
-      - [ ] `keyboard_shortcuts` round-trips correctly through `save_preferences` / `load_preferences`
+      - [x] `preferences.json` files without `keyboard_shortcuts` deserialize cleanly to an empty map
+      - [x] `keyboard_shortcuts` round-trips correctly through `save_preferences` / `load_preferences`
     - **Dependencies**: None
-  - [ ] **Task: Extend TypeScript `PreferencesSchema` with `keyboard_shortcuts`**
+  - [x] **Task: Extend TypeScript `PreferencesSchema` with `keyboard_shortcuts`**
     - **Description**: In `src/lib/preferences.ts`, add `keyboard_shortcuts: z.record(z.string(), z.string()).default({})` to `PreferencesSchema` and `keyboard_shortcuts: {}` to `DEFAULT_PREFERENCES`.
     - **Acceptance criteria**:
-      - [ ] `parsePreferences` returns `{}` for `keyboard_shortcuts` when the field is absent from the input
-      - [ ] `parsePreferences` correctly parses a `keyboard_shortcuts` map when present
-      - [ ] Existing preferences tests pass
+      - [x] `parsePreferences` returns `{}` for `keyboard_shortcuts` when the field is absent from the input
+      - [x] `parsePreferences` correctly parses a `keyboard_shortcuts` map when present
+      - [x] Existing preferences tests pass
     - **Dependencies**: None
-  - [ ] **Task: Write unit tests for preferences round-trip**
+  - [x] **Task: Write unit tests for preferences round-trip**
     - **Description**: In `tests/unit/preferences.test.ts`, add cases: (1) preferences JSON without `keyboard_shortcuts` parses to empty map; (2) preferences JSON with `keyboard_shortcuts` entries parses correctly; (3) `DEFAULT_PREFERENCES` has empty `keyboard_shortcuts`.
     - **Acceptance criteria**:
-      - [ ] All three cases pass
+      - [x] All three cases pass
     - **Dependencies**: Task: Extend TypeScript `PreferencesSchema` with `keyboard_shortcuts`
 
-- [ ] **Story: App startup wiring**
-  - [ ] **Task: Register all actions and wire global keydown listener in `App.tsx`**
+- [x] **Story: App startup wiring**
+  - [x] **Task: Register all actions and wire global keydown listener in `App.tsx`**
     - **Description**: In `App.tsx`: (1) Add a `useEffect` that calls `registerAction` for every action in the initial registry (tech spec section 3 table). Register `dev.kitchen-sink` only when `import.meta.env.DEV` is true. (2) Replace the two existing `document.addEventListener("keydown", ...)` calls with a single listener that calls `resolveAction` and invokes the matched action's `handler`. (3) In the existing preferences load `useEffect`, call `applyCustomBindings` with `prefs.keyboard_shortcuts` after `load_preferences` returns.
     - **Acceptance criteria**:
-      - [ ] All actions from the initial registry are registered on mount
-      - [ ] `settings.close` (Escape) fires through inputs and closes settings when open; no-ops when settings is closed
-      - [ ] `settings.open` (Cmd+,) fires through inputs and opens settings
-      - [ ] `shortcuts.quick-reference` (?) fires only when no input is focused
-      - [ ] `dev.kitchen-sink` (Cmd+Shift+K) is only registered in dev mode
-      - [ ] Previously hardcoded `keydown` listeners in `App.tsx` are removed
-      - [ ] Saved custom bindings are applied to the store on app startup
+      - [x] All actions from the initial registry are registered on mount
+      - [x] `settings.close` (Escape) fires through inputs and closes settings when open; no-ops when settings is closed
+      - [x] `settings.open` (Cmd+,) fires through inputs and opens settings
+      - [x] `shortcuts.quick-reference` (?) fires only when no input is focused
+      - [x] `dev.kitchen-sink` (Cmd+Shift+K) is only registered in dev mode
+      - [x] Previously hardcoded `keydown` listeners in `App.tsx` are removed
+      - [x] Saved custom bindings are applied to the store on app startup
     - **Dependencies**: Task: Implement `useShortcutsStore`, Task: Extend TypeScript `PreferencesSchema` with `keyboard_shortcuts`
 
-- [ ] **Story: Focus-scoped component migration**
-  - [ ] **Task: Migrate `CreateNewDialog` keydown handler to registry**
+- [x] **Story: Focus-scoped component migration**
+  - [x] **Task: Migrate `CreateNewDialog` keydown handler to registry**
     - **Description**: In `src/components/CreateNewDialog.tsx`, remove `document.addEventListener("keydown", handleKey)`. Replace hardcoded `e.key` comparisons with `normalizeCombo(e) === getBinding(actionId)` lookups for any actions registered in the store. Actions not yet in the initial registry (e.g. number key shortcuts for type selection) should be registered as new focus-scoped actions.
     - **Acceptance criteria**:
-      - [ ] No `document.addEventListener` calls remain in `CreateNewDialog.tsx`
-      - [ ] Dialog keyboard behavior is unchanged
-      - [ ] Existing `CreateNewDialog` tests pass
+      - [x] No `document.addEventListener` calls remain in `CreateNewDialog.tsx`
+      - [x] Dialog keyboard behavior is unchanged
+      - [x] Existing `CreateNewDialog` tests pass
     - **Dependencies**: Task: Register all actions and wire global keydown listener in `App.tsx`
-  - [ ] **Task: Migrate `FileTree` `onKeyDown` to registry**
+  - [x] **Task: Migrate `FileTree` `onKeyDown` to registry**
     - **Description**: In `src/components/FileTree.tsx`, replace the four hardcoded `e.key` checks in `handleKeyDown` (`ArrowUp`, `ArrowDown`, `ArrowRight`, `ArrowLeft`) with `normalizeCombo(e) === getBinding(actionId)` comparisons using the corresponding `file-tree.*` action IDs.
     - **Acceptance criteria**:
-      - [ ] All four navigation actions read their binding from the store
-      - [ ] No hardcoded key strings remain in `FileTree.tsx`
-      - [ ] Existing `FileTree` tests pass
+      - [x] All four navigation actions read their binding from the store
+      - [x] No hardcoded key strings remain in `FileTree.tsx`
+      - [x] Existing `FileTree` tests pass
     - **Dependencies**: Task: Register all actions and wire global keydown listener in `App.tsx`
-  - [ ] **Task: Migrate `AiChatPanel` `onKeyDown` to registry**
+  - [x] **Task: Migrate `AiChatPanel` `onKeyDown` to registry**
     - **Description**: In `src/components/AiChatPanel.tsx`, replace hardcoded `e.key === "Enter"` checks with `normalizeCombo(e) === getBinding("chat.send")` and `normalizeCombo(e) === getBinding("chat.connect")`.
     - **Acceptance criteria**:
-      - [ ] Both chat actions read their binding from the store
-      - [ ] No hardcoded key strings remain in `AiChatPanel.tsx`
-      - [ ] Existing `AiChatPanel` tests pass
+      - [x] Both chat actions read their binding from the store
+      - [x] No hardcoded key strings remain in `AiChatPanel.tsx`
+      - [x] Existing `AiChatPanel` tests pass
     - **Dependencies**: Task: Register all actions and wire global keydown listener in `App.tsx`
 
-- [ ] **Story: Quick reference dialog**
-  - [ ] **Task: Implement `QuickReferenceDialog` component**
+- [x] **Story: Quick reference dialog**
+  - [x] **Task: Implement `QuickReferenceDialog` component**
     - **Description**: Create `src/components/QuickReferenceDialog.tsx`. Uses Radix `Dialog.Root`. Reads all actions from `useShortcutsStore` where `rebindable === true`, grouped by `area`. Body uses CSS grid: two columns at 640px+, single column below. Each row shows action label + `<KbdShortcut keys={...} />` with the current binding. Header: title "Keyboard shortcuts", close button (✕). Closes on Escape or ✕. Accepts `open` and `onOpenChange` props.
     - **Acceptance criteria**:
-      - [ ] Only rebindable actions are shown
-      - [ ] Actions are grouped by area with section labels
-      - [ ] Two-column grid layout at 640px or wider; single column below
-      - [ ] `<KbdShortcut>` displays the current binding from the store
-      - [ ] Dialog closes on Escape and ✕
-      - [ ] Non-rebindable actions (e.g. `settings.close`) do not appear
+      - [x] Only rebindable actions are shown
+      - [x] Actions are grouped by area with section labels
+      - [x] Two-column grid layout at 640px or wider; single column below
+      - [x] `<KbdShortcut>` displays the current binding from the store
+      - [x] Dialog closes on Escape and ✕
+      - [x] Non-rebindable actions (e.g. `settings.close`) do not appear
     - **Dependencies**: Task: Implement `useShortcutsStore`, issue #59 (`KbdShortcut` must be implemented first — already done)
-  - [ ] **Task: Wire `?` keydown to open `QuickReferenceDialog`**
+  - [x] **Task: Wire `?` keydown to open `QuickReferenceDialog`**
     - **Description**: In `App.tsx`, add `quickReferenceOpen` state and render `<QuickReferenceDialog open={quickReferenceOpen} onOpenChange={setQuickReferenceOpen} />`. Set the `shortcuts.quick-reference` action handler to `() => setQuickReferenceOpen(true)`.
     - **Acceptance criteria**:
-      - [ ] Pressing `?` when no input is focused opens the dialog
-      - [ ] Pressing `?` when an input is focused does not open the dialog
-      - [ ] Dialog can be closed with Escape or ✕
+      - [x] Pressing `?` when no input is focused opens the dialog
+      - [x] Pressing `?` when an input is focused does not open the dialog
+      - [x] Dialog can be closed with Escape or ✕
     - **Dependencies**: Task: Implement `QuickReferenceDialog` component, Task: Register all actions and wire global keydown listener in `App.tsx`
-  - [ ] **Task: Write unit tests for `QuickReferenceDialog`**
+  - [x] **Task: Write unit tests for `QuickReferenceDialog`**
     - **Description**: Create `tests/unit/components/QuickReferenceDialog.test.tsx`. Cover: only rebindable actions render; non-rebindable excluded; actions grouped correctly by area; `<KbdShortcut>` receives correct keys; closes on Escape.
     - **Acceptance criteria**:
-      - [ ] Non-rebindable actions absent from rendered output
-      - [ ] Section labels match `ShortcutArea` values
-      - [ ] All tests pass
+      - [x] Non-rebindable actions absent from rendered output
+      - [x] Section labels match `ShortcutArea` values
+      - [x] All tests pass
     - **Dependencies**: Task: Implement `QuickReferenceDialog` component
 
-- [ ] **Story: Keyboard shortcuts settings panel**
-  - [ ] **Task: Add "Keyboard shortcuts" category to `settingsConfig`**
+- [x] **Story: Keyboard shortcuts settings panel**
+  - [x] **Task: Add "Keyboard shortcuts" category to `settingsConfig`**
     - **Description**: In `src/config/settings.ts`, add a new `SettingsCategory` with `id: "keyboard-shortcuts"`, `label: "Keyboard shortcuts"`, `icon: Keyboard` (from Lucide), `order: 2`, and an empty `sections: []` array. The panel renders custom content rather than `SettingItem` entries.
     - **Acceptance criteria**:
-      - [ ] "Keyboard shortcuts" appears in the settings sidebar nav
-      - [ ] Existing settings category tests pass
+      - [x] "Keyboard shortcuts" appears in the settings sidebar nav
+      - [x] Existing settings category tests pass
     - **Dependencies**: None
-  - [ ] **Task: Implement `BindingCard` component**
+  - [x] **Task: Implement `BindingCard` component**
     - **Description**: Create `src/components/ui/BindingCard.tsx`. A styled `div` container wrapping `<KbdShortcut>`. Props: `actionId: string`, `onCapture: (combo: string) => void`, `onEscape: () => void`, `hasConflict: boolean`. States: default (no ring), focused/capture (`--color-accent` focus ring, `tabIndex={0}`, listens for `keydown`), conflict (`--color-state-danger` border + glow). In capture mode, `keydown` calls `normalizeCombo` and invokes `onCapture`. Escape calls `onEscape`. The card does not call store methods directly.
     - **Acceptance criteria**:
-      - [ ] Default state shows `<KbdShortcut>` with no focus ring
-      - [ ] Clicking enters capture mode with accent focus ring
-      - [ ] Keydown in capture mode calls `onCapture` with normalized combo
-      - [ ] `hasConflict={true}` renders error ring
-      - [ ] Escape in any state calls `onEscape`
+      - [x] Default state shows `<KbdShortcut>` with no focus ring
+      - [x] Clicking enters capture mode with accent focus ring
+      - [x] Keydown in capture mode calls `onCapture` with normalized combo
+      - [x] `hasConflict={true}` renders error ring
+      - [x] Escape in any state calls `onEscape`
     - **Dependencies**: Task: Implement `useShortcutsStore`, issue #59 (already done)
-  - [ ] **Task: Implement `ShortcutRow` component**
+  - [x] **Task: Implement `ShortcutRow` component**
     - **Description**: Create `src/components/ShortcutRow.tsx`. Renders a three-column row: (1) action label (`--color-text-primary`, fills available space), (2) `BindingCard`, (3) reset indicator (RotateCcw 14px ghost icon button, visible only when `customBindings[actionId]` exists). Manages capture state locally. On `onCapture`: calls `checkConflict`; if no conflict, calls `setBinding` and clears conflict state; if conflict, sets `conflictingLabel` to show inline error. On `onEscape`: clears conflict state, exits capture. Reset indicator click calls `resetBinding`.
     - **Acceptance criteria**:
-      - [ ] Reset indicator only visible when binding differs from default
-      - [ ] Clicking reset indicator calls `resetBinding`; indicator disappears
-      - [ ] No-conflict capture: `setBinding` called, card shows new binding, no error
-      - [ ] Conflict capture: inline "Already used by [action label]" shown in `--color-state-danger`, `setBinding` not called
-      - [ ] Escape clears conflict state and blurs
+      - [x] Reset indicator only visible when binding differs from default
+      - [x] Clicking reset indicator calls `resetBinding`; indicator disappears
+      - [x] No-conflict capture: `setBinding` called, card shows new binding, no error
+      - [x] Conflict capture: inline "Already used by [action label]" shown in `--color-state-danger`, `setBinding` not called
+      - [x] Escape clears conflict state and blurs
     - **Dependencies**: Task: Implement `BindingCard` component
-  - [ ] **Task: Implement `KeyboardShortcutsSettings` component**
+  - [x] **Task: Implement `KeyboardShortcutsSettings` component**
     - **Description**: Create `src/components/KeyboardShortcutsSettings.tsx`. Reads all rebindable actions from `useShortcutsStore`, grouped by area. Renders a search `Input` (placeholder "Search shortcuts…") at top, followed by `ShortcutRow` per action. Search filters by action label (case-insensitive substring). Empty state: centered "No matching shortcuts" in `--color-text-tertiary` when no rows match. Wire into `SettingsPanel.tsx`: add a `categoryId === "keyboard-shortcuts"` branch in `CategoryContent` that renders `<KeyboardShortcutsSettings />` instead of the default section loop.
     - **Acceptance criteria**:
-      - [ ] All rebindable actions render as `ShortcutRow` components grouped by area
-      - [ ] Search field filters rows by label in real time
-      - [ ] Empty state renders when search yields no results
-      - [ ] Non-rebindable actions do not appear
-      - [ ] Wired correctly in `SettingsPanel.tsx` — navigating to "Keyboard shortcuts" shows the panel
+      - [x] All rebindable actions render as `ShortcutRow` components grouped by area
+      - [x] Search field filters rows by label in real time
+      - [x] Empty state renders when search yields no results
+      - [x] Non-rebindable actions do not appear
+      - [x] Wired correctly in `SettingsPanel.tsx` — navigating to "Keyboard shortcuts" shows the panel
     - **Dependencies**: Task: Implement `ShortcutRow` component, Task: Add "Keyboard shortcuts" category to `settingsConfig`
-  - [ ] **Task: Write unit tests for settings panel components**
+  - [x] **Task: Write unit tests for settings panel components**
     - **Description**: Create `tests/unit/components/BindingCard.test.tsx` and `tests/unit/components/ShortcutRow.test.tsx`. Add keyboard shortcuts cases to `tests/unit/SettingsPanel.test.tsx`.
     - **Acceptance criteria**:
-      - [ ] `BindingCard`: default → capture → no-conflict flow passes
-      - [ ] `BindingCard`: default → capture → conflict error ring flow passes
-      - [ ] `BindingCard`: Escape reverts and blurs
-      - [ ] `ShortcutRow`: reset indicator visible only for modified bindings
-      - [ ] `ShortcutRow`: reset indicator click calls `resetBinding`
-      - [ ] `KeyboardShortcutsSettings`: search filters correctly
-      - [ ] `KeyboardShortcutsSettings`: empty state renders when no matches
-      - [ ] All tests pass
+      - [x] `BindingCard`: default → capture → no-conflict flow passes
+      - [x] `BindingCard`: default → capture → conflict error ring flow passes
+      - [x] `BindingCard`: Escape reverts and blurs
+      - [x] `ShortcutRow`: reset indicator visible only for modified bindings
+      - [x] `ShortcutRow`: reset indicator click calls `resetBinding`
+      - [x] `KeyboardShortcutsSettings`: search filters correctly
+      - [x] `KeyboardShortcutsSettings`: empty state renders when no matches
+      - [x] All tests pass
     - **Dependencies**: Task: Implement `KeyboardShortcutsSettings` component
 
-- [ ] **Story: E2E tests**
-  - [ ] **Task: Write E2E tests for keyboard shortcuts**
+- [x] **Story: E2E tests**
+  - [x] **Task: Write E2E tests for keyboard shortcuts**
     - **Description**: Create `tests/e2e/keyboard-shortcuts.spec.ts`. Cover: (1) pressing `?` opens the quick reference dialog and lists rebindable actions; (2) opening settings → keyboard shortcuts, rebinding an action, verifying the new binding fires and the old does not; (3) rebinding to a conflicting combo shows the error message and does not apply the binding.
     - **Acceptance criteria**:
-      - [ ] `?` dialog opens and displays at least one rebindable action
-      - [ ] Rebound action: new binding triggers the action; old binding does not
-      - [ ] Conflicting rebind: "Already used by" error appears; binding is not applied
-      - [ ] All E2E tests pass
+      - [x] `?` dialog opens and displays at least one rebindable action
+      - [x] Rebound action: new binding triggers the action; old binding does not
+      - [x] Conflicting rebind: "Already used by" error appears; binding is not applied
+      - [x] All E2E tests pass
     - **Dependencies**: All story tasks complete
