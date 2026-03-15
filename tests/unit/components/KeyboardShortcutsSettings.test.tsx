@@ -17,6 +17,7 @@ beforeEach(() => {
     defaultBinding: "Meta+Comma",
     category: "Global",
     firesThroughInputs: false,
+    rebindable: true,
   });
 });
 

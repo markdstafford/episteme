@@ -40,6 +40,7 @@ describe("useShortcutsStore", () => {
       defaultBinding: "Meta+Comma",
       category: "Global",
       firesThroughInputs: false,
+      rebindable: false,
     });
     const actions = useShortcutsStore.getState().actions;
     expect(actions["test.action"]).toBeDefined();
@@ -53,6 +54,7 @@ describe("useShortcutsStore", () => {
       defaultBinding: "Meta+Comma",
       category: "Global",
       firesThroughInputs: false,
+      rebindable: false,
     });
     expect(useShortcutsStore.getState().getBinding("test.action")).toBe("Meta+Comma");
   });
@@ -64,6 +66,7 @@ describe("useShortcutsStore", () => {
       defaultBinding: "Meta+Comma",
       category: "Global",
       firesThroughInputs: false,
+      rebindable: false,
     });
     useShortcutsStore.setState({ customBindings: { "test.action": "Meta+KeyP" } });
     expect(useShortcutsStore.getState().getBinding("test.action")).toBe("Meta+KeyP");
@@ -76,6 +79,7 @@ describe("useShortcutsStore", () => {
       defaultBinding: "Meta+Comma",
       category: "Global",
       firesThroughInputs: false,
+      rebindable: false,
     });
     expect(useShortcutsStore.getState().comboToAction("Meta+Comma")).toBe("test.action");
   });
@@ -91,6 +95,7 @@ describe("useShortcutsStore", () => {
       defaultBinding: "Meta+Comma",
       category: "Global",
       firesThroughInputs: false,
+      rebindable: false,
       callback: () => {},
     });
     const div = document.createElement("div");
@@ -105,6 +110,7 @@ describe("useShortcutsStore", () => {
       defaultBinding: "Meta+Comma",
       category: "Global",
       firesThroughInputs: false,
+      rebindable: false,
       callback: () => {},
     });
     const textarea = document.createElement("textarea");
@@ -119,6 +125,7 @@ describe("useShortcutsStore", () => {
       defaultBinding: "Escape",
       category: "Global",
       firesThroughInputs: true,
+      rebindable: false,
       callback: () => {},
     });
     const textarea = document.createElement("textarea");
@@ -133,6 +140,7 @@ describe("useShortcutsStore", () => {
       defaultBinding: "Meta+Comma",
       category: "Global",
       firesThroughInputs: false,
+      rebindable: false,
       callback: () => {},
     });
     const input = document.createElement("input");
@@ -147,6 +155,7 @@ describe("useShortcutsStore", () => {
       defaultBinding: "Meta+Comma",
       category: "Global",
       firesThroughInputs: false,
+      rebindable: false,
       callback: () => {},
     });
     const div = document.createElement("div");
@@ -163,6 +172,7 @@ describe("useShortcutsStore", () => {
       defaultBinding: "Meta+Comma",
       category: "Global",
       firesThroughInputs: false,
+      rebindable: false,
     });
     useShortcutsStore.getState().setBinding("test.action", "Meta+KeyP");
     expect(useShortcutsStore.getState().getBinding("test.action")).toBe("Meta+KeyP");
@@ -175,6 +185,7 @@ describe("useShortcutsStore", () => {
       defaultBinding: "Meta+Comma",
       category: "Global",
       firesThroughInputs: false,
+      rebindable: false,
     });
     useShortcutsStore.getState().setBinding("test.action", "Meta+KeyP");
     useShortcutsStore.getState().resetBinding("test.action");
@@ -188,8 +199,57 @@ describe("useShortcutsStore", () => {
       defaultBinding: "Meta+Comma",
       category: "Global",
       firesThroughInputs: false,
+      rebindable: false,
     });
     useShortcutsStore.getState().applyCustomBindings({ "test.action": "Meta+KeyZ" });
     expect(useShortcutsStore.getState().getBinding("test.action")).toBe("Meta+KeyZ");
+  });
+
+  it("checkConflict returns null when no other rebindable action uses the combo", () => {
+    useShortcutsStore.getState().registerAction({
+      id: "test.action",
+      label: "Test Action",
+      defaultBinding: "Meta+Comma",
+      category: "Global",
+      firesThroughInputs: false,
+      rebindable: true,
+    });
+    expect(useShortcutsStore.getState().checkConflict("Meta+KeyP")).toBeNull();
+  });
+
+  it("checkConflict returns conflicting actionId when another rebindable action uses the combo", () => {
+    useShortcutsStore.getState().registerAction({
+      id: "test.action",
+      label: "Test Action",
+      defaultBinding: "Meta+Comma",
+      category: "Global",
+      firesThroughInputs: false,
+      rebindable: true,
+    });
+    expect(useShortcutsStore.getState().checkConflict("Meta+Comma")).toBe("test.action");
+  });
+
+  it("checkConflict excludes the specified actionId from conflict check", () => {
+    useShortcutsStore.getState().registerAction({
+      id: "test.action",
+      label: "Test Action",
+      defaultBinding: "Meta+Comma",
+      category: "Global",
+      firesThroughInputs: false,
+      rebindable: true,
+    });
+    expect(useShortcutsStore.getState().checkConflict("Meta+Comma", "test.action")).toBeNull();
+  });
+
+  it("checkConflict ignores non-rebindable actions", () => {
+    useShortcutsStore.getState().registerAction({
+      id: "test.action",
+      label: "Test Action",
+      defaultBinding: "Escape",
+      category: "Global",
+      firesThroughInputs: true,
+      rebindable: false,
+    });
+    expect(useShortcutsStore.getState().checkConflict("Escape")).toBeNull();
   });
 });

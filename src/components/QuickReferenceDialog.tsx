@@ -8,7 +8,8 @@ interface Props {
 
 export function QuickReferenceDialog({ onClose }: Props) {
   const { actions, getBinding } = useShortcutsStore();
-  const categories = Array.from(new Set(Object.values(actions).map((a) => a.category)));
+  const rebindableActions = Object.values(actions).filter((a) => a.rebindable === true);
+  const categories = Array.from(new Set(rebindableActions.map((a) => a.category)));
 
   return (
     <div
@@ -36,7 +37,7 @@ export function QuickReferenceDialog({ onClose }: Props) {
         }}
       >
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-          <span style={{ fontFamily: "var(--font-ui)", fontWeight: 600 }}>Keyboard shortcuts</span>
+          <span style={{ fontFamily: "var(--font-ui)", fontWeight: 600, color: "var(--color-text-primary)" }}>Keyboard shortcuts</span>
           <button aria-label="Close" onClick={onClose}>
             ✕
           </button>
@@ -56,7 +57,7 @@ export function QuickReferenceDialog({ onClose }: Props) {
             >
               {category}
             </div>
-            {Object.values(actions)
+            {rebindableActions
               .filter((a) => a.category === category)
               .map((action) => {
                 const binding = getBinding(action.id) ?? action.defaultBinding;
@@ -66,7 +67,7 @@ export function QuickReferenceDialog({ onClose }: Props) {
                     key={action.id}
                     style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 0" }}
                   >
-                    <span style={{ fontFamily: "var(--font-ui)", fontSize: "var(--font-size-ui-sm)" }}>
+                    <span style={{ fontFamily: "var(--font-ui)", fontSize: "var(--font-size-ui-sm)", color: "var(--color-text-primary)" }}>
                       {action.label}
                     </span>
                     <KbdShortcut keys={keys} />

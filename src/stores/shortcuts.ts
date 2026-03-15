@@ -6,6 +6,7 @@ export interface ShortcutAction {
   defaultBinding: string;
   category: string;
   firesThroughInputs: boolean;
+  rebindable: boolean;
   callback?: () => void;
 }
 
@@ -19,6 +20,7 @@ interface ShortcutsState {
   comboToAction: (combo: string) => string | null;
   resolveAction: (combo: string, target: Element) => ShortcutAction | null;
   applyCustomBindings: (bindings: Record<string, string>) => void;
+  checkConflict: (combo: string, excludeActionId?: string) => string | null;
 }
 
 export function normalizeCombo(e: KeyboardEvent): string {
@@ -82,5 +84,15 @@ export const useShortcutsStore = create<ShortcutsState>((set, get) => ({
 
   applyCustomBindings(bindings) {
     set({ customBindings: bindings });
+  },
+
+  checkConflict(combo, excludeActionId) {
+    const { actions } = get();
+    for (const [id, action] of Object.entries(actions)) {
+      if (!action.rebindable) continue;
+      if (excludeActionId !== undefined && id === excludeActionId) continue;
+      if (get().getBinding(id) === combo) return id;
+    }
+    return null;
   },
 }));

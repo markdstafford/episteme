@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useWorkspaceStore } from "@/stores/workspace";
 import { useAiChatStore } from "@/stores/aiChat";
 import { useSettingsStore } from "@/stores/settings";
@@ -26,6 +26,12 @@ function App() {
   const openFolder = useWorkspaceStore((s) => s.openFolder);
   const settingsOpen = useSettingsStore((s) => s.settingsOpen);
 
+  const settingsPanelOpenRef = useRef(false);
+  const quickReferenceOpenRef = useRef(false);
+
+  useEffect(() => { settingsPanelOpenRef.current = settingsOpen; }, [settingsOpen]);
+  useEffect(() => { quickReferenceOpenRef.current = quickReferenceOpen; }, [quickReferenceOpen]);
+
   useEffect(() => {
     const unlisten = listen("menu:open-folder", () => openFolder());
     return () => { unlisten.then((f) => f()); };
@@ -48,6 +54,7 @@ function App() {
       defaultBinding: "Escape",
       category: "Global",
       firesThroughInputs: true,
+      rebindable: false,
       callback: () => {
         useSettingsStore.getState().closeSettings();
         setQuickReferenceOpen(false);
@@ -59,6 +66,7 @@ function App() {
       defaultBinding: "Meta+Comma",
       category: "Global",
       firesThroughInputs: false,
+      rebindable: true,
       callback: () => useSettingsStore.getState().openSettings(),
     });
     registerAction({
@@ -67,6 +75,7 @@ function App() {
       defaultBinding: "Meta+Slash",
       category: "Global",
       firesThroughInputs: false,
+      rebindable: true,
       callback: () => setQuickReferenceOpen(true),
     });
     // Meta+Shift+K: intentionally Mac-only (⌘⇧K). Cross-platform Ctrl support not included
@@ -77,16 +86,18 @@ function App() {
       defaultBinding: "Meta+Shift+KeyK",
       category: "Global",
       firesThroughInputs: false,
+      rebindable: false,
       callback: () => setShowKitchenSink((v) => !v),
     });
-    registerAction({ id: "filetree.navigateUp", label: "Navigate up", defaultBinding: "ArrowUp", category: "File tree", firesThroughInputs: false });
-    registerAction({ id: "filetree.navigateDown", label: "Navigate down", defaultBinding: "ArrowDown", category: "File tree", firesThroughInputs: false });
-    registerAction({ id: "filetree.collapse", label: "Collapse", defaultBinding: "ArrowLeft", category: "File tree", firesThroughInputs: false });
-    registerAction({ id: "filetree.expand", label: "Expand", defaultBinding: "ArrowRight", category: "File tree", firesThroughInputs: false });
-    registerAction({ id: "filetree.open", label: "Open file", defaultBinding: "Enter", category: "File tree", firesThroughInputs: false });
+    registerAction({ id: "filetree.navigateUp", label: "Navigate up", defaultBinding: "ArrowUp", category: "File tree", firesThroughInputs: false, rebindable: false });
+    registerAction({ id: "filetree.navigateDown", label: "Navigate down", defaultBinding: "ArrowDown", category: "File tree", firesThroughInputs: false, rebindable: false });
+    registerAction({ id: "filetree.collapse", label: "Collapse", defaultBinding: "ArrowLeft", category: "File tree", firesThroughInputs: false, rebindable: false });
+    registerAction({ id: "filetree.expand", label: "Expand", defaultBinding: "ArrowRight", category: "File tree", firesThroughInputs: false, rebindable: false });
+    registerAction({ id: "filetree.open", label: "Open file", defaultBinding: "Enter", category: "File tree", firesThroughInputs: false, rebindable: false });
 
     function handleKeyDown(e: KeyboardEvent) {
       const combo = normalizeCombo(e);
+      if ((settingsPanelOpenRef.current || quickReferenceOpenRef.current) && combo !== "Escape") return;
       const target = e.target instanceof Element ? e.target : document.body;
       const action = useShortcutsStore.getState().resolveAction(combo, target);
       if (action?.callback) {
