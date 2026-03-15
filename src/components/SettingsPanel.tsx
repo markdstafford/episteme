@@ -4,7 +4,6 @@ import { useAiChatStore } from "@/stores/aiChat";
 import { useSettingsStore } from "@/stores/settings";
 import { settingsConfig } from "@/config/settings";
 import { Input } from "@/components/ui/Input";
-import { KeyboardShortcutsSettings } from "@/components/KeyboardShortcutsSettings";
 import { parsePreferences } from "@/lib/preferences";
 import type { Preferences } from "@/lib/preferences";
 
@@ -76,22 +75,9 @@ function SettingControl({ settingId }: { settingId: string }) {
 
 function CategoryContent({
   categoryId,
-  preferences,
-  onPreferencesChange,
 }: {
   categoryId: string;
-  preferences: Preferences;
-  onPreferencesChange: (prefs: Preferences) => void;
 }) {
-  if (categoryId === "keyboard-shortcuts") {
-    return (
-      <KeyboardShortcutsSettings
-        preferences={preferences}
-        onPreferencesChange={onPreferencesChange}
-      />
-    );
-  }
-
   const category = settingsConfig.find((c) => c.id === categoryId);
 
   if (!category) {
@@ -124,23 +110,10 @@ function CategoryContent({
 
 export function SettingsPanel() {
   const activeCategory = useSettingsStore((s) => s.activeCategory);
-  const [preferences, setPreferences] = useState<Preferences>(
-    parsePreferences({})
-  );
-
-  useEffect(() => {
-    invoke<Preferences>("load_preferences")
-      .then((prefs) => setPreferences(parsePreferences(prefs)))
-      .catch(() => {});
-  }, []);
 
   return (
     <div className="flex-1 bg-(--color-bg-base) overflow-y-auto px-[var(--padding-content)] pt-[var(--space-6)]">
-      <CategoryContent
-        categoryId={activeCategory}
-        preferences={preferences}
-        onPreferencesChange={setPreferences}
-      />
+      <CategoryContent categoryId={activeCategory} />
     </div>
   );
 }

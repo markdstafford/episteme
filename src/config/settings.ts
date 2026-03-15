@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import { Keyboard, Sparkles } from "lucide-react";
+import { Sparkles } from "lucide-react";
 
 export interface SettingItem {
   id: string;
@@ -47,13 +47,6 @@ export const settingsConfig: SettingsCategory[] = [
         ],
       },
     ],
-  },
-  {
-    id: "keyboard-shortcuts",
-    label: "Keyboard shortcuts",
-    icon: Keyboard,
-    order: 2,
-    sections: [],
   },
 ];
 

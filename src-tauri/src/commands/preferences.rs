@@ -9,8 +9,6 @@ pub struct Preferences {
     pub aws_profile: Option<String>,
     #[serde(default)]
     pub recently_used_skill_types: Vec<String>,
-    #[serde(default)]
-    pub keyboard_shortcuts: std::collections::HashMap<String, String>,
 }
 
 impl Default for Preferences {
@@ -19,7 +17,6 @@ impl Default for Preferences {
             last_opened_folder: None,
             aws_profile: None,
             recently_used_skill_types: Vec::new(),
-            keyboard_shortcuts: std::collections::HashMap::new(),
         }
     }
 }
