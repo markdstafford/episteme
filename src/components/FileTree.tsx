@@ -79,7 +79,7 @@ export function FileTree() {
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
-      const { getBinding } = useShortcutsStore.getState();
+      const { actions } = useShortcutsStore.getState();
       const combo = normalizeCombo(e as unknown as globalThis.KeyboardEvent);
       const visiblePaths = getVisiblePaths(nodes, expandedPaths);
       const currentPath = focusedPathRef.current;
@@ -87,15 +87,15 @@ export function FileTree() {
         ? visiblePaths.indexOf(currentPath)
         : -1;
 
-      if (combo === getBinding("filetree.navigateDown")) {
+      if (combo === actions["filetree.navigateDown"]?.binding) {
         e.preventDefault();
         const next = visiblePaths[currentIndex + 1];
         if (next) setFocusedPath(next);
-      } else if (combo === getBinding("filetree.navigateUp")) {
+      } else if (combo === actions["filetree.navigateUp"]?.binding) {
         e.preventDefault();
         const prev = visiblePaths[currentIndex - 1];
         if (prev) setFocusedPath(prev);
-      } else if (combo === getBinding("filetree.expand")) {
+      } else if (combo === actions["filetree.expand"]?.binding) {
         e.preventDefault();
         if (!currentPath) return;
         const node = findNode(nodes, currentPath);
@@ -106,7 +106,7 @@ export function FileTree() {
             setFocusedPath(node.children[0].path);
           }
         }
-      } else if (combo === getBinding("filetree.collapse")) {
+      } else if (combo === actions["filetree.collapse"]?.binding) {
         e.preventDefault();
         if (!currentPath) return;
         const n = findNode(nodes, currentPath);
@@ -116,7 +116,7 @@ export function FileTree() {
           const parent = findParentPath(nodes, currentPath);
           if (parent) setFocusedPath(parent);
         }
-      } else if (combo === getBinding("filetree.open")) {
+      } else if (combo === actions["filetree.open"]?.binding) {
         e.preventDefault();
         if (!currentPath) return;
         const enterNode = findNode(nodes, currentPath);

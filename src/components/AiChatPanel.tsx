@@ -44,8 +44,8 @@ export function AiChatPanel({ onClose }: AiChatPanelProps) {
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     const combo = normalizeCombo(e as unknown as KeyboardEvent);
-    const sendBinding =
-      useShortcutsStore.getState().getBinding("chat.send") ?? "Enter";
+    const action = useShortcutsStore.getState().actions["chat.send"];
+    const sendBinding = action?.binding ?? "Enter";
     if (combo === sendBinding) {
       e.preventDefault();
       handleSend();

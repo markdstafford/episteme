@@ -25,11 +25,11 @@ const mockTree: FileNode[] = [
 
 function registerFileTreeActions() {
   const { registerAction } = useShortcutsStore.getState();
-  registerAction({ id: "filetree.navigateUp", label: "Navigate up", defaultBinding: "ArrowUp", category: "File tree", firesThroughInputs: false });
-  registerAction({ id: "filetree.navigateDown", label: "Navigate down", defaultBinding: "ArrowDown", category: "File tree", firesThroughInputs: false });
-  registerAction({ id: "filetree.collapse", label: "Collapse", defaultBinding: "ArrowLeft", category: "File tree", firesThroughInputs: false });
-  registerAction({ id: "filetree.expand", label: "Expand", defaultBinding: "ArrowRight", category: "File tree", firesThroughInputs: false });
-  registerAction({ id: "filetree.open", label: "Open file", defaultBinding: "Enter", category: "File tree", firesThroughInputs: false });
+  registerAction({ id: "filetree.navigateUp", label: "Navigate up", binding: "ArrowUp", category: "File tree", ignoresActionRestrictions: false });
+  registerAction({ id: "filetree.navigateDown", label: "Navigate down", binding: "ArrowDown", category: "File tree", ignoresActionRestrictions: false });
+  registerAction({ id: "filetree.collapse", label: "Collapse", binding: "ArrowLeft", category: "File tree", ignoresActionRestrictions: false });
+  registerAction({ id: "filetree.expand", label: "Expand", binding: "ArrowRight", category: "File tree", ignoresActionRestrictions: false });
+  registerAction({ id: "filetree.open", label: "Open file", binding: "Enter", category: "File tree", ignoresActionRestrictions: false });
 }
 
 describe("FileTree", () => {
@@ -41,7 +41,7 @@ describe("FileTree", () => {
       isLoading: false,
       error: null,
     });
-    useShortcutsStore.setState({ actions: {}, customBindings: {} });
+    useShortcutsStore.setState({ actions: {}, actionsRestricted: false });
   });
 
   it("shows empty message when no nodes", () => {
@@ -103,7 +103,7 @@ describe("FileTree keyboard navigation", () => {
       isLoading: false,
       error: null,
     });
-    useShortcutsStore.setState({ actions: {}, customBindings: {} });
+    useShortcutsStore.setState({ actions: {}, actionsRestricted: false });
     registerFileTreeActions();
   });
 
