@@ -84,7 +84,6 @@ function App() {
     registerAction({ id: "filetree.collapse", label: "Collapse", defaultBinding: "ArrowLeft", category: "File tree", firesThroughInputs: false });
     registerAction({ id: "filetree.expand", label: "Expand", defaultBinding: "ArrowRight", category: "File tree", firesThroughInputs: false });
     registerAction({ id: "filetree.open", label: "Open file", defaultBinding: "Enter", category: "File tree", firesThroughInputs: false });
-    registerAction({ id: "chat.send", label: "Send message", defaultBinding: "Enter", category: "Chat", firesThroughInputs: false });
 
     function handleKeyDown(e: KeyboardEvent) {
       const combo = normalizeCombo(e);

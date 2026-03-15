@@ -13,6 +13,7 @@ export const DEFAULT_PREFERENCES: Preferences = {
   last_opened_folder: null,
   aws_profile: null,
   recently_used_skill_types: [],
+  keyboard_shortcuts: {},
 };
 
 export function parsePreferences(data: unknown): Preferences {

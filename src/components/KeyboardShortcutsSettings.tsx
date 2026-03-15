@@ -23,8 +23,8 @@ export function KeyboardShortcutsSettings({ preferences, onPreferencesChange }: 
 
   async function handleReset(actionId: string) {
     resetBinding(actionId);
-    const updatedShortcuts = { ...customBindings };
-    delete updatedShortcuts[actionId];
+    // Read from store after mutation, not from stale closure snapshot
+    const updatedShortcuts = { ...useShortcutsStore.getState().customBindings };
     const updatedPrefs = { ...preferences, keyboard_shortcuts: updatedShortcuts };
     await invoke("save_preferences", { preferences: updatedPrefs });
     onPreferencesChange(updatedPrefs);
