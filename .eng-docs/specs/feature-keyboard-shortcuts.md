@@ -1,11 +1,11 @@
 ---
 created: 2026-03-14
 last_updated: 2026-03-15
-status: complete
+status: superseded
 issue: 26
 specced_by: markdstafford
 implemented_by: markdstafford
-superseded_by: null
+superseded_by: feature-keyboard-shortcuts-v2.md
 ---
 
 # Keyboard shortcuts
