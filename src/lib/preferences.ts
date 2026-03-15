@@ -4,6 +4,7 @@ export const PreferencesSchema = z.object({
   last_opened_folder: z.string().nullable(),
   aws_profile: z.string().nullable(),
   recently_used_skill_types: z.array(z.string()).default([]),
+  keyboard_shortcuts: z.record(z.string(), z.string()).default({}),
 });
 
 export type Preferences = z.infer<typeof PreferencesSchema>;
