@@ -4,17 +4,15 @@ import { useAiChatStore } from "@/stores/aiChat";
 import { useSettingsStore } from "@/stores/settings";
 import { settingsConfig } from "@/config/settings";
 import { Input } from "@/components/ui/Input";
+import { KeyboardShortcutsSettings } from "@/components/KeyboardShortcutsSettings";
+import { parsePreferences } from "@/lib/preferences";
+import type { Preferences } from "@/lib/preferences";
 
 const AWS_PROFILE_REGEX = /^[A-Za-z0-9_.-]{1,64}$/;
 
-interface Preferences {
-  aws_profile?: string | null;
-  last_opened_folder?: string | null;
-}
-
 function AwsProfileSetting({ id, label }: { id: string; label: string }) {
   const [awsProfile, setAwsProfile] = useState("");
-  const [fullPrefs, setFullPrefs] = useState<Preferences>({});
+  const [fullPrefs, setFullPrefs] = useState<Preferences>(parsePreferences({}));
   const [prefsLoaded, setPrefsLoaded] = useState(false);
   const setStoreAwsProfile = useAiChatStore((s) => s.setAwsProfile);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -76,7 +74,24 @@ function SettingControl({ settingId }: { settingId: string }) {
   return null;
 }
 
-function CategoryContent({ categoryId }: { categoryId: string }) {
+function CategoryContent({
+  categoryId,
+  preferences,
+  onPreferencesChange,
+}: {
+  categoryId: string;
+  preferences: Preferences;
+  onPreferencesChange: (prefs: Preferences) => void;
+}) {
+  if (categoryId === "keyboard-shortcuts") {
+    return (
+      <KeyboardShortcutsSettings
+        preferences={preferences}
+        onPreferencesChange={onPreferencesChange}
+      />
+    );
+  }
+
   const category = settingsConfig.find((c) => c.id === categoryId);
 
   if (!category) {
@@ -109,10 +124,23 @@ function CategoryContent({ categoryId }: { categoryId: string }) {
 
 export function SettingsPanel() {
   const activeCategory = useSettingsStore((s) => s.activeCategory);
+  const [preferences, setPreferences] = useState<Preferences>(
+    parsePreferences({})
+  );
+
+  useEffect(() => {
+    invoke<Preferences>("load_preferences")
+      .then((prefs) => setPreferences(parsePreferences(prefs)))
+      .catch(() => {});
+  }, []);
 
   return (
     <div className="flex-1 bg-(--color-bg-base) overflow-y-auto px-[var(--padding-content)] pt-[var(--space-6)]">
-      <CategoryContent categoryId={activeCategory} />
+      <CategoryContent
+        categoryId={activeCategory}
+        preferences={preferences}
+        onPreferencesChange={setPreferences}
+      />
     </div>
   );
 }
