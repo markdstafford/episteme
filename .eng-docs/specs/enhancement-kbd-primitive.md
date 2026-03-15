@@ -1,10 +1,10 @@
 ---
 created: 2026-03-12
-last_updated: 2026-03-12
-status: approved
+last_updated: 2026-03-14
+status: complete
 issue: 59
 specced_by: markdstafford
-implemented_by: null
+implemented_by: markdstafford
 superseded_by: null
 ---
 
@@ -79,48 +79,48 @@ A single public component that renders one or more keys as a keyboard shortcut.
 
 ## Task list
 
-- [ ] **Story: KbdShortcut primitive**
-  - [ ] **Task: Implement `Kbd` and `KbdShortcut` components**
+- [x] **Story: KbdShortcut primitive**
+  - [x] **Task: Implement `Kbd` and `KbdShortcut` components**
     - **Description**: Create `src/components/ui/Kbd.tsx`. Implement a non-exported `Kbd` sub-component that renders a single `<kbd>` key chip using design tokens (background `--color-bg-hover`, border `1px solid var(--color-border-default)`, `--radius-sm`, `--font-size-ui-xs`, weight 500, padding `2px 5px`, `inline-flex`). Implement and export `KbdShortcut` which accepts `keys: string[]` and optional `separator?: string` (default `"+"`). It renders an outer `<kbd>` containing one `Kbd` per key with the separator as plain text between them. Single-key arrays render one chip with no separator.
     - **Acceptance criteria**:
-      - [ ] `KbdShortcut` is the only export from `Kbd.tsx`
-      - [ ] Single key: `<KbdShortcut keys={["1"]} />` renders one chip, no separator
-      - [ ] Multi-key: `<KbdShortcut keys={["⌘", ","]} />` renders two chips with `+` between
-      - [ ] Custom separator: `<KbdShortcut keys={["⌘", ","]} separator="-" />` renders with `-`
-      - [ ] All visual properties reference design tokens — no hardcoded values
+      - [x] `KbdShortcut` is the only export from `Kbd.tsx`
+      - [x] Single key: `<KbdShortcut keys={["1"]} />` renders one chip, no separator
+      - [x] Multi-key: `<KbdShortcut keys={["⌘", ","]} />` renders two chips with `+` between
+      - [x] Custom separator: `<KbdShortcut keys={["⌘", ","]} separator="-" />` renders with `-`
+      - [x] All visual properties reference design tokens — no hardcoded values
     - **Dependencies**: None
-  - [ ] **Task: Write unit tests for `KbdShortcut`**
-    - **Description**: Create `tests/unit/Kbd.test.tsx`. Cover: single-key rendering, multi-key rendering and separator count, custom separator prop, correct use of outer and inner `<kbd>` elements.
+  - [x] **Task: Write unit tests for `KbdShortcut`**
+    - **Description**: Create `tests/unit/components/Kbd.test.tsx`. Cover: single-key rendering, multi-key rendering and separator count, custom separator prop, correct use of outer and inner `<kbd>` elements.
     - **Acceptance criteria**:
-      - [ ] Single key renders one `<kbd>` chip, no separator rendered
-      - [ ] Two keys render two chips and one `+` separator
-      - [ ] Three keys render three chips and two separators
-      - [ ] Custom separator prop is used instead of default
-      - [ ] Outer element is `<kbd>`, inner key chips are `<kbd>`
-      - [ ] All tests pass
+      - [x] Single key renders one `<kbd>` chip, no separator rendered
+      - [x] Two keys render two chips and one `+` separator
+      - [x] Three keys render three chips and two separators
+      - [x] Custom separator prop is used instead of default
+      - [x] Outer element is `<kbd>`, inner key chips are `<kbd>`
+      - [x] All tests pass
     - **Dependencies**: Task: Implement `Kbd` and `KbdShortcut` components
 
-- [ ] **Story: Migrate call sites**
-  - [ ] **Task: Migrate `CreateNewDialog` shortcut indicators to `<KbdShortcut>`**
+- [x] **Story: Migrate call sites**
+  - [x] **Task: Migrate `CreateNewDialog` shortcut indicators to `<KbdShortcut>`**
     - **Description**: In `src/components/CreateNewDialog.tsx`, replace the hardcoded `<span>` shortcut indicator (lines ~215–226) with `<KbdShortcut keys={[String(i + 1)]} />`. Remove the inline style block it replaces.
     - **Acceptance criteria**:
-      - [ ] No inline-styled shortcut spans remain in `CreateNewDialog.tsx`
-      - [ ] Visual output is unchanged
-      - [ ] Existing `CreateNewDialog` tests pass
+      - [x] No inline-styled shortcut spans remain in `CreateNewDialog.tsx`
+      - [x] Visual output is unchanged
+      - [x] Existing `CreateNewDialog` tests pass
     - **Dependencies**: Task: Implement `Kbd` and `KbdShortcut` components
-  - [ ] **Task: Add `KbdShortcut` showcase to DesignKitchen**
+  - [x] **Task: Add `KbdShortcut` showcase to DesignKitchen**
     - **Description**: In `src/components/DesignKitchen.tsx`, add a KbdShortcut row to the Components section (after Inputs, before Badges). Show three examples with labels: single digit `["1"]`, single letter `["K"]`, and multi-key `["⌘", ","]`.
     - **Acceptance criteria**:
-      - [ ] Three labeled examples render correctly in the kitchen sink
-      - [ ] Examples use `<KbdShortcut>`, no inline styles
+      - [x] Three labeled examples render correctly in the kitchen sink
+      - [x] Examples use `<KbdShortcut>`, no inline styles
     - **Dependencies**: Task: Implement `Kbd` and `KbdShortcut` components
 
-- [ ] **Story: Documentation**
-  - [ ] **Task: Add `KbdShortcut` to `design-system.md`**
+- [x] **Story: Documentation**
+  - [x] **Task: Add `KbdShortcut` to `design-system.md`**
     - **Description**: Add a KbdShortcut entry to the component patterns section of `.eng-docs/wiki/design-system.md`. Document: element structure, all visual token values, API (`keys`, `separator` props), distinction from Badge, and example usage.
     - **Acceptance criteria**:
-      - [ ] KbdShortcut section present in design-system.md
-      - [ ] All visual properties documented with token references
-      - [ ] API props documented
-      - [ ] Distinction from Badge noted
+      - [x] KbdShortcut section present in design-system.md
+      - [x] All visual properties documented with token references
+      - [x] API props documented
+      - [x] Distinction from Badge noted
     - **Dependencies**: Task: Implement `Kbd` and `KbdShortcut` components

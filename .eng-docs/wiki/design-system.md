@@ -528,6 +528,40 @@ All dialogs are in-app. No separate OS windows.
 | Success | dark | `oklch(24% 0.06 155)` (`--color-state-success-subtle`) | `oklch(76% 0.16 155)` (`--color-badge-success-text`) |
 | Success | light | `oklch(95% 0.04 155)` (`--color-state-success-subtle`) | `oklch(40% 0.16 155)` (`--color-badge-success-text`) |
 
+### KbdShortcut
+
+A single public component that renders one or more keys as a keyboard shortcut hint. Uses the semantic `<kbd>` HTML element so screen readers announce it as keyboard input.
+
+**Distinction from Badge:** No fixed height token, has a visible border, tighter padding. The border gives the subtle keycap appearance that distinguishes it from a status badge.
+
+| Property | Value |
+|---|---|
+| Element | Outer `<kbd>` (layout only) wrapping one inner `<kbd>` per key (all visual styling) |
+| Background | `--color-bg-hover` (inner `<kbd>` only) |
+| Border | `1px solid var(--color-border-default)` (inner `<kbd>` only) |
+| Border radius | `--radius-sm` (3px) (inner `<kbd>` only) |
+| Font family | `--font-ui` (inner `<kbd>` only; overrides browser monospace UA default) |
+| Font size | `--font-size-ui-xs` (11px) (inner `<kbd>` only) |
+| Font weight | 500 (inner `<kbd>` only) |
+| Padding (per key chip) | `2px 5px` (inner `<kbd>` only) |
+| Display | Outer: `inline-flex`, `align-items: center`, `gap: 4px`. Inner `<kbd>` also `inline-flex`, `align-items: center`. |
+| Separator | None by default; configurable via `separator` prop. The separator text and each key chip share a `<span>` wrapper per key position. |
+
+**API:**
+```tsx
+// Single key (sequence indicator)
+<KbdShortcut keys={["1"]} />
+
+// Multi-key shortcut
+<KbdShortcut keys={["⌘", ","]} />
+
+// Custom separator
+<KbdShortcut keys={["⌘", ","]} separator="-" />
+
+// Dynamic keys from any string array
+<KbdShortcut keys={combo.split("+")} />
+```
+
 ### Frontmatter bar
 
 Displays document frontmatter key/value pairs above the document content area.

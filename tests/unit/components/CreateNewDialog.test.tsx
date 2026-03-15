@@ -149,6 +149,28 @@ describe("CreateNewDialog MRU update", () => {
   });
 });
 
+describe("CreateNewDialog shortcut indicators", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockInvoke.mockImplementation((cmd) => {
+      if (cmd === "list_skills") return Promise.resolve(makeSkills(["product-description", "tech-design"]));
+      if (cmd === "count_documents_by_type") return Promise.resolve({});
+      if (cmd === "load_preferences") return Promise.resolve({ last_opened_folder: null, aws_profile: null, recently_used_skill_types: [] });
+      return Promise.resolve(null);
+    });
+  });
+
+  it("renders shortcut indicators as kbd elements", async () => {
+    render(<CreateNewDialog onSelect={vi.fn()} onClose={vi.fn()} workspacePath="/ws" />);
+    await waitFor(() => expect(screen.getByText("product-description")).toBeTruthy());
+
+    const kbdElements = document.body.querySelectorAll("kbd");
+    const kbdTexts = Array.from(kbdElements).map((el) => el.textContent);
+    expect(kbdTexts).toContain("1");
+    expect(kbdTexts).toContain("2");
+  });
+});
+
 describe("CreateNewDialog empty workspace", () => {
   it("shows only Other when no skills exist", async () => {
     vi.clearAllMocks();
