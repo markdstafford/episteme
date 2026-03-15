@@ -36,3 +36,4 @@ describe("settingsConfig", () => {
     expect(allSettings.some((s) => s.id === "aws_profile")).toBe(true);
   });
 });
+

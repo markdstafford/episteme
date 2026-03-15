@@ -4,17 +4,14 @@ import { useAiChatStore } from "@/stores/aiChat";
 import { useSettingsStore } from "@/stores/settings";
 import { settingsConfig } from "@/config/settings";
 import { Input } from "@/components/ui/Input";
+import { parsePreferences } from "@/lib/preferences";
+import type { Preferences } from "@/lib/preferences";
 
 const AWS_PROFILE_REGEX = /^[A-Za-z0-9_.-]{1,64}$/;
 
-interface Preferences {
-  aws_profile?: string | null;
-  last_opened_folder?: string | null;
-}
-
 function AwsProfileSetting({ id, label }: { id: string; label: string }) {
   const [awsProfile, setAwsProfile] = useState("");
-  const [fullPrefs, setFullPrefs] = useState<Preferences>({});
+  const [fullPrefs, setFullPrefs] = useState<Preferences>(parsePreferences({}));
   const [prefsLoaded, setPrefsLoaded] = useState(false);
   const setStoreAwsProfile = useAiChatStore((s) => s.setAwsProfile);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -76,7 +73,11 @@ function SettingControl({ settingId }: { settingId: string }) {
   return null;
 }
 
-function CategoryContent({ categoryId }: { categoryId: string }) {
+function CategoryContent({
+  categoryId,
+}: {
+  categoryId: string;
+}) {
   const category = settingsConfig.find((c) => c.id === categoryId);
 
   if (!category) {

@@ -1,8 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useWorkspaceStore } from "@/stores/workspace";
 import { useAiChatStore } from "@/stores/aiChat";
 import { useSettingsStore } from "@/stores/settings";
 import { useUpdateStore } from "@/stores/update";
+import { useShortcutsStore, normalizeCombo } from "@/stores/shortcuts";
 import { WelcomeScreen } from "@/components/WelcomeScreen";
 import { TitleBar } from "@/components/TitleBar";
 import { Sidebar } from "@/components/Sidebar";
@@ -14,14 +15,27 @@ import { listen } from "@tauri-apps/api/event";
 import { parsePreferences } from "@/lib/preferences";
 import { Loader2 } from "lucide-react";
 import { DesignKitchen } from "@/components/DesignKitchen";
+import { ShortcutsPanel } from "@/components/ShortcutsPanel";
 
 function App() {
   const [showKitchenSink, setShowKitchenSink] = useState(false);
+  const [shortcutsPanelOpen, setShortcutsPanelOpen] = useState(false);
   const folderPath = useWorkspaceStore((s) => s.folderPath);
   const isLoading = useWorkspaceStore((s) => s.isLoading);
   const loadSavedFolder = useWorkspaceStore((s) => s.loadSavedFolder);
   const openFolder = useWorkspaceStore((s) => s.openFolder);
   const settingsOpen = useSettingsStore((s) => s.settingsOpen);
+
+  const [overlayStack, setOverlayStack] = useState<string[]>([]);
+  const overlayStackRef = useRef<string[]>([]);
+  useEffect(() => { overlayStackRef.current = overlayStack; }, [overlayStack]);
+
+  function pushOverlay(id: string) {
+    setOverlayStack((prev) => prev.includes(id) ? prev : [...prev, id]);
+  }
+  function removeOverlay(id: string) {
+    setOverlayStack((prev) => prev.filter((x) => x !== id));
+  }
 
   useEffect(() => {
     const unlisten = listen("menu:open-folder", () => openFolder());
@@ -29,32 +43,86 @@ function App() {
   }, [openFolder]);
 
   useEffect(() => {
-    const unlisten = listen("menu:open-settings", () =>
-      useSettingsStore.getState().openSettings()
-    );
+    const unlisten = listen("menu:open-settings", () => {
+      useSettingsStore.getState().openSettings();
+      pushOverlay("settings");
+    });
     return () => { unlisten.then((f) => f()); };
   }, []);
 
   useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && useSettingsStore.getState().settingsOpen) {
-        useSettingsStore.getState().closeSettings();
-      }
-    };
-    document.addEventListener("keydown", handler);
-    return () => document.removeEventListener("keydown", handler);
-  }, []);
+    const { registerAction } = useShortcutsStore.getState();
 
-  useEffect(() => {
-    if (!import.meta.env.DEV) return;
-    const handler = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.code === "KeyK") {
+    // ignoresActionRestrictions: true so Escape dismisses overlays even when an input is focused
+    registerAction({
+      id: "app.closeOverlay",
+      label: "Close",
+      binding: "Escape",
+      category: "Global",
+      ignoresActionRestrictions: true,
+      callback: () => {
+        const stack = overlayStackRef.current;
+        if (stack.length === 0) return;
+        const top = stack[stack.length - 1];
+        if (top === "shortcutsPanel") {
+          setShortcutsPanelOpen(false);
+          removeOverlay("shortcutsPanel");
+        } else if (top === "settings") {
+          useSettingsStore.getState().closeSettings();
+          removeOverlay("settings");
+        }
+      },
+    });
+    registerAction({
+      id: "app.openSettings",
+      label: "Open settings",
+      binding: "Meta+Comma",
+      category: "Global",
+      ignoresActionRestrictions: false,
+      callback: () => {
+        useSettingsStore.getState().openSettings();
+        pushOverlay("settings");
+      },
+    });
+    registerAction({
+      id: "app.openShortcutsPanel",
+      label: "Show keyboard shortcuts",
+      binding: "Meta+Slash",
+      category: "Global",
+      ignoresActionRestrictions: true,
+      callback: () => {
+        setShortcutsPanelOpen(true);
+        pushOverlay("shortcutsPanel");
+      },
+    });
+    // Meta+Shift+K: intentionally Mac-only (⌘⇧K). Cross-platform Ctrl support not included
+    // since normalizeCombo does not normalize Ctrl — see src/stores/shortcuts.ts.
+    registerAction({
+      id: "app.toggleDesignKitchen",
+      label: "Toggle design kitchen",
+      binding: "Meta+Shift+KeyK",
+      category: "Global",
+      ignoresActionRestrictions: false,
+      callback: () => setShowKitchenSink((v) => !v),
+    });
+    registerAction({ id: "filetree.navigateUp", label: "Navigate up", binding: "ArrowUp", category: "File tree", ignoresActionRestrictions: false });
+    registerAction({ id: "filetree.navigateDown", label: "Navigate down", binding: "ArrowDown", category: "File tree", ignoresActionRestrictions: false });
+    registerAction({ id: "filetree.collapse", label: "Collapse", binding: "ArrowLeft", category: "File tree", ignoresActionRestrictions: false });
+    registerAction({ id: "filetree.expand", label: "Expand", binding: "ArrowRight", category: "File tree", ignoresActionRestrictions: false });
+    registerAction({ id: "filetree.open", label: "Open file", binding: "Enter", category: "File tree", ignoresActionRestrictions: false });
+
+    function handleKeyDown(e: KeyboardEvent) {
+      const combo = normalizeCombo(e);
+      const target = e.target instanceof Element ? e.target : document.body;
+      const action = useShortcutsStore.getState().resolveAction(combo, target);
+      if (action?.callback) {
         e.preventDefault();
-        setShowKitchenSink((v) => !v);
+        action.callback();
       }
-    };
-    document.addEventListener("keydown", handler);
-    return () => document.removeEventListener("keydown", handler);
+    }
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
   }, []);
 
   useEffect(() => {
@@ -81,6 +149,28 @@ function App() {
     return () => clearInterval(interval);
   }, [checkForUpdate]);
 
+  // Sync overlay stack when settings closes externally
+  useEffect(() => {
+    if (!settingsOpen) {
+      removeOverlay("settings");
+    }
+  }, [settingsOpen]);
+
+  function closeShortcutsPanel() {
+    setShortcutsPanelOpen(false);
+    removeOverlay("shortcutsPanel");
+  }
+
+  const shortcutsPanelOverlay = shortcutsPanelOpen && (
+    <>
+      <div
+        style={{ position: "fixed", inset: 0, zIndex: 1099 }}
+        onClick={closeShortcutsPanel}
+      />
+      <ShortcutsPanel onClose={closeShortcutsPanel} />
+    </>
+  );
+
   if (import.meta.env.DEV && showKitchenSink) {
     return <DesignKitchen onClose={() => setShowKitchenSink(false)} />;
   }
@@ -98,6 +188,7 @@ function App() {
             </p>
           </div>
         </div>
+        {shortcutsPanelOverlay}
       </div>
     );
   }
@@ -108,6 +199,7 @@ function App() {
         {/* TODO: re-wire to keyboard shortcut when AI chat panel toggle is implemented */}
         <TitleBar folderPath={null} onStartAuthoring={() => {}} />
         <WelcomeScreen />
+        {shortcutsPanelOverlay}
       </div>
     );
   }
@@ -135,6 +227,7 @@ function App() {
           </div>
         )}
       </div>
+      {shortcutsPanelOverlay}
     </div>
   );
 }

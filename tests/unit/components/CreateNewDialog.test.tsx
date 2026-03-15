@@ -97,7 +97,7 @@ describe("CreateNewDialog keyboard shortcuts", () => {
     render(<CreateNewDialog onSelect={onSelect} onClose={vi.fn()} workspacePath="/ws" />);
     await waitFor(() => expect(screen.getByText("product-description")).toBeTruthy());
 
-    fireEvent.keyDown(document, { key: "1" });
+    fireEvent.keyDown(screen.getByRole("dialog"), { code: "Digit1" });
     expect(onSelect).toHaveBeenCalledWith("product-description");
   });
 
@@ -107,7 +107,7 @@ describe("CreateNewDialog keyboard shortcuts", () => {
     render(<CreateNewDialog onSelect={onSelect} onClose={onClose} workspacePath="/ws" />);
     await waitFor(() => expect(screen.getByText("product-description")).toBeTruthy());
 
-    fireEvent.keyDown(document, { key: "Escape" });
+    fireEvent.keyDown(screen.getByRole("dialog"), { code: "Escape" });
     expect(onClose).toHaveBeenCalledOnce();
     expect(onSelect).not.toHaveBeenCalled();
   });
@@ -118,7 +118,7 @@ describe("CreateNewDialog keyboard shortcuts", () => {
     await waitFor(() => expect(screen.getByText("Other")).toBeTruthy());
 
     // 2 skills + Other = key "3"
-    fireEvent.keyDown(document, { key: "3" });
+    fireEvent.keyDown(screen.getByRole("dialog"), { code: "Digit3" });
     expect(onSelect).toHaveBeenCalledWith(null);
   });
 });
