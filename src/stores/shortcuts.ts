@@ -3,24 +3,18 @@ import { create } from "zustand";
 export interface ShortcutAction {
   id: string;
   label: string;
-  defaultBinding: string;
+  binding: string;
   category: string;
-  firesThroughInputs: boolean;
-  rebindable: boolean;
+  ignoresActionRestrictions: boolean;
   callback?: () => void;
 }
 
 interface ShortcutsState {
   actions: Record<string, ShortcutAction>;
-  customBindings: Record<string, string>;
+  actionsRestricted: boolean;
   registerAction: (action: ShortcutAction) => void;
-  setBinding: (actionId: string, combo: string) => void;
-  resetBinding: (actionId: string) => void;
-  getBinding: (actionId: string) => string | undefined;
-  comboToAction: (combo: string) => string | null;
   resolveAction: (combo: string, target: Element) => ShortcutAction | null;
-  applyCustomBindings: (bindings: Record<string, string>) => void;
-  checkConflict: (combo: string, excludeActionId?: string) => string | null;
+  setActionsRestricted: (restricted: boolean) => void;
 }
 
 export function normalizeCombo(e: KeyboardEvent): string {
@@ -40,59 +34,23 @@ function isInputTarget(el: Element): boolean {
 
 export const useShortcutsStore = create<ShortcutsState>((set, get) => ({
   actions: {},
-  customBindings: {},
+  actionsRestricted: false,
 
   registerAction(action) {
     set((s) => ({ actions: { ...s.actions, [action.id]: action } }));
   },
 
-  setBinding(actionId, combo) {
-    set((s) => ({ customBindings: { ...s.customBindings, [actionId]: combo } }));
-  },
-
-  resetBinding(actionId) {
-    set((s) => {
-      const next = { ...s.customBindings };
-      delete next[actionId];
-      return { customBindings: next };
-    });
-  },
-
-  getBinding(actionId) {
-    const { actions, customBindings } = get();
-    return customBindings[actionId] ?? actions[actionId]?.defaultBinding;
-  },
-
-  comboToAction(combo) {
-    const { actions, customBindings } = get();
-    for (const [id, action] of Object.entries(actions)) {
-      const effective = customBindings[id] ?? action.defaultBinding;
-      if (effective === combo) return id;
-    }
-    return null;
-  },
-
   resolveAction(combo, target) {
-    const { actions } = get();
-    const actionId = get().comboToAction(combo);
-    if (!actionId) return null;
-    const action = actions[actionId];
+    const { actions, actionsRestricted } = get();
+    const action = Object.values(actions).find((a) => a.binding === combo) ?? null;
     if (!action) return null;
-    if (!action.firesThroughInputs && isInputTarget(target)) return null;
+    if (actionsRestricted || isInputTarget(target)) {
+      return action.ignoresActionRestrictions ? action : null;
+    }
     return action;
   },
 
-  applyCustomBindings(bindings) {
-    set({ customBindings: bindings });
-  },
-
-  checkConflict(combo, excludeActionId) {
-    const { actions } = get();
-    for (const [id, action] of Object.entries(actions)) {
-      if (!action.rebindable) continue;
-      if (excludeActionId !== undefined && id === excludeActionId) continue;
-      if (get().getBinding(id) === combo) return id;
-    }
-    return null;
+  setActionsRestricted(restricted) {
+    set({ actionsRestricted: restricted });
   },
 }));

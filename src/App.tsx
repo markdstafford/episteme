@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useWorkspaceStore } from "@/stores/workspace";
 import { useAiChatStore } from "@/stores/aiChat";
 import { useSettingsStore } from "@/stores/settings";
@@ -10,7 +10,6 @@ import { Sidebar } from "@/components/Sidebar";
 import { FileTree } from "@/components/FileTree";
 import { DocumentViewer } from "@/components/DocumentViewer";
 import { SettingsPanel } from "@/components/SettingsPanel";
-import { QuickReferenceDialog } from "@/components/QuickReferenceDialog";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { parsePreferences } from "@/lib/preferences";
@@ -19,18 +18,12 @@ import { DesignKitchen } from "@/components/DesignKitchen";
 
 function App() {
   const [showKitchenSink, setShowKitchenSink] = useState(false);
-  const [quickReferenceOpen, setQuickReferenceOpen] = useState(false);
+  const [shortcutsPanelOpen, setShortcutsPanelOpen] = useState(false);
   const folderPath = useWorkspaceStore((s) => s.folderPath);
   const isLoading = useWorkspaceStore((s) => s.isLoading);
   const loadSavedFolder = useWorkspaceStore((s) => s.loadSavedFolder);
   const openFolder = useWorkspaceStore((s) => s.openFolder);
   const settingsOpen = useSettingsStore((s) => s.settingsOpen);
-
-  const settingsPanelOpenRef = useRef(false);
-  const quickReferenceOpenRef = useRef(false);
-
-  useEffect(() => { settingsPanelOpenRef.current = settingsOpen; }, [settingsOpen]);
-  useEffect(() => { quickReferenceOpenRef.current = quickReferenceOpen; }, [quickReferenceOpen]);
 
   useEffect(() => {
     const unlisten = listen("menu:open-folder", () => openFolder());
@@ -47,57 +40,52 @@ function App() {
   useEffect(() => {
     const { registerAction } = useShortcutsStore.getState();
 
-    // firesThroughInputs: true so Escape dismisses dialogs even when an input is focused
+    // ignoresActionRestrictions: true so Escape dismisses overlays even when an input is focused
     registerAction({
       id: "app.closeOverlay",
       label: "Close",
-      defaultBinding: "Escape",
+      binding: "Escape",
       category: "Global",
-      firesThroughInputs: true,
-      rebindable: false,
+      ignoresActionRestrictions: true,
       callback: () => {
         useSettingsStore.getState().closeSettings();
-        setQuickReferenceOpen(false);
+        setShortcutsPanelOpen(false);
       },
     });
     registerAction({
       id: "app.openSettings",
       label: "Open settings",
-      defaultBinding: "Meta+Comma",
+      binding: "Meta+Comma",
       category: "Global",
-      firesThroughInputs: false,
-      rebindable: true,
+      ignoresActionRestrictions: false,
       callback: () => useSettingsStore.getState().openSettings(),
     });
     registerAction({
-      id: "app.openQuickReference",
+      id: "app.openShortcutsPanel",
       label: "Show keyboard shortcuts",
-      defaultBinding: "Shift+Slash",
+      binding: "Meta+Slash",
       category: "Global",
-      firesThroughInputs: false,
-      rebindable: true,
-      callback: () => setQuickReferenceOpen(true),
+      ignoresActionRestrictions: true,
+      callback: () => setShortcutsPanelOpen(true),
     });
     // Meta+Shift+K: intentionally Mac-only (⌘⇧K). Cross-platform Ctrl support not included
     // since normalizeCombo does not normalize Ctrl — see src/stores/shortcuts.ts.
     registerAction({
       id: "app.toggleDesignKitchen",
       label: "Toggle design kitchen",
-      defaultBinding: "Meta+Shift+KeyK",
+      binding: "Meta+Shift+KeyK",
       category: "Global",
-      firesThroughInputs: false,
-      rebindable: false,
+      ignoresActionRestrictions: false,
       callback: () => setShowKitchenSink((v) => !v),
     });
-    registerAction({ id: "filetree.navigateUp", label: "Navigate up", defaultBinding: "ArrowUp", category: "File tree", firesThroughInputs: false, rebindable: false });
-    registerAction({ id: "filetree.navigateDown", label: "Navigate down", defaultBinding: "ArrowDown", category: "File tree", firesThroughInputs: false, rebindable: false });
-    registerAction({ id: "filetree.collapse", label: "Collapse", defaultBinding: "ArrowLeft", category: "File tree", firesThroughInputs: false, rebindable: false });
-    registerAction({ id: "filetree.expand", label: "Expand", defaultBinding: "ArrowRight", category: "File tree", firesThroughInputs: false, rebindable: false });
-    registerAction({ id: "filetree.open", label: "Open file", defaultBinding: "Enter", category: "File tree", firesThroughInputs: false, rebindable: false });
+    registerAction({ id: "filetree.navigateUp", label: "Navigate up", binding: "ArrowUp", category: "File tree", ignoresActionRestrictions: false });
+    registerAction({ id: "filetree.navigateDown", label: "Navigate down", binding: "ArrowDown", category: "File tree", ignoresActionRestrictions: false });
+    registerAction({ id: "filetree.collapse", label: "Collapse", binding: "ArrowLeft", category: "File tree", ignoresActionRestrictions: false });
+    registerAction({ id: "filetree.expand", label: "Expand", binding: "ArrowRight", category: "File tree", ignoresActionRestrictions: false });
+    registerAction({ id: "filetree.open", label: "Open file", binding: "Enter", category: "File tree", ignoresActionRestrictions: false });
 
     function handleKeyDown(e: KeyboardEvent) {
       const combo = normalizeCombo(e);
-      if ((settingsPanelOpenRef.current || quickReferenceOpenRef.current) && combo !== "Escape") return;
       const target = e.target instanceof Element ? e.target : document.body;
       const action = useShortcutsStore.getState().resolveAction(combo, target);
       if (action?.callback) {
@@ -119,7 +107,6 @@ function App() {
         if (prefs.aws_profile) {
           useAiChatStore.setState({ awsProfile: prefs.aws_profile });
         }
-        useShortcutsStore.getState().applyCustomBindings(prefs.keyboard_shortcuts ?? {});
       } catch {
         // ignore - preferences may not exist yet
       }
@@ -152,9 +139,6 @@ function App() {
             </p>
           </div>
         </div>
-        {quickReferenceOpen && (
-          <QuickReferenceDialog onClose={() => setQuickReferenceOpen(false)} />
-        )}
       </div>
     );
   }
@@ -165,9 +149,6 @@ function App() {
         {/* TODO: re-wire to keyboard shortcut when AI chat panel toggle is implemented */}
         <TitleBar folderPath={null} onStartAuthoring={() => {}} />
         <WelcomeScreen />
-        {quickReferenceOpen && (
-          <QuickReferenceDialog onClose={() => setQuickReferenceOpen(false)} />
-        )}
       </div>
     );
   }
@@ -195,9 +176,6 @@ function App() {
           </div>
         )}
       </div>
-      {quickReferenceOpen && (
-        <QuickReferenceDialog onClose={() => setQuickReferenceOpen(false)} />
-      )}
     </div>
   );
 }
