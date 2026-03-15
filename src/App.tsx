@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useWorkspaceStore } from "@/stores/workspace";
 import { useAiChatStore } from "@/stores/aiChat";
 import { useSettingsStore } from "@/stores/settings";
@@ -15,6 +15,7 @@ import { listen } from "@tauri-apps/api/event";
 import { parsePreferences } from "@/lib/preferences";
 import { Loader2 } from "lucide-react";
 import { DesignKitchen } from "@/components/DesignKitchen";
+import { ShortcutsPanel } from "@/components/ShortcutsPanel";
 
 function App() {
   const [showKitchenSink, setShowKitchenSink] = useState(false);
@@ -25,15 +26,27 @@ function App() {
   const openFolder = useWorkspaceStore((s) => s.openFolder);
   const settingsOpen = useSettingsStore((s) => s.settingsOpen);
 
+  const [overlayStack, setOverlayStack] = useState<string[]>([]);
+  const overlayStackRef = useRef<string[]>([]);
+  useEffect(() => { overlayStackRef.current = overlayStack; }, [overlayStack]);
+
+  function pushOverlay(id: string) {
+    setOverlayStack((prev) => prev.includes(id) ? prev : [...prev, id]);
+  }
+  function removeOverlay(id: string) {
+    setOverlayStack((prev) => prev.filter((x) => x !== id));
+  }
+
   useEffect(() => {
     const unlisten = listen("menu:open-folder", () => openFolder());
     return () => { unlisten.then((f) => f()); };
   }, [openFolder]);
 
   useEffect(() => {
-    const unlisten = listen("menu:open-settings", () =>
-      useSettingsStore.getState().openSettings()
-    );
+    const unlisten = listen("menu:open-settings", () => {
+      useSettingsStore.getState().openSettings();
+      pushOverlay("settings");
+    });
     return () => { unlisten.then((f) => f()); };
   }, []);
 
@@ -48,8 +61,16 @@ function App() {
       category: "Global",
       ignoresActionRestrictions: true,
       callback: () => {
-        useSettingsStore.getState().closeSettings();
-        setShortcutsPanelOpen(false);
+        const stack = overlayStackRef.current;
+        if (stack.length === 0) return;
+        const top = stack[stack.length - 1];
+        if (top === "shortcutsPanel") {
+          setShortcutsPanelOpen(false);
+          removeOverlay("shortcutsPanel");
+        } else if (top === "settings") {
+          useSettingsStore.getState().closeSettings();
+          removeOverlay("settings");
+        }
       },
     });
     registerAction({
@@ -58,7 +79,10 @@ function App() {
       binding: "Meta+Comma",
       category: "Global",
       ignoresActionRestrictions: false,
-      callback: () => useSettingsStore.getState().openSettings(),
+      callback: () => {
+        useSettingsStore.getState().openSettings();
+        pushOverlay("settings");
+      },
     });
     registerAction({
       id: "app.openShortcutsPanel",
@@ -66,7 +90,10 @@ function App() {
       binding: "Meta+Slash",
       category: "Global",
       ignoresActionRestrictions: true,
-      callback: () => setShortcutsPanelOpen(true),
+      callback: () => {
+        setShortcutsPanelOpen(true);
+        pushOverlay("shortcutsPanel");
+      },
     });
     // Meta+Shift+K: intentionally Mac-only (⌘⇧K). Cross-platform Ctrl support not included
     // since normalizeCombo does not normalize Ctrl — see src/stores/shortcuts.ts.
@@ -122,6 +149,28 @@ function App() {
     return () => clearInterval(interval);
   }, [checkForUpdate]);
 
+  // Sync overlay stack when settings closes externally
+  useEffect(() => {
+    if (!settingsOpen) {
+      removeOverlay("settings");
+    }
+  }, [settingsOpen]);
+
+  function closeShortcutsPanel() {
+    setShortcutsPanelOpen(false);
+    removeOverlay("shortcutsPanel");
+  }
+
+  const shortcutsPanelOverlay = shortcutsPanelOpen && (
+    <>
+      <div
+        style={{ position: "fixed", inset: 0, zIndex: 1099 }}
+        onClick={closeShortcutsPanel}
+      />
+      <ShortcutsPanel onClose={closeShortcutsPanel} />
+    </>
+  );
+
   if (import.meta.env.DEV && showKitchenSink) {
     return <DesignKitchen onClose={() => setShowKitchenSink(false)} />;
   }
@@ -139,6 +188,7 @@ function App() {
             </p>
           </div>
         </div>
+        {shortcutsPanelOverlay}
       </div>
     );
   }
@@ -149,6 +199,7 @@ function App() {
         {/* TODO: re-wire to keyboard shortcut when AI chat panel toggle is implemented */}
         <TitleBar folderPath={null} onStartAuthoring={() => {}} />
         <WelcomeScreen />
+        {shortcutsPanelOverlay}
       </div>
     );
   }
@@ -176,6 +227,7 @@ function App() {
           </div>
         )}
       </div>
+      {shortcutsPanelOverlay}
     </div>
   );
 }
