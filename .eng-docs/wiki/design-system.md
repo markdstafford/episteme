@@ -544,7 +544,7 @@ A single public component that renders one or more keys as a keyboard shortcut h
 | Font weight | 500 (inner `<kbd>` only) |
 | Padding (per key chip) | `2px 5px` (inner `<kbd>` only) |
 | Display | Outer: `inline-flex`, `align-items: center` (layout only). Inner `<kbd>` also `inline-flex`, `align-items: center`. |
-| Separator | `+` between key chips (default; configurable via `separator` prop). The separator text and each key chip share a `<span>` wrapper per key position. |
+| Separator | None by default; configurable via `separator` prop. The separator text and each key chip share a `<span>` wrapper per key position. |
 
 **API:**
 ```tsx
