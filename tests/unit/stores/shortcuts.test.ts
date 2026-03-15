@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { normalizeCombo, useShortcutsStore } from "@/stores/shortcuts";
 
 // Helper to construct a synthetic KeyboardEvent-like object
@@ -25,6 +25,29 @@ describe("normalizeCombo", () => {
 
   it("sorts multiple modifiers alphabetically", () => {
     expect(normalizeCombo(key("KeyK", { metaKey: true, shiftKey: true }))).toBe("Meta+Shift+KeyK");
+  });
+
+  describe("cross-platform ctrlKey normalization", () => {
+    const originalPlatform = navigator.platform;
+
+    afterEach(() => {
+      Object.defineProperty(navigator, "platform", { value: originalPlatform, configurable: true });
+    });
+
+    it("treats ctrlKey as Meta on non-Mac platforms", () => {
+      Object.defineProperty(navigator, "platform", { value: "Win32", configurable: true });
+      expect(normalizeCombo(key("Comma", { ctrlKey: true }))).toBe("Meta+Comma");
+    });
+
+    it("does not remap ctrlKey on Mac", () => {
+      Object.defineProperty(navigator, "platform", { value: "MacIntel", configurable: true });
+      expect(normalizeCombo(key("Comma", { ctrlKey: true }))).toBe("Comma");
+    });
+
+    it("still uses metaKey on Mac", () => {
+      Object.defineProperty(navigator, "platform", { value: "MacIntel", configurable: true });
+      expect(normalizeCombo(key("Comma", { metaKey: true }))).toBe("Meta+Comma");
+    });
   });
 });
 

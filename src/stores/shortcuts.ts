@@ -18,12 +18,15 @@ interface ShortcutsState {
 }
 
 export function normalizeCombo(e: KeyboardEvent): string {
+  const isMac = navigator.platform.startsWith("Mac");
   const modifiers: string[] = [];
   if (e.altKey) modifiers.push("Alt");
   if (e.metaKey) modifiers.push("Meta");
+  if (!isMac && e.ctrlKey) modifiers.push("Meta");
   if (e.shiftKey) modifiers.push("Shift");
-  modifiers.sort();
-  return [...modifiers, e.code].join("+");
+  const unique = [...new Set(modifiers)];
+  unique.sort();
+  return [...unique, e.code].join("+");
 }
 
 function isInputTarget(el: Element): boolean {
