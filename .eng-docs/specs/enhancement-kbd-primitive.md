@@ -100,7 +100,7 @@ A single public component that renders one or more keys as a keyboard shortcut.
       - [x] All tests pass
     - **Dependencies**: Task: Implement `Kbd` and `KbdShortcut` components
 
-- [ ] **Story: Migrate call sites**
+- [x] **Story: Migrate call sites**
   - [x] **Task: Migrate `CreateNewDialog` shortcut indicators to `<KbdShortcut>`**
     - **Description**: In `src/components/CreateNewDialog.tsx`, replace the hardcoded `<span>` shortcut indicator (lines ~215–226) with `<KbdShortcut keys={[String(i + 1)]} />`. Remove the inline style block it replaces.
     - **Acceptance criteria**:
@@ -108,11 +108,11 @@ A single public component that renders one or more keys as a keyboard shortcut.
       - [x] Visual output is unchanged
       - [x] Existing `CreateNewDialog` tests pass
     - **Dependencies**: Task: Implement `Kbd` and `KbdShortcut` components
-  - [ ] **Task: Add `KbdShortcut` showcase to DesignKitchen**
+  - [x] **Task: Add `KbdShortcut` showcase to DesignKitchen**
     - **Description**: In `src/components/DesignKitchen.tsx`, add a KbdShortcut row to the Components section (after Inputs, before Badges). Show three examples with labels: single digit `["1"]`, single letter `["K"]`, and multi-key `["⌘", ","]`.
     - **Acceptance criteria**:
-      - [ ] Three labeled examples render correctly in the kitchen sink
-      - [ ] Examples use `<KbdShortcut>`, no inline styles
+      - [x] Three labeled examples render correctly in the kitchen sink
+      - [x] Examples use `<KbdShortcut>`, no inline styles
     - **Dependencies**: Task: Implement `Kbd` and `KbdShortcut` components
 
 - [ ] **Story: Documentation**

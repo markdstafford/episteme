@@ -115,4 +115,14 @@ describe("DesignKitchen", () => {
     render(<DesignKitchen onClose={vi.fn()} />);
     expect(screen.getByRole("button", { name: /open sample context menu/i })).toBeInTheDocument();
   });
+
+  it("renders KbdShortcut showcase examples", () => {
+    render(<DesignKitchen onClose={vi.fn()} />);
+    // The three examples: "1", "K", and "⌘" + ","
+    const kbdElements = document.querySelectorAll("kbd");
+    const texts = Array.from(kbdElements).map((el) => el.textContent);
+    expect(texts).toContain("1");
+    expect(texts).toContain("K");
+    expect(texts).toContain("⌘");
+  });
 });
