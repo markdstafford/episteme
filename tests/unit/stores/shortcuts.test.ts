@@ -125,4 +125,71 @@ describe("useShortcutsStore", () => {
     const result = useShortcutsStore.getState().resolveAction("Escape", textarea);
     expect(result?.id).toBe("test.action");
   });
+
+  it("resolveAction suppresses non-firesThroughInputs action when target is input", () => {
+    useShortcutsStore.getState().registerAction({
+      id: "test.action",
+      label: "Test Action",
+      defaultBinding: "Meta+Comma",
+      category: "Global",
+      firesThroughInputs: false,
+      callback: () => {},
+    });
+    const input = document.createElement("input");
+    const result = useShortcutsStore.getState().resolveAction("Meta+Comma", input);
+    expect(result).toBeNull();
+  });
+
+  it("resolveAction suppresses non-firesThroughInputs action when target is contenteditable", () => {
+    useShortcutsStore.getState().registerAction({
+      id: "test.action",
+      label: "Test Action",
+      defaultBinding: "Meta+Comma",
+      category: "Global",
+      firesThroughInputs: false,
+      callback: () => {},
+    });
+    const div = document.createElement("div");
+    // jsdom does not implement isContentEditable, so stub it directly
+    Object.defineProperty(div, "isContentEditable", { get: () => true, configurable: true });
+    const result = useShortcutsStore.getState().resolveAction("Meta+Comma", div);
+    expect(result).toBeNull();
+  });
+
+  it("setBinding persists the custom binding", () => {
+    useShortcutsStore.getState().registerAction({
+      id: "test.action",
+      label: "Test Action",
+      defaultBinding: "Meta+Comma",
+      category: "Global",
+      firesThroughInputs: false,
+    });
+    useShortcutsStore.getState().setBinding("test.action", "Meta+KeyP");
+    expect(useShortcutsStore.getState().getBinding("test.action")).toBe("Meta+KeyP");
+  });
+
+  it("resetBinding reverts to defaultBinding after a custom binding was set", () => {
+    useShortcutsStore.getState().registerAction({
+      id: "test.action",
+      label: "Test Action",
+      defaultBinding: "Meta+Comma",
+      category: "Global",
+      firesThroughInputs: false,
+    });
+    useShortcutsStore.getState().setBinding("test.action", "Meta+KeyP");
+    useShortcutsStore.getState().resetBinding("test.action");
+    expect(useShortcutsStore.getState().getBinding("test.action")).toBe("Meta+Comma");
+  });
+
+  it("applyCustomBindings replaces customBindings wholesale", () => {
+    useShortcutsStore.getState().registerAction({
+      id: "test.action",
+      label: "Test Action",
+      defaultBinding: "Meta+Comma",
+      category: "Global",
+      firesThroughInputs: false,
+    });
+    useShortcutsStore.getState().applyCustomBindings({ "test.action": "Meta+KeyZ" });
+    expect(useShortcutsStore.getState().getBinding("test.action")).toBe("Meta+KeyZ");
+  });
 });
