@@ -72,7 +72,7 @@ function App() {
     registerAction({
       id: "app.openQuickReference",
       label: "Show keyboard shortcuts",
-      defaultBinding: "Meta+Slash",
+      defaultBinding: "Shift+Slash",
       category: "Global",
       firesThroughInputs: false,
       rebindable: true,
