@@ -1,31 +1,7 @@
 import { useState, useEffect } from "react";
 import { KbdShortcut } from "@/components/ui/Kbd";
 import { normalizeCombo } from "@/stores/shortcuts";
-
-function displayKey(segment: string): string {
-  const map: Record<string, string> = {
-    Meta: "⌘",
-    Shift: "⇧",
-    Alt: "⌥",
-    Ctrl: "^",
-    Comma: ",",
-    Period: ".",
-    Slash: "/",
-    Escape: "Esc",
-    ArrowUp: "↑",
-    ArrowDown: "↓",
-    ArrowLeft: "←",
-    ArrowRight: "→",
-    Enter: "↵",
-    Backspace: "⌫",
-    Space: "Space",
-  };
-  if (map[segment]) return map[segment];
-  // KeyA → A, Digit1 → 1
-  if (segment.startsWith("Key")) return segment.slice(3);
-  if (segment.startsWith("Digit")) return segment.slice(5);
-  return segment;
-}
+import { displayKey } from "@/lib/shortcutDisplay";
 
 function comboToDisplay(combo: string): string[] {
   return combo.split("+").map(displayKey);
