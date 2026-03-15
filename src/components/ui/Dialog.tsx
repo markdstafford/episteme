@@ -24,9 +24,15 @@ function DialogOverlay() {
 export function DialogContent({
   children,
   style,
+  onKeyDown,
+  tabIndex,
+  autoFocus,
 }: {
   children: React.ReactNode;
   style?: React.CSSProperties;
+  onKeyDown?: React.KeyboardEventHandler<HTMLDivElement>;
+  tabIndex?: number;
+  autoFocus?: boolean;
 }) {
   return (
     <RadixDialog.Portal>
@@ -34,6 +40,9 @@ export function DialogContent({
       <RadixDialog.Content
         className="dialog-content"
         aria-describedby={undefined}
+        onKeyDown={onKeyDown}
+        tabIndex={tabIndex}
+        autoFocus={autoFocus}
         style={{
           position: "fixed",
           top: "50%",

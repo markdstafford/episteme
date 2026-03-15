@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useAiChatStore } from "@/stores/aiChat";
+import { normalizeCombo, useShortcutsStore } from "@/stores/shortcuts";
 import { ChatMessage } from "@/components/ChatMessage";
 import { MessageSquare, RotateCcw, X, Send, Loader2 } from "lucide-react";
 
@@ -42,7 +43,10 @@ export function AiChatPanel({ onClose }: AiChatPanelProps) {
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) {
+    const combo = normalizeCombo(e as unknown as KeyboardEvent);
+    const action = useShortcutsStore.getState().actions["chat.send"];
+    const sendBinding = action?.binding ?? "Enter";
+    if (combo === sendBinding) {
       e.preventDefault();
       handleSend();
     }

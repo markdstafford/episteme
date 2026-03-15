@@ -1,8 +1,9 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { FileTree } from "@/components/FileTree";
 import { useFileTreeStore } from "@/stores/fileTree";
+import { useShortcutsStore } from "@/stores/shortcuts";
 import type { FileNode } from "@/lib/fileTree";
 
 vi.mock("@tauri-apps/api/core", () => ({
@@ -22,6 +23,15 @@ const mockTree: FileNode[] = [
   { name: "README.md", path: "/docs/README.md", is_dir: false },
 ];
 
+function registerFileTreeActions() {
+  const { registerAction } = useShortcutsStore.getState();
+  registerAction({ id: "filetree.navigateUp", label: "Navigate up", binding: "ArrowUp", category: "File tree", ignoresActionRestrictions: false });
+  registerAction({ id: "filetree.navigateDown", label: "Navigate down", binding: "ArrowDown", category: "File tree", ignoresActionRestrictions: false });
+  registerAction({ id: "filetree.collapse", label: "Collapse", binding: "ArrowLeft", category: "File tree", ignoresActionRestrictions: false });
+  registerAction({ id: "filetree.expand", label: "Expand", binding: "ArrowRight", category: "File tree", ignoresActionRestrictions: false });
+  registerAction({ id: "filetree.open", label: "Open file", binding: "Enter", category: "File tree", ignoresActionRestrictions: false });
+}
+
 describe("FileTree", () => {
   beforeEach(() => {
     useFileTreeStore.setState({
@@ -31,6 +41,7 @@ describe("FileTree", () => {
       isLoading: false,
       error: null,
     });
+    useShortcutsStore.setState({ actions: {}, actionsRestricted: false });
   });
 
   it("shows empty message when no nodes", () => {
@@ -80,5 +91,72 @@ describe("FileTree", () => {
     expect(useFileTreeStore.getState().selectedFilePath).toBe(
       "/docs/README.md"
     );
+  });
+});
+
+describe("FileTree keyboard navigation", () => {
+  beforeEach(() => {
+    useFileTreeStore.setState({
+      nodes: mockTree,
+      expandedPaths: new Set(["/docs/specs"]),
+      selectedFilePath: null,
+      isLoading: false,
+      error: null,
+    });
+    useShortcutsStore.setState({ actions: {}, actionsRestricted: false });
+    registerFileTreeActions();
+  });
+
+  function getTree() {
+    return screen.getByRole("tree");
+  }
+
+  it("ArrowDown moves focus to next visible item", () => {
+    render(<FileTree />);
+    // Visible order: /docs/specs, /docs/specs/app.md, /docs/specs/feature.md, /docs/README.md
+    // Initial focused path is the first item (/docs/specs)
+    fireEvent.keyDown(getTree(), { code: "ArrowDown" });
+    // After one ArrowDown the focused path should be /docs/specs/app.md
+    // We verify by firing ArrowDown again and then Enter to open the second child
+    fireEvent.keyDown(getTree(), { code: "ArrowDown" });
+    fireEvent.keyDown(getTree(), { code: "Enter" });
+    expect(useFileTreeStore.getState().selectedFilePath).toBe("/docs/specs/feature.md");
+  });
+
+  it("ArrowUp moves focus to previous visible item", () => {
+    render(<FileTree />);
+    // Navigate down to /docs/specs/app.md then back up to /docs/specs
+    fireEvent.keyDown(getTree(), { code: "ArrowDown" });
+    fireEvent.keyDown(getTree(), { code: "ArrowUp" });
+    fireEvent.keyDown(getTree(), { code: "Enter" });
+    // /docs/specs is a dir — Enter toggles it (collapse), not selectFile
+    // selectedFilePath stays null, but if it were a file it would be selected.
+    // Instead verify we're back on specs by collapsing it
+    expect(useFileTreeStore.getState().expandedPaths.has("/docs/specs")).toBe(false);
+  });
+
+  it("ArrowRight expands a collapsed directory", () => {
+    useFileTreeStore.setState({ expandedPaths: new Set() });
+    render(<FileTree />);
+    // Focus is on /docs/specs (collapsed); ArrowRight should expand it
+    fireEvent.keyDown(getTree(), { code: "ArrowRight" });
+    expect(useFileTreeStore.getState().expandedPaths.has("/docs/specs")).toBe(true);
+  });
+
+  it("ArrowLeft collapses an expanded directory", () => {
+    render(<FileTree />);
+    // /docs/specs is expanded; focus starts there
+    fireEvent.keyDown(getTree(), { code: "ArrowLeft" });
+    expect(useFileTreeStore.getState().expandedPaths.has("/docs/specs")).toBe(false);
+  });
+
+  it("Enter opens a file", () => {
+    render(<FileTree />);
+    // Navigate down three times to reach /docs/README.md
+    fireEvent.keyDown(getTree(), { code: "ArrowDown" });
+    fireEvent.keyDown(getTree(), { code: "ArrowDown" });
+    fireEvent.keyDown(getTree(), { code: "ArrowDown" });
+    fireEvent.keyDown(getTree(), { code: "Enter" });
+    expect(useFileTreeStore.getState().selectedFilePath).toBe("/docs/README.md");
   });
 });
