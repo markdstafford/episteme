@@ -528,6 +528,39 @@ All dialogs are in-app. No separate OS windows.
 | Success | dark | `oklch(24% 0.06 155)` (`--color-state-success-subtle`) | `oklch(76% 0.16 155)` (`--color-badge-success-text`) |
 | Success | light | `oklch(95% 0.04 155)` (`--color-state-success-subtle`) | `oklch(40% 0.16 155)` (`--color-badge-success-text`) |
 
+### KbdShortcut
+
+A single public component that renders one or more keys as a keyboard shortcut hint. Uses the semantic `<kbd>` HTML element so screen readers announce it as keyboard input.
+
+**Distinction from Badge:** No fixed height token, has a visible border, tighter padding. The border gives the subtle keycap appearance that distinguishes it from a status badge.
+
+| Property | Value |
+|---|---|
+| Element | Outer `<kbd>` wrapping one inner `<kbd>` per key |
+| Background | `--color-bg-hover` |
+| Border | `1px solid var(--color-border-default)` |
+| Border radius | `--radius-sm` (3px) |
+| Font size | `--font-size-ui-xs` (11px) |
+| Font weight | 500 |
+| Padding (per key chip) | `2px 5px` |
+| Display | `inline-flex`, `align-items: center` |
+| Separator | `+` between key chips (default; configurable via `separator` prop) |
+
+**API:**
+```tsx
+// Single key (sequence indicator)
+<KbdShortcut keys={["1"]} />
+
+// Multi-key shortcut
+<KbdShortcut keys={["⌘", ","]} />
+
+// Custom separator
+<KbdShortcut keys={["⌘", ","]} separator="-" />
+
+// From store (user-assignable)
+<KbdShortcut keys={shortcut.keys} />
+```
+
 ### Frontmatter bar
 
 Displays document frontmatter key/value pairs above the document content area.

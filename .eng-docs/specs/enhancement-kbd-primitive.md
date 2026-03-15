@@ -115,12 +115,12 @@ A single public component that renders one or more keys as a keyboard shortcut.
       - [x] Examples use `<KbdShortcut>`, no inline styles
     - **Dependencies**: Task: Implement `Kbd` and `KbdShortcut` components
 
-- [ ] **Story: Documentation**
-  - [ ] **Task: Add `KbdShortcut` to `design-system.md`**
+- [x] **Story: Documentation**
+  - [x] **Task: Add `KbdShortcut` to `design-system.md`**
     - **Description**: Add a KbdShortcut entry to the component patterns section of `.eng-docs/wiki/design-system.md`. Document: element structure, all visual token values, API (`keys`, `separator` props), distinction from Badge, and example usage.
     - **Acceptance criteria**:
-      - [ ] KbdShortcut section present in design-system.md
-      - [ ] All visual properties documented with token references
-      - [ ] API props documented
-      - [ ] Distinction from Badge noted
+      - [x] KbdShortcut section present in design-system.md
+      - [x] All visual properties documented with token references
+      - [x] API props documented
+      - [x] Distinction from Badge noted
     - **Dependencies**: Task: Implement `Kbd` and `KbdShortcut` components
