@@ -171,10 +171,10 @@ describe("App", () => {
     expect(useSettingsStore.getState().settingsOpen).toBe(false);
   });
 
-  it("pressing Meta+Slash opens the quick reference dialog", async () => {
+  it("pressing Shift+Slash opens the quick reference dialog", async () => {
     render(<App />);
     await waitFor(() => { /* preferences loaded */ });
-    fireEvent.keyDown(document, { code: "Slash", metaKey: true });
+    fireEvent.keyDown(document, { code: "Slash", shiftKey: true });
     await waitFor(() => expect(screen.getByRole("dialog", { name: /keyboard shortcuts/i })).toBeTruthy());
   });
 

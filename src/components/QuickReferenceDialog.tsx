@@ -57,23 +57,29 @@ export function QuickReferenceDialog({ onClose }: Props) {
             >
               {category}
             </div>
-            {rebindableActions
-              .filter((a) => a.category === category)
-              .map((action) => {
-                const binding = getBinding(action.id) ?? action.defaultBinding;
-                const keys = binding.split("+").map(displayKey);
-                return (
-                  <div
-                    key={action.id}
-                    style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 0" }}
-                  >
-                    <span style={{ fontFamily: "var(--font-ui)", fontSize: "var(--font-size-ui-sm)", color: "var(--color-text-primary)" }}>
-                      {action.label}
-                    </span>
-                    <KbdShortcut keys={keys} />
-                  </div>
-                );
-              })}
+            <div style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))",
+              gap: "4px 24px",
+            }}>
+              {rebindableActions
+                .filter((a) => a.category === category)
+                .map((action) => {
+                  const binding = getBinding(action.id) ?? action.defaultBinding;
+                  const keys = binding.split("+").map(displayKey);
+                  return (
+                    <div
+                      key={action.id}
+                      style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 0" }}
+                    >
+                      <span style={{ fontFamily: "var(--font-ui)", fontSize: "var(--font-size-ui-sm)", color: "var(--color-text-primary)" }}>
+                        {action.label}
+                      </span>
+                      <KbdShortcut keys={keys} />
+                    </div>
+                  );
+                })}
+            </div>
           </div>
         ))}
       </div>
