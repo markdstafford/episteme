@@ -30,226 +30,139 @@ describe("normalizeCombo", () => {
 
 describe("useShortcutsStore", () => {
   beforeEach(() => {
-    useShortcutsStore.setState({ actions: {}, customBindings: {} });
+    useShortcutsStore.setState({ actions: {}, actionsRestricted: false });
   });
 
-  it("registers an action with its default binding", () => {
-    useShortcutsStore.getState().registerAction({
-      id: "test.action",
-      label: "Test Action",
-      defaultBinding: "Meta+Comma",
-      category: "Global",
-      firesThroughInputs: false,
-      rebindable: false,
+  describe("registerAction", () => {
+    it("registers an action with binding and stores it", () => {
+      useShortcutsStore.getState().registerAction({
+        id: "test.action",
+        label: "Test Action",
+        binding: "Meta+Comma",
+        category: "Global",
+        ignoresActionRestrictions: false,
+      });
+      const actions = useShortcutsStore.getState().actions;
+      expect(actions["test.action"]).toBeDefined();
+      expect(actions["test.action"].binding).toBe("Meta+Comma");
     });
-    const actions = useShortcutsStore.getState().actions;
-    expect(actions["test.action"]).toBeDefined();
-    expect(actions["test.action"].defaultBinding).toBe("Meta+Comma");
   });
 
-  it("getBinding returns defaultBinding when no custom binding", () => {
-    useShortcutsStore.getState().registerAction({
-      id: "test.action",
-      label: "Test Action",
-      defaultBinding: "Meta+Comma",
-      category: "Global",
-      firesThroughInputs: false,
-      rebindable: false,
+  describe("resolveAction", () => {
+    it("returns action for matching combo on non-input", () => {
+      useShortcutsStore.getState().registerAction({
+        id: "test.action",
+        label: "Test Action",
+        binding: "Meta+Comma",
+        category: "Global",
+        ignoresActionRestrictions: false,
+        callback: () => {},
+      });
+      const div = document.createElement("div");
+      const result = useShortcutsStore.getState().resolveAction("Meta+Comma", div);
+      expect(result?.id).toBe("test.action");
     });
-    expect(useShortcutsStore.getState().getBinding("test.action")).toBe("Meta+Comma");
-  });
 
-  it("getBinding returns customBinding when set", () => {
-    useShortcutsStore.getState().registerAction({
-      id: "test.action",
-      label: "Test Action",
-      defaultBinding: "Meta+Comma",
-      category: "Global",
-      firesThroughInputs: false,
-      rebindable: false,
+    it("returns null on textarea when ignoresActionRestrictions is false", () => {
+      useShortcutsStore.getState().registerAction({
+        id: "test.action",
+        label: "Test Action",
+        binding: "Meta+Comma",
+        category: "Global",
+        ignoresActionRestrictions: false,
+        callback: () => {},
+      });
+      const textarea = document.createElement("textarea");
+      const result = useShortcutsStore.getState().resolveAction("Meta+Comma", textarea);
+      expect(result).toBeNull();
     });
-    useShortcutsStore.setState({ customBindings: { "test.action": "Meta+KeyP" } });
-    expect(useShortcutsStore.getState().getBinding("test.action")).toBe("Meta+KeyP");
-  });
 
-  it("comboToAction finds the action for a combo", () => {
-    useShortcutsStore.getState().registerAction({
-      id: "test.action",
-      label: "Test Action",
-      defaultBinding: "Meta+Comma",
-      category: "Global",
-      firesThroughInputs: false,
-      rebindable: false,
+    it("allows through on textarea when ignoresActionRestrictions is true", () => {
+      useShortcutsStore.getState().registerAction({
+        id: "test.action",
+        label: "Test Action",
+        binding: "Escape",
+        category: "Global",
+        ignoresActionRestrictions: true,
+        callback: () => {},
+      });
+      const textarea = document.createElement("textarea");
+      const result = useShortcutsStore.getState().resolveAction("Escape", textarea);
+      expect(result?.id).toBe("test.action");
     });
-    expect(useShortcutsStore.getState().comboToAction("Meta+Comma")).toBe("test.action");
-  });
 
-  it("comboToAction returns null for unknown combo", () => {
-    expect(useShortcutsStore.getState().comboToAction("Meta+KeyX")).toBeNull();
-  });
-
-  it("resolveAction returns action when target is not an input", () => {
-    useShortcutsStore.getState().registerAction({
-      id: "test.action",
-      label: "Test Action",
-      defaultBinding: "Meta+Comma",
-      category: "Global",
-      firesThroughInputs: false,
-      rebindable: false,
-      callback: () => {},
+    it("returns null on input when ignoresActionRestrictions is false", () => {
+      useShortcutsStore.getState().registerAction({
+        id: "test.action",
+        label: "Test Action",
+        binding: "Meta+Comma",
+        category: "Global",
+        ignoresActionRestrictions: false,
+        callback: () => {},
+      });
+      const input = document.createElement("input");
+      const result = useShortcutsStore.getState().resolveAction("Meta+Comma", input);
+      expect(result).toBeNull();
     });
-    const div = document.createElement("div");
-    const result = useShortcutsStore.getState().resolveAction("Meta+Comma", div);
-    expect(result?.id).toBe("test.action");
+
+    it("returns null on contenteditable when ignoresActionRestrictions is false", () => {
+      useShortcutsStore.getState().registerAction({
+        id: "test.action",
+        label: "Test Action",
+        binding: "Meta+Comma",
+        category: "Global",
+        ignoresActionRestrictions: false,
+        callback: () => {},
+      });
+      const div = document.createElement("div");
+      Object.defineProperty(div, "isContentEditable", { get: () => true, configurable: true });
+      const result = useShortcutsStore.getState().resolveAction("Meta+Comma", div);
+      expect(result).toBeNull();
+    });
+
+    it("returns null when actionsRestricted is true and ignoresActionRestrictions is false", () => {
+      useShortcutsStore.getState().registerAction({
+        id: "test.action",
+        label: "Test Action",
+        binding: "Meta+Comma",
+        category: "Global",
+        ignoresActionRestrictions: false,
+        callback: () => {},
+      });
+      useShortcutsStore.getState().setActionsRestricted(true);
+      const div = document.createElement("div");
+      const result = useShortcutsStore.getState().resolveAction("Meta+Comma", div);
+      expect(result).toBeNull();
+    });
+
+    it("returns action when actionsRestricted is true and ignoresActionRestrictions is true", () => {
+      useShortcutsStore.getState().registerAction({
+        id: "test.action",
+        label: "Test Action",
+        binding: "Escape",
+        category: "Global",
+        ignoresActionRestrictions: true,
+        callback: () => {},
+      });
+      useShortcutsStore.getState().setActionsRestricted(true);
+      const div = document.createElement("div");
+      const result = useShortcutsStore.getState().resolveAction("Escape", div);
+      expect(result?.id).toBe("test.action");
+    });
+
+    it("returns null for unknown combo", () => {
+      const div = document.createElement("div");
+      expect(useShortcutsStore.getState().resolveAction("Meta+KeyX", div)).toBeNull();
+    });
   });
 
-  it("resolveAction suppresses non-firesThroughInputs action when target is textarea", () => {
-    useShortcutsStore.getState().registerAction({
-      id: "test.action",
-      label: "Test Action",
-      defaultBinding: "Meta+Comma",
-      category: "Global",
-      firesThroughInputs: false,
-      rebindable: false,
-      callback: () => {},
+  describe("setActionsRestricted", () => {
+    it("toggles actionsRestricted state", () => {
+      expect(useShortcutsStore.getState().actionsRestricted).toBe(false);
+      useShortcutsStore.getState().setActionsRestricted(true);
+      expect(useShortcutsStore.getState().actionsRestricted).toBe(true);
+      useShortcutsStore.getState().setActionsRestricted(false);
+      expect(useShortcutsStore.getState().actionsRestricted).toBe(false);
     });
-    const textarea = document.createElement("textarea");
-    const result = useShortcutsStore.getState().resolveAction("Meta+Comma", textarea);
-    expect(result).toBeNull();
-  });
-
-  it("resolveAction allows firesThroughInputs action when target is textarea", () => {
-    useShortcutsStore.getState().registerAction({
-      id: "test.action",
-      label: "Test Action",
-      defaultBinding: "Escape",
-      category: "Global",
-      firesThroughInputs: true,
-      rebindable: false,
-      callback: () => {},
-    });
-    const textarea = document.createElement("textarea");
-    const result = useShortcutsStore.getState().resolveAction("Escape", textarea);
-    expect(result?.id).toBe("test.action");
-  });
-
-  it("resolveAction suppresses non-firesThroughInputs action when target is input", () => {
-    useShortcutsStore.getState().registerAction({
-      id: "test.action",
-      label: "Test Action",
-      defaultBinding: "Meta+Comma",
-      category: "Global",
-      firesThroughInputs: false,
-      rebindable: false,
-      callback: () => {},
-    });
-    const input = document.createElement("input");
-    const result = useShortcutsStore.getState().resolveAction("Meta+Comma", input);
-    expect(result).toBeNull();
-  });
-
-  it("resolveAction suppresses non-firesThroughInputs action when target is contenteditable", () => {
-    useShortcutsStore.getState().registerAction({
-      id: "test.action",
-      label: "Test Action",
-      defaultBinding: "Meta+Comma",
-      category: "Global",
-      firesThroughInputs: false,
-      rebindable: false,
-      callback: () => {},
-    });
-    const div = document.createElement("div");
-    // jsdom does not implement isContentEditable, so stub it directly
-    Object.defineProperty(div, "isContentEditable", { get: () => true, configurable: true });
-    const result = useShortcutsStore.getState().resolveAction("Meta+Comma", div);
-    expect(result).toBeNull();
-  });
-
-  it("setBinding persists the custom binding", () => {
-    useShortcutsStore.getState().registerAction({
-      id: "test.action",
-      label: "Test Action",
-      defaultBinding: "Meta+Comma",
-      category: "Global",
-      firesThroughInputs: false,
-      rebindable: false,
-    });
-    useShortcutsStore.getState().setBinding("test.action", "Meta+KeyP");
-    expect(useShortcutsStore.getState().getBinding("test.action")).toBe("Meta+KeyP");
-  });
-
-  it("resetBinding reverts to defaultBinding after a custom binding was set", () => {
-    useShortcutsStore.getState().registerAction({
-      id: "test.action",
-      label: "Test Action",
-      defaultBinding: "Meta+Comma",
-      category: "Global",
-      firesThroughInputs: false,
-      rebindable: false,
-    });
-    useShortcutsStore.getState().setBinding("test.action", "Meta+KeyP");
-    useShortcutsStore.getState().resetBinding("test.action");
-    expect(useShortcutsStore.getState().getBinding("test.action")).toBe("Meta+Comma");
-  });
-
-  it("applyCustomBindings replaces customBindings wholesale", () => {
-    useShortcutsStore.getState().registerAction({
-      id: "test.action",
-      label: "Test Action",
-      defaultBinding: "Meta+Comma",
-      category: "Global",
-      firesThroughInputs: false,
-      rebindable: false,
-    });
-    useShortcutsStore.getState().applyCustomBindings({ "test.action": "Meta+KeyZ" });
-    expect(useShortcutsStore.getState().getBinding("test.action")).toBe("Meta+KeyZ");
-  });
-
-  it("checkConflict returns null when no other rebindable action uses the combo", () => {
-    useShortcutsStore.getState().registerAction({
-      id: "test.action",
-      label: "Test Action",
-      defaultBinding: "Meta+Comma",
-      category: "Global",
-      firesThroughInputs: false,
-      rebindable: true,
-    });
-    expect(useShortcutsStore.getState().checkConflict("Meta+KeyP")).toBeNull();
-  });
-
-  it("checkConflict returns conflicting actionId when another rebindable action uses the combo", () => {
-    useShortcutsStore.getState().registerAction({
-      id: "test.action",
-      label: "Test Action",
-      defaultBinding: "Meta+Comma",
-      category: "Global",
-      firesThroughInputs: false,
-      rebindable: true,
-    });
-    expect(useShortcutsStore.getState().checkConflict("Meta+Comma")).toBe("test.action");
-  });
-
-  it("checkConflict excludes the specified actionId from conflict check", () => {
-    useShortcutsStore.getState().registerAction({
-      id: "test.action",
-      label: "Test Action",
-      defaultBinding: "Meta+Comma",
-      category: "Global",
-      firesThroughInputs: false,
-      rebindable: true,
-    });
-    expect(useShortcutsStore.getState().checkConflict("Meta+Comma", "test.action")).toBeNull();
-  });
-
-  it("checkConflict ignores non-rebindable actions", () => {
-    useShortcutsStore.getState().registerAction({
-      id: "test.action",
-      label: "Test Action",
-      defaultBinding: "Escape",
-      category: "Global",
-      firesThroughInputs: true,
-      rebindable: false,
-    });
-    expect(useShortcutsStore.getState().checkConflict("Escape")).toBeNull();
   });
 });

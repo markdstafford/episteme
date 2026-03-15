@@ -171,13 +171,6 @@ describe("App", () => {
     expect(useSettingsStore.getState().settingsOpen).toBe(false);
   });
 
-  it("pressing Shift+Slash opens the quick reference dialog", async () => {
-    render(<App />);
-    await waitFor(() => { /* preferences loaded */ });
-    fireEvent.keyDown(document, { code: "Slash", shiftKey: true });
-    await waitFor(() => expect(screen.getByRole("dialog", { name: /keyboard shortcuts/i })).toBeTruthy());
-  });
-
   it("renders SettingsPanel in content area when settings is open", () => {
     useWorkspaceStore.setState({ folderPath: "/some/path" });
     useSettingsStore.setState({ settingsOpen: true, activeCategory: "ai" });

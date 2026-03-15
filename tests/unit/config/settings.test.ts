@@ -37,10 +37,3 @@ describe("settingsConfig", () => {
   });
 });
 
-describe("settingsConfig keyboard-shortcuts", () => {
-  it("includes a keyboard-shortcuts category", () => {
-    const cat = settingsConfig.find((c: { id: string }) => c.id === "keyboard-shortcuts");
-    expect(cat).toBeDefined();
-    expect(cat?.label).toBe("Keyboard shortcuts");
-  });
-});
