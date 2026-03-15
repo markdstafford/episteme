@@ -279,10 +279,10 @@ export function DesignKitchen({ onClose }: DesignKitchenProps) {
           </div>
 
           {/* KbdShortcut */}
-          <div style={{ marginBottom: "var(--space-6)" }}>
-            <p style={{ fontSize: "var(--font-size-ui-sm)", color: "var(--color-text-tertiary)", marginBottom: "var(--space-3)" }}>
+          <div style={{ marginBottom: "48px" }}>
+            <div style={{ fontSize: "var(--font-size-ui-xs)", color: "var(--color-text-quaternary)", marginBottom: "16px", textTransform: "uppercase", letterSpacing: "0.06em" }}>
               KbdShortcut
-            </p>
+            </div>
             <div style={{ display: "flex", gap: "var(--space-4)", alignItems: "center" }}>
               <KbdShortcut keys={["1"]} />
               <KbdShortcut keys={["K"]} />
