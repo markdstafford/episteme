@@ -157,8 +157,10 @@ describe("App", () => {
 
   it("pressing Esc closes settings when settings is open", () => {
     useWorkspaceStore.setState({ folderPath: "/some/path" });
-    useSettingsStore.setState({ settingsOpen: true });
     render(<App />);
+    // Open settings via shortcut so the overlay stack is populated
+    fireEvent.keyDown(document, { code: "Comma", metaKey: true });
+    expect(useSettingsStore.getState().settingsOpen).toBe(true);
     fireEvent.keyDown(document, { code: "Escape" });
     expect(useSettingsStore.getState().settingsOpen).toBe(false);
   });
