@@ -1,5 +1,6 @@
 import { useCallback, useRef, KeyboardEvent } from "react";
 import { useFileTreeStore } from "@/stores/fileTree";
+import { useShortcutsStore, normalizeCombo } from "@/stores/shortcuts";
 import { FileTreeItem } from "@/components/FileTreeItem";
 import type { FileNode } from "@/lib/fileTree";
 
@@ -78,60 +79,51 @@ export function FileTree() {
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
+      const { getBinding } = useShortcutsStore.getState();
+      const combo = normalizeCombo(e as unknown as globalThis.KeyboardEvent);
       const visiblePaths = getVisiblePaths(nodes, expandedPaths);
       const currentPath = focusedPathRef.current;
       const currentIndex = currentPath
         ? visiblePaths.indexOf(currentPath)
         : -1;
 
-      switch (e.key) {
-        case "ArrowDown": {
-          e.preventDefault();
-          const next = visiblePaths[currentIndex + 1];
-          if (next) setFocusedPath(next);
-          break;
-        }
-        case "ArrowUp": {
-          e.preventDefault();
-          const prev = visiblePaths[currentIndex - 1];
-          if (prev) setFocusedPath(prev);
-          break;
-        }
-        case "ArrowRight": {
-          e.preventDefault();
-          if (!currentPath) break;
-          const node = findNode(nodes, currentPath);
-          if (node?.is_dir) {
-            if (!expandedPaths.has(currentPath)) {
-              toggleExpanded(currentPath);
-            } else if (node.children?.length) {
-              setFocusedPath(node.children[0].path);
-            }
-          }
-          break;
-        }
-        case "ArrowLeft": {
-          e.preventDefault();
-          if (!currentPath) break;
-          const n = findNode(nodes, currentPath);
-          if (n?.is_dir && expandedPaths.has(currentPath)) {
+      if (combo === getBinding("filetree.navigateDown")) {
+        e.preventDefault();
+        const next = visiblePaths[currentIndex + 1];
+        if (next) setFocusedPath(next);
+      } else if (combo === getBinding("filetree.navigateUp")) {
+        e.preventDefault();
+        const prev = visiblePaths[currentIndex - 1];
+        if (prev) setFocusedPath(prev);
+      } else if (combo === getBinding("filetree.expand")) {
+        e.preventDefault();
+        if (!currentPath) return;
+        const node = findNode(nodes, currentPath);
+        if (node?.is_dir) {
+          if (!expandedPaths.has(currentPath)) {
             toggleExpanded(currentPath);
-          } else {
-            const parent = findParentPath(nodes, currentPath);
-            if (parent) setFocusedPath(parent);
+          } else if (node.children?.length) {
+            setFocusedPath(node.children[0].path);
           }
-          break;
         }
-        case "Enter": {
-          e.preventDefault();
-          if (!currentPath) break;
-          const enterNode = findNode(nodes, currentPath);
-          if (enterNode?.is_dir) {
-            toggleExpanded(currentPath);
-          } else if (enterNode) {
-            selectFile(currentPath);
-          }
-          break;
+      } else if (combo === getBinding("filetree.collapse")) {
+        e.preventDefault();
+        if (!currentPath) return;
+        const n = findNode(nodes, currentPath);
+        if (n?.is_dir && expandedPaths.has(currentPath)) {
+          toggleExpanded(currentPath);
+        } else {
+          const parent = findParentPath(nodes, currentPath);
+          if (parent) setFocusedPath(parent);
+        }
+      } else if (combo === getBinding("filetree.open")) {
+        e.preventDefault();
+        if (!currentPath) return;
+        const enterNode = findNode(nodes, currentPath);
+        if (enterNode?.is_dir) {
+          toggleExpanded(currentPath);
+        } else if (enterNode) {
+          selectFile(currentPath);
         }
       }
     },
