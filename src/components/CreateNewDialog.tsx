@@ -137,6 +137,8 @@ export function CreateNewDialog({
       const combo = normalizeCombo(e as unknown as KeyboardEvent);
       if (combo === "Escape") {
         onClose();
+        e.stopPropagation();
+        e.nativeEvent.stopImmediatePropagation();
         return;
       }
       const digitMatch = combo.match(/^Digit(\d)$/);

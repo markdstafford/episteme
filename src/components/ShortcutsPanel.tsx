@@ -52,9 +52,19 @@ export function ShortcutsPanel({ onClose }: Props) {
     if (e.key === "Escape") {
       if (searchQuery) {
         setSearchQuery("");
-        e.stopPropagation();
+      } else {
+        handleClose();
       }
-      // If empty, let it bubble to global listener
+      e.stopPropagation();
+      e.nativeEvent.stopImmediatePropagation();
+    }
+  }
+
+  function handlePanelKeyDown(e: React.KeyboardEvent) {
+    if (e.key === "Escape") {
+      handleClose();
+      e.stopPropagation();
+      e.nativeEvent.stopImmediatePropagation();
     }
   }
 
@@ -67,6 +77,7 @@ export function ShortcutsPanel({ onClose }: Props) {
     <div
       role="complementary"
       aria-label="Keyboard shortcuts"
+      onKeyDown={handlePanelKeyDown}
       style={{
         position: "fixed",
         top: "var(--height-titlebar)",
