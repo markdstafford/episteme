@@ -45,6 +45,7 @@ describe("KbdShortcut", () => {
   it("applies correct visual styles to each key chip", () => {
     render(<KbdShortcut keys={["1"]} />);
     const chip = screen.getByText("1");
+    expect(chip.style.fontFamily).toBe("var(--font-ui)");
     expect(chip.style.background).toBe("var(--color-bg-hover)");
     expect(chip.style.border).toBe("1px solid var(--color-border-default)");
     expect(chip.style.borderRadius).toBe("var(--radius-sm)");

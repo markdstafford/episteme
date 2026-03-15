@@ -540,10 +540,11 @@ A single public component that renders one or more keys as a keyboard shortcut h
 | Background | `--color-bg-hover` (inner `<kbd>` only) |
 | Border | `1px solid var(--color-border-default)` (inner `<kbd>` only) |
 | Border radius | `--radius-sm` (3px) (inner `<kbd>` only) |
+| Font family | `--font-ui` (inner `<kbd>` only; overrides browser monospace UA default) |
 | Font size | `--font-size-ui-xs` (11px) (inner `<kbd>` only) |
 | Font weight | 500 (inner `<kbd>` only) |
 | Padding (per key chip) | `2px 5px` (inner `<kbd>` only) |
-| Display | Outer: `inline-flex`, `align-items: center` (layout only). Inner `<kbd>` also `inline-flex`, `align-items: center`. |
+| Display | Outer: `inline-flex`, `align-items: center`, `gap: 4px`. Inner `<kbd>` also `inline-flex`, `align-items: center`. |
 | Separator | None by default; configurable via `separator` prop. The separator text and each key chip share a `<span>` wrapper per key position. |
 
 **API:**
