@@ -1,6 +1,8 @@
+const isMac = typeof navigator !== "undefined" && navigator.platform.startsWith("Mac");
+
 export function displayKey(segment: string): string {
   const map: Record<string, string> = {
-    Meta: "⌘",
+    Meta: isMac ? "⌘" : "Ctrl",
     Shift: "⇧",
     Alt: "⌥",
     Ctrl: "^",
