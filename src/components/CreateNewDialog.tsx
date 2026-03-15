@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
+import { normalizeCombo } from "@/stores/shortcuts";
 import { invoke } from "@tauri-apps/api/core";
 import { FileText, Wrench, HelpCircle } from "lucide-react";
 import { parsePreferences } from "@/lib/preferences";
@@ -130,24 +131,28 @@ export function CreateNewDialog({
     [onSelect, onClose]
   );
 
-  useEffect(() => {
-    if (options === null) return;
-    function handleKey(e: KeyboardEvent) {
-      // Escape is handled by Radix Dialog via onOpenChange; skip it here
-      // to avoid calling onClose twice.
-      if (e.key === "Escape") return;
-      const n = parseInt(e.key, 10);
-      if (!isNaN(n) && n >= 1 && n <= options!.length) {
-        handleSelect(options![n - 1]);
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLDivElement>) => {
+      if (options === null) return;
+      const combo = normalizeCombo(e as unknown as KeyboardEvent);
+      if (combo === "Escape") {
+        onClose();
+        return;
       }
-    }
-    document.addEventListener("keydown", handleKey);
-    return () => document.removeEventListener("keydown", handleKey);
-  }, [options, handleSelect]);
+      const digitMatch = combo.match(/^Digit(\d)$/);
+      if (digitMatch) {
+        const idx = parseInt(digitMatch[1], 10) - 1;
+        if (idx >= 0 && idx < options.length) {
+          handleSelect(options[idx]);
+        }
+      }
+    },
+    [options, handleSelect, onClose]
+  );
 
   return (
     <Dialog open onOpenChange={(open) => { if (!open) onClose(); }}>
-      <DialogContent style={{ width: 288 }}>
+      <DialogContent style={{ width: 288 }} onKeyDown={handleKeyDown} tabIndex={-1} autoFocus>
         <DialogHeader>
           <DialogTitle>New document</DialogTitle>
           <DialogClose />
