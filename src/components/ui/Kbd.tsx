@@ -15,6 +15,7 @@ function Kbd({ children }: KbdProps) {
         padding: "2px 5px",
         display: "inline-flex",
         alignItems: "center",
+        color: "var(--color-text-primary)",
       }}
     >
       {children}
