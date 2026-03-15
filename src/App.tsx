@@ -41,6 +41,7 @@ function App() {
   useEffect(() => {
     const { registerAction } = useShortcutsStore.getState();
 
+    // firesThroughInputs: true so Escape dismisses dialogs even when an input is focused
     registerAction({
       id: "app.closeOverlay",
       label: "Close",
@@ -68,6 +69,8 @@ function App() {
       firesThroughInputs: false,
       callback: () => setQuickReferenceOpen(true),
     });
+    // Meta+Shift+K: intentionally Mac-only (⌘⇧K). Cross-platform Ctrl support not included
+    // since normalizeCombo does not normalize Ctrl — see src/stores/shortcuts.ts.
     registerAction({
       id: "app.toggleDesignKitchen",
       label: "Toggle design kitchen",
