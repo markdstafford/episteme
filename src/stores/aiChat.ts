@@ -222,7 +222,7 @@ export const useAiChatStore = create<AiChatStore>((set, get) => ({
 
   loadSessions: async () => {
     const sessions = await invoke<Session[]>("load_sessions");
-    const current = newSession("view");
+    const current = newSession("view", { type: "workspace" });
     set({ sessions, currentSession: current });
   },
 
@@ -239,7 +239,7 @@ export const useAiChatStore = create<AiChatStore>((set, get) => ({
 
   newSession: () => {
     set({
-      currentSession: newSession("view"),
+      currentSession: newSession("view", { type: "workspace" }),
       messages: [],
       isStreaming: false,
       streamingContent: "",
