@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { useAiChatStore } from "@/stores/aiChat";
 import { ChatMessage } from "@/components/ChatMessage";
 import { ChatInputCard } from "@/components/ChatInputCard";
-import { MessageSquare, Clock, Loader2 } from "lucide-react";
+import { MessageSquare, Clock, Loader2, RotateCcw } from "lucide-react";
 
 export function AiChatPanel() {
   const [input, setInput] = useState("");
@@ -11,6 +11,7 @@ export function AiChatPanel() {
   const panelRef = useRef<HTMLDivElement>(null);
 
   const {
+    currentSession,
     messages,
     isStreaming,
     streamingContent,
@@ -22,6 +23,7 @@ export function AiChatPanel() {
     login,
     sendMessage,
     setAwsProfile,
+    newSession,
   } = useAiChatStore();
 
   useEffect(() => {
@@ -175,13 +177,22 @@ export function AiChatPanel() {
             AI assistant
           </span>
         </div>
-        <button
-          className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded"
-          title="Session history"
-          onClick={() => {}}
-        >
-          <Clock className="w-4 h-4 text-gray-500" />
-        </button>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={newSession}
+            className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded"
+            title="New conversation"
+          >
+            <RotateCcw className="w-4 h-4 text-gray-500" />
+          </button>
+          <button
+            className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded"
+            title="Session history"
+            onClick={() => {}}
+          >
+            <Clock className="w-4 h-4 text-gray-500" />
+          </button>
+        </div>
       </div>
 
       {/* Content area */}
@@ -196,7 +207,7 @@ export function AiChatPanel() {
               value={input}
               onChange={setInput}
               onSend={handleSend}
-              isStreaming={isStreaming}
+              isStreaming={isStreaming || !currentSession}
               panelRef={panelRef}
             />
           </div>

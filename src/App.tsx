@@ -139,6 +139,7 @@ function App() {
       } catch {
         // ignore - preferences may not exist yet
       }
+      await useAiChatStore.getState().loadSessions();
     };
     init();
   }, [loadSavedFolder]);

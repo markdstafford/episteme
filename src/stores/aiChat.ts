@@ -3,6 +3,7 @@ import { invoke, Channel } from "@tauri-apps/api/core";
 import { parsePreferences } from "@/lib/preferences";
 import { useFileTreeStore } from "@/stores/fileTree";
 import { useWorkspaceStore } from "@/stores/workspace";
+import { type Session, type SessionMessage, type CanonicalMessage, makeTextBlock, newSession } from "@/lib/session";
 
 export interface ChatMessage {
   role: "user" | "assistant";
@@ -21,13 +22,17 @@ interface AiChatStore {
   authoringFilePath: string | null;
   activeSkill: string | null;
   documentReloadCounter: number;
+  currentSession: Session | null;
+  sessions: Session[];
 
   checkAuth: () => Promise<void>;
   login: () => Promise<void>;
   sendMessage: (content: string) => Promise<void>;
   setAwsProfile: (profile: string) => Promise<void>;
-  clearConversation: () => void;
   startAuthoring: (skillName?: string | null) => void;
+  loadSessions: () => Promise<void>;
+  saveCurrentSession: () => Promise<void>;
+  newSession: () => void;
 }
 
 export const useAiChatStore = create<AiChatStore>((set, get) => ({
@@ -42,6 +47,8 @@ export const useAiChatStore = create<AiChatStore>((set, get) => ({
   authoringFilePath: null,
   activeSkill: null,
   documentReloadCounter: 0,
+  currentSession: null,
+  sessions: [],
 
   checkAuth: async () => {
     const { awsProfile } = get();
@@ -79,43 +86,85 @@ export const useAiChatStore = create<AiChatStore>((set, get) => ({
 
   sendMessage: async (content: string) => {
     const userMessage: ChatMessage = { role: "user", content };
+    const userSessionMsg: SessionMessage = {
+      role: "user",
+      content: [makeTextBlock(content)],
+      mode: null,
+      model: null,
+    };
+    const userCanonical: CanonicalMessage = {
+      role: "user",
+      content: [makeTextBlock(content)],
+    };
+
     set((s) => ({
       messages: [...s.messages, userMessage],
       isStreaming: true,
       streamingContent: "",
       error: null,
+      currentSession: s.currentSession
+        ? {
+            ...s.currentSession,
+            messages_all: [...s.currentSession.messages_all, userSessionMsg],
+            messages_compacted: [...s.currentSession.messages_compacted, userCanonical],
+            last_active_at: new Date().toISOString(),
+          }
+        : s.currentSession,
     }));
+
+    await get().saveCurrentSession();
 
     const { authoringMode, authoringFilePath, activeSkill, awsProfile } = get();
     const activeFilePath = authoringMode
       ? authoringFilePath
       : useFileTreeStore.getState().selectedFilePath;
     const workspacePath = useWorkspaceStore.getState().folderPath;
-    const currentMessages = get().messages;
+    const currentMessages = get().currentSession?.messages_compacted ?? [];
 
-    const onEvent = new Channel<{ type: string; data: string }>();
+    const onEvent = new Channel<{ type: string; data: unknown }>();
     onEvent.onmessage = (event) => {
       if (event.type === "Token") {
-        set((s) => ({ streamingContent: s.streamingContent + event.data }));
+        set((s) => ({ streamingContent: s.streamingContent + (event.data as string) }));
       } else if (event.type === "Done") {
+        const { content: doneContent, model } = event.data as { content: string; model: string };
+        const assistantSessionMsg: SessionMessage = {
+          role: "assistant",
+          content: [makeTextBlock(doneContent)],
+          mode: null,
+          model,
+        };
+        const assistantCanonical: CanonicalMessage = {
+          role: "assistant",
+          content: [makeTextBlock(doneContent)],
+        };
         set((s) => ({
           messages: [
             ...s.messages,
-            { role: "assistant" as const, content: event.data },
+            { role: "assistant" as const, content: doneContent },
           ],
           isStreaming: false,
           streamingContent: "",
+          currentSession: s.currentSession
+            ? {
+                ...s.currentSession,
+                messages_all: [...s.currentSession.messages_all, assistantSessionMsg],
+                messages_compacted: [...s.currentSession.messages_compacted, assistantCanonical],
+                last_active_at: new Date().toISOString(),
+              }
+            : s.currentSession,
         }));
+        void get().saveCurrentSession();
       } else if (event.type === "Error") {
-        const isAuthError = event.data.startsWith("auth:");
+        const errData = event.data as string;
+        const isAuthError = errData.startsWith("auth:");
         set({
           isStreaming: false,
           streamingContent: "",
-          error: event.data,
+          error: errData,
           ...(isAuthError ? { isAuthenticated: false } : {}),
         });
       } else if (event.type === "DocumentUpdated") {
-        const filePath = event.data;
+        const filePath = event.data as string;
         set((s) => ({
           authoringFilePath: filePath,
           documentReloadCounter: s.documentReloadCounter + 1,
@@ -159,19 +208,6 @@ export const useAiChatStore = create<AiChatStore>((set, get) => ({
     }
   },
 
-  clearConversation: () => {
-    set({
-      messages: [],
-      isStreaming: false,
-      streamingContent: "",
-      error: null,
-      authoringMode: false,
-      authoringFilePath: null,
-      activeSkill: null,
-      documentReloadCounter: 0,
-    });
-  },
-
   startAuthoring: (skillName?: string | null) => {
     set({
       authoringMode: true,
@@ -181,6 +217,37 @@ export const useAiChatStore = create<AiChatStore>((set, get) => ({
       isStreaming: false,
       streamingContent: "",
       error: null,
+    });
+  },
+
+  loadSessions: async () => {
+    const sessions = await invoke<Session[]>("load_sessions");
+    const current = newSession("view");
+    set({ sessions, currentSession: current });
+  },
+
+  saveCurrentSession: async () => {
+    const { currentSession } = get();
+    if (!currentSession) return;
+    try {
+      await invoke("save_session", { session: currentSession });
+    } catch (e) {
+      // Non-fatal — log but don't surface to user
+      console.warn("saveCurrentSession failed:", e);
+    }
+  },
+
+  newSession: () => {
+    set({
+      currentSession: newSession("view"),
+      messages: [],
+      isStreaming: false,
+      streamingContent: "",
+      error: null,
+      authoringMode: false,
+      authoringFilePath: null,
+      activeSkill: null,
+      documentReloadCounter: 0,
     });
   },
 }));

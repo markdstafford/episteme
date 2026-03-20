@@ -6,21 +6,17 @@ use aws_sdk_bedrockruntime::types::{
     ToolResultBlock, ToolResultContentBlock, ToolUseBlock,
 };
 use aws_smithy_types::Document;
-use serde::{Deserialize, Serialize};
+use base64::Engine;
+use crate::session::{CanonicalBlock, CanonicalMessage, ImageSource};
+use serde::Serialize;
 use tauri::ipc::Channel;
 use tokio::process::Command;
-
-#[derive(Clone, Serialize, Deserialize)]
-pub struct ChatMessage {
-    role: String,
-    content: String,
-}
 
 #[derive(Clone, Serialize)]
 #[serde(tag = "type", content = "data")]
 pub enum StreamEvent {
     Token(String),
-    Done(String),
+    Done { content: String, model: String },
     Error(String),
     DocumentUpdated(String), // absolute file path
 }
@@ -131,6 +127,74 @@ fn build_write_file_tool_config(
         .map_err(|e| format!("Failed to build tool config: {}", e))
 }
 
+fn resolve_file_refs(
+    messages: Vec<CanonicalMessage>,
+    workspace_path: &str,
+) -> Result<Vec<CanonicalMessage>, String> {
+    let canonical_workspace = std::fs::canonicalize(workspace_path)
+        .map_err(|e| format!("Invalid workspace path: {}", e))?;
+
+    messages
+        .into_iter()
+        .map(|mut msg| {
+            msg.content = msg
+                .content
+                .into_iter()
+                .map(|block| {
+                    let (path, media_type) = match &block {
+                        CanonicalBlock::FileRef { path, media_type, .. } => {
+                            (path.clone(), media_type.clone())
+                        }
+                        CanonicalBlock::Image { media_type, source: ImageSource::Path { path } } => {
+                            (path.clone(), media_type.clone())
+                        }
+                        other => return Ok(other.clone()),
+                    };
+
+                    let file_path = std::path::Path::new(&path);
+                    if file_path.is_absolute() {
+                        return Err(format!("file_ref path must be relative: {}", path));
+                    }
+                    for component in file_path.components() {
+                        if component == std::path::Component::ParentDir {
+                            return Err("file_ref path traversal not allowed".to_string());
+                        }
+                    }
+                    let full_path = canonical_workspace.join(file_path);
+                    // Check for existence before canonicalizing (canonicalize fails on missing files)
+                    if !full_path.exists() {
+                        log::warn!("file_ref: file not found: {}", path);
+                        return Ok(CanonicalBlock::Text {
+                            text: format!("[attachment unavailable: {}]", path),
+                        });
+                    }
+                    let canonical_full = std::fs::canonicalize(&full_path)
+                        .map_err(|e| format!("file_ref: cannot resolve path {}: {}", path, e))?;
+                    if !canonical_full.starts_with(&canonical_workspace) {
+                        return Err(format!("Access denied: {} is outside workspace", path));
+                    }
+                    match std::fs::read(&canonical_full) {
+                        Ok(bytes) => {
+                            let data = base64::engine::general_purpose::STANDARD.encode(&bytes);
+                            Ok(CanonicalBlock::Image {
+                                media_type,
+                                source: ImageSource::Base64 { data },
+                            })
+                        }
+                        Err(e) => {
+                            log::warn!("file_ref: could not read {}: {}", path, e);
+                            Ok(CanonicalBlock::Text {
+                                text: format!("[attachment unavailable: {}]", path),
+                            })
+                        }
+                    }
+                })
+                .collect::<Result<Vec<_>, String>>()?;
+            Ok(msg)
+        })
+        .collect()
+}
+
 #[tauri::command]
 pub async fn ai_sso_login(aws_profile: String) -> Result<(), String> {
     validate_aws_profile(&aws_profile)?;
@@ -173,7 +237,7 @@ pub async fn ai_check_auth(aws_profile: String) -> Result<bool, String> {
 
 #[tauri::command]
 pub async fn ai_chat(
-    messages: Vec<ChatMessage>,
+    messages: Vec<CanonicalMessage>,
     active_file_path: Option<String>,
     workspace_path: String,
     aws_profile: String,
@@ -219,18 +283,34 @@ pub async fn ai_chat(
     // 4. Create Bedrock client
     let client = BedrockClient::new(&config);
 
-    // 5. Build messages
+    // 5. Resolve file refs, then build messages
+    let resolved_messages = resolve_file_refs(messages, &workspace_path)?;
+
     let mut bedrock_messages = Vec::new();
-    for msg in &messages {
+    for msg in &resolved_messages {
         let role = match msg.role.as_str() {
             "user" => ConversationRole::User,
             "assistant" => ConversationRole::Assistant,
             _ => continue,
         };
+        // Build content blocks — for now, only handle Text blocks
+        // Image blocks will be wired when multi-modal UI is built
+        let content_blocks: Vec<ContentBlock> = msg.content.iter().filter_map(|block| {
+            match block {
+                CanonicalBlock::Text { text } => Some(ContentBlock::Text(text.clone())),
+                _ => {
+                    log::debug!("ai_chat: skipping non-text block (multi-modal not yet wired)");
+                    None
+                }
+            }
+        }).collect();
+        if content_blocks.is_empty() {
+            continue;
+        }
         bedrock_messages.push(
             Message::builder()
                 .role(role)
-                .content(ContentBlock::Text(msg.content.clone()))
+                .set_content(Some(content_blocks))
                 .build()
                 .map_err(|e| format!("Failed to build message: {}", e))?,
         );
@@ -429,7 +509,10 @@ pub async fn ai_chat(
         break;
     }
 
-    let _ = on_event.send(StreamEvent::Done(full_response));
+    let _ = on_event.send(StreamEvent::Done {
+        content: full_response,
+        model: "us.anthropic.claude-sonnet-4-6".to_string(),
+    });
     Ok(())
 }
 
@@ -542,6 +625,78 @@ mod tests {
     fn test_build_write_file_tool_compiles() {
         let config = build_write_file_tool_config();
         assert!(config.is_ok());
+    }
+
+    #[test]
+    fn test_file_ref_resolution_rejects_path_traversal() {
+        use crate::session::{CanonicalBlock, CanonicalMessage};
+        let dir = tempfile::tempdir().unwrap();
+        let messages = vec![CanonicalMessage {
+            role: "user".to_string(),
+            content: vec![CanonicalBlock::FileRef {
+                path: "../outside.md".to_string(),
+                name: "outside.md".to_string(),
+                media_type: "text/markdown".to_string(),
+            }],
+        }];
+        let result = resolve_file_refs(messages, dir.path().to_str().unwrap());
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_file_ref_resolution_resolves_text_file() {
+        use crate::session::{CanonicalBlock, CanonicalMessage, ImageSource};
+        let dir = tempfile::tempdir().unwrap();
+        std::fs::write(dir.path().join("doc.md"), b"hello").unwrap();
+        let messages = vec![CanonicalMessage {
+            role: "user".to_string(),
+            content: vec![CanonicalBlock::FileRef {
+                path: "doc.md".to_string(),
+                name: "doc.md".to_string(),
+                media_type: "text/markdown".to_string(),
+            }],
+        }];
+        let result = resolve_file_refs(messages, dir.path().to_str().unwrap()).unwrap();
+        match &result[0].content[0] {
+            CanonicalBlock::Image { source: ImageSource::Base64 { data }, .. } => {
+                assert!(!data.is_empty());
+            }
+            other => panic!("expected Image::Base64, got {:?}", other),
+        }
+    }
+
+    #[test]
+    fn test_text_only_messages_pass_through_unchanged() {
+        use crate::session::{CanonicalBlock, CanonicalMessage};
+        let messages = vec![CanonicalMessage {
+            role: "user".to_string(),
+            content: vec![CanonicalBlock::Text { text: "hello".to_string() }],
+        }];
+        let result = resolve_file_refs(messages, "/tmp").unwrap();
+        assert!(matches!(result[0].content[0], CanonicalBlock::Text { .. }));
+    }
+
+    #[test]
+    fn test_file_ref_missing_file_returns_placeholder() {
+        use crate::session::{CanonicalBlock, CanonicalMessage};
+        let dir = tempfile::tempdir().unwrap();
+        // File does NOT exist in the workspace
+        let messages = vec![CanonicalMessage {
+            role: "user".to_string(),
+            content: vec![CanonicalBlock::FileRef {
+                path: "nonexistent.md".to_string(),
+                name: "nonexistent.md".to_string(),
+                media_type: "text/markdown".to_string(),
+            }],
+        }];
+        let result = resolve_file_refs(messages, dir.path().to_str().unwrap()).unwrap();
+        // Should succeed (not Err) and return a text placeholder
+        match &result[0].content[0] {
+            CanonicalBlock::Text { text } => {
+                assert!(text.contains("unavailable") || text.contains("nonexistent"));
+            }
+            other => panic!("expected Text placeholder, got {:?}", other),
+        }
     }
 
     #[test]

@@ -11,6 +11,7 @@ import { invoke, Channel } from "@tauri-apps/api/core";
 import { useAiChatStore } from "@/stores/aiChat";
 import { useFileTreeStore } from "@/stores/fileTree";
 import { useWorkspaceStore } from "@/stores/workspace";
+import type { Session } from "@/lib/session";
 
 const mockInvoke = vi.mocked(invoke);
 
@@ -25,6 +26,8 @@ describe("useAiChatStore", () => {
       authChecked: false,
       awsProfile: null,
       error: null,
+      currentSession: null,
+      sessions: [],
     });
     useFileTreeStore.setState({ selectedFilePath: null });
     useWorkspaceStore.setState({ folderPath: null });
@@ -179,12 +182,14 @@ describe("useAiChatStore", () => {
       useAiChatStore.setState({ awsProfile: "my-profile" });
       useFileTreeStore.setState({ selectedFilePath: "/workspace/doc.md" });
       useWorkspaceStore.setState({ folderPath: "/workspace" });
-      mockInvoke.mockResolvedValueOnce(undefined);
+      mockInvoke.mockResolvedValueOnce([]); // load_sessions
+      await useAiChatStore.getState().loadSessions();
+      mockInvoke.mockResolvedValue(undefined);
 
       await useAiChatStore.getState().sendMessage("Hello");
 
       expect(mockInvoke).toHaveBeenCalledWith("ai_chat", {
-        messages: [{ role: "user", content: "Hello" }],
+        messages: [{ role: "user", content: [{ type: "text", text: "Hello" }] }],
         activeFilePath: "/workspace/doc.md",
         workspacePath: "/workspace",
         awsProfile: "my-profile",
@@ -222,13 +227,13 @@ describe("useAiChatStore", () => {
     });
   });
 
-  describe("clearConversation", () => {
+  describe("newSession", () => {
     it("resets messages to empty array", () => {
       useAiChatStore.setState({
         messages: [{ role: "user", content: "Hello" }],
       });
 
-      useAiChatStore.getState().clearConversation();
+      useAiChatStore.getState().newSession();
 
       expect(useAiChatStore.getState().messages).toEqual([]);
     });
@@ -236,7 +241,7 @@ describe("useAiChatStore", () => {
     it("resets streamingContent to empty string", () => {
       useAiChatStore.setState({ streamingContent: "partial response" });
 
-      useAiChatStore.getState().clearConversation();
+      useAiChatStore.getState().newSession();
 
       expect(useAiChatStore.getState().streamingContent).toBe("");
     });
@@ -244,7 +249,7 @@ describe("useAiChatStore", () => {
     it("resets error to null", () => {
       useAiChatStore.setState({ error: "some error" });
 
-      useAiChatStore.getState().clearConversation();
+      useAiChatStore.getState().newSession();
 
       expect(useAiChatStore.getState().error).toBeNull();
     });
@@ -252,7 +257,7 @@ describe("useAiChatStore", () => {
     it("resets isStreaming to false", () => {
       useAiChatStore.setState({ isStreaming: true });
 
-      useAiChatStore.getState().clearConversation();
+      useAiChatStore.getState().newSession();
 
       expect(useAiChatStore.getState().isStreaming).toBe(false);
     });
@@ -306,6 +311,119 @@ describe("useAiChatStore", () => {
       await useAiChatStore.getState().setAwsProfile("new-profile");
 
       expect(useAiChatStore.getState().error).toBe("Save failed");
+    });
+  });
+
+  describe("session management", () => {
+    beforeEach(() => {
+      vi.clearAllMocks();
+      useAiChatStore.setState({
+        messages: [],
+        isStreaming: false,
+        streamingContent: "",
+        isAuthenticated: false,
+        authChecked: false,
+        awsProfile: null,
+        error: null,
+        currentSession: null,
+        sessions: [],
+      });
+      useFileTreeStore.setState({ selectedFilePath: null });
+      useWorkspaceStore.setState({ folderPath: "/workspace" });
+    });
+
+    it("loadSessions populates sessions from Tauri command", async () => {
+      const fakeSessions: Session[] = [
+        {
+          id: "s1", created_at: "2026-01-01T00:00:00Z", last_active_at: "2026-01-01T00:00:00Z",
+          last_mode: "view", pinned: false, messages_all: [], messages_compacted: [],
+        },
+      ];
+      mockInvoke.mockResolvedValueOnce(fakeSessions);
+      await useAiChatStore.getState().loadSessions();
+      expect(useAiChatStore.getState().sessions).toEqual(fakeSessions);
+    });
+
+    it("loadSessions initializes a new currentSession", async () => {
+      mockInvoke.mockResolvedValueOnce([]);
+      await useAiChatStore.getState().loadSessions();
+      const session = useAiChatStore.getState().currentSession;
+      expect(session).not.toBeNull();
+      expect(session!.messages_all).toEqual([]);
+      expect(session!.messages_compacted).toEqual([]);
+      expect(session!.id).toBeTruthy();
+    });
+
+    it("sendMessage appends user message to both arrays", async () => {
+      // Set up a current session
+      mockInvoke.mockResolvedValueOnce([]); // load_sessions
+      await useAiChatStore.getState().loadSessions();
+      useAiChatStore.setState({ awsProfile: "test-profile", isAuthenticated: true });
+
+      // Mock save_session and ai_chat
+      mockInvoke.mockResolvedValue(undefined);
+      const mockChannel = { onmessage: null as any };
+      vi.mocked(Channel).mockImplementation(function (this: any) { return mockChannel; } as any);
+
+      // Don't await — just trigger and check state
+      useAiChatStore.getState().sendMessage("hello");
+
+      // Give the async store update a tick
+      await new Promise(r => setTimeout(r, 0));
+
+      const session = useAiChatStore.getState().currentSession!;
+      expect(session.messages_all.length).toBeGreaterThanOrEqual(1);
+      expect(session.messages_all[0].role).toBe("user");
+      expect(session.messages_compacted.length).toBeGreaterThanOrEqual(1);
+      expect(session.messages_compacted[0].role).toBe("user");
+    });
+
+    it("sendMessage passes messages_compacted to ai_chat", async () => {
+      mockInvoke.mockResolvedValueOnce([]);
+      await useAiChatStore.getState().loadSessions();
+      useAiChatStore.setState({ awsProfile: "test-profile", isAuthenticated: true });
+      mockInvoke.mockResolvedValue(undefined);
+      const mockChannel = { onmessage: null as any };
+      vi.mocked(Channel).mockImplementation(function (this: any) { return mockChannel; } as any);
+
+      await new Promise(r => setTimeout(r, 0));
+      useAiChatStore.getState().sendMessage("hello");
+      await new Promise(r => setTimeout(r, 10));
+
+      const aiChatCall = mockInvoke.mock.calls.find(c => c[0] === "ai_chat");
+      expect(aiChatCall).toBeTruthy();
+      // messages should be CanonicalMessage (no mode/model fields)
+      const msgs = (aiChatCall![1] as any).messages as any[];
+      expect(msgs[0]).not.toHaveProperty("mode");
+      expect(msgs[0]).not.toHaveProperty("model");
+    });
+
+    it("records model on assistant message after Done event", async () => {
+      mockInvoke.mockResolvedValueOnce([]);
+      await useAiChatStore.getState().loadSessions();
+      useAiChatStore.setState({ awsProfile: "test-profile", isAuthenticated: true });
+      mockInvoke.mockResolvedValue(undefined);
+
+      let capturedOnmessage: ((event: any) => void) | null = null;
+      vi.mocked(Channel).mockImplementation(function (this: any) {
+        Object.defineProperty(this, "onmessage", {
+          set(fn: any) { capturedOnmessage = fn; },
+          get() { return capturedOnmessage; },
+        });
+      } as any);
+
+      const sendPromise = useAiChatStore.getState().sendMessage("hello");
+      await new Promise(r => setTimeout(r, 0));
+
+      if (capturedOnmessage) {
+        capturedOnmessage({ type: "Done", data: { content: "reply", model: "us.anthropic.claude-sonnet-4-6" } });
+      }
+      await sendPromise;
+
+      const session = useAiChatStore.getState().currentSession!;
+      const assistantMsg = session.messages_all.find(m => m.role === "assistant");
+      expect(assistantMsg).toBeTruthy();
+      expect(assistantMsg!.model).toBe("us.anthropic.claude-sonnet-4-6");
     });
   });
 });
