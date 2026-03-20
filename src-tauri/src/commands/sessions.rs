@@ -55,6 +55,28 @@ fn prune_sessions(sessions: Vec<Session>) -> Vec<Session> {
         .collect()
 }
 
+pub struct SessionsLock(pub std::sync::Mutex<()>);
+
+fn upsert_session(path: &std::path::Path, session: Session) -> Result<(), String> {
+    let mut sessions = read_sessions(path);
+    match sessions.iter().position(|s| s.id == session.id) {
+        Some(i) => sessions[i] = session,
+        None => sessions.push(session),
+    }
+    write_sessions(path, &sessions)
+}
+
+#[tauri::command]
+pub async fn save_session(
+    app: tauri::AppHandle,
+    state: tauri::State<'_, SessionsLock>,
+    session: Session,
+) -> Result<(), String> {
+    let path = sessions_path(&app)?;
+    let _guard = state.0.lock().map_err(|e| format!("Lock error: {}", e))?;
+    upsert_session(&path, session)
+}
+
 #[tauri::command]
 pub async fn load_sessions(app: tauri::AppHandle) -> Result<Vec<Session>, String> {
     let path = sessions_path(&app)?;
@@ -150,5 +172,43 @@ mod tests {
         let back = read_sessions(&path);
         assert_eq!(back.len(), 1);
         assert_eq!(back[0].id, "abc");
+    }
+
+    #[test]
+    fn test_upsert_appends_new_session() {
+        let dir = tempdir().unwrap();
+        let path = dir.path().join("sessions.json");
+        let s1 = make_session("s1", 1, false);
+        write_sessions(&path, &[s1]).unwrap();
+
+        let s2 = make_session("s2", 2, false);
+        upsert_session(&path, s2).unwrap();
+
+        let back = read_sessions(&path);
+        assert_eq!(back.len(), 2);
+    }
+
+    #[test]
+    fn test_upsert_replaces_existing_session() {
+        let dir = tempdir().unwrap();
+        let path = dir.path().join("sessions.json");
+        let mut s1 = make_session("s1", 1, false);
+        write_sessions(&path, &[s1.clone()]).unwrap();
+
+        s1.last_mode = "edit".to_string();
+        upsert_session(&path, s1).unwrap();
+
+        let back = read_sessions(&path);
+        assert_eq!(back.len(), 1);
+        assert_eq!(back[0].last_mode, "edit");
+    }
+
+    #[test]
+    fn test_upsert_creates_file_on_first_save() {
+        let dir = tempdir().unwrap();
+        let path = dir.path().join("sessions.json");
+        assert!(!path.exists());
+        upsert_session(&path, make_session("s1", 1, false)).unwrap();
+        assert!(path.exists());
     }
 }

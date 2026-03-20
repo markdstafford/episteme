@@ -52,6 +52,7 @@ pub fn run() {
       });
 
       app.manage(commands::updater::PendingUpdate(std::sync::Mutex::new(None)));
+      app.manage(commands::sessions::SessionsLock(std::sync::Mutex::new(())));
 
       Ok(())
     })
