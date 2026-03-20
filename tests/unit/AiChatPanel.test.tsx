@@ -149,7 +149,6 @@ describe("AiChatPanel", () => {
         screen.getByPlaceholderText("Ask a question..."),
       ).toBeInTheDocument();
     });
-
   });
 
   describe("Header", () => {
