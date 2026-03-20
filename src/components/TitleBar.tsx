@@ -1,14 +1,16 @@
 import { useState } from "react";
-import { ChevronLeft, ChevronRight, Share2, Plus, Aperture } from "lucide-react";
+import { ChevronLeft, ChevronRight, Share2, Plus, Aperture, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { CreateNewDialog } from "@/components/CreateNewDialog";
 
 interface TitleBarProps {
   folderPath: string | null;
   onStartAuthoring: (skillName: string | null) => void;
+  aiPanelOpen?: boolean;
+  onToggleAiPanel?: () => void;
 }
 
-export function TitleBar({ folderPath, onStartAuthoring }: TitleBarProps) {
+export function TitleBar({ folderPath, onStartAuthoring, aiPanelOpen, onToggleAiPanel }: TitleBarProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
 
   return (
@@ -83,7 +85,7 @@ export function TitleBar({ folderPath, onStartAuthoring }: TitleBarProps) {
         <div
           className="titlebar-no-drag"
           style={{
-            width: 80,
+            width: 112,
             height: "100%",
             display: "flex",
             alignItems: "center",
@@ -92,6 +94,20 @@ export function TitleBar({ folderPath, onStartAuthoring }: TitleBarProps) {
             flexShrink: 0,
           }}
         >
+          <Button
+            variant="ghost"
+            size="sm"
+            iconOnly
+            aria-label="Toggle AI panel"
+            onClick={onToggleAiPanel}
+            style={{
+              color: aiPanelOpen
+                ? "var(--color-accent)"
+                : "var(--color-text-tertiary)",
+            }}
+          >
+            <MessageSquare size={16} />
+          </Button>
           <Button variant="ghost" size="sm" iconOnly aria-label="Share" disabled style={{ color: "var(--color-text-tertiary)" }}>
             <Share2 size={16} />
           </Button>
