@@ -1,0 +1,311 @@
+use crate::session::Session;
+use tauri::Manager;
+
+fn sessions_path(app: &tauri::AppHandle) -> Result<std::path::PathBuf, String> {
+    let app_data = app
+        .path()
+        .app_data_dir()
+        .map_err(|e| format!("Failed to get app data dir: {}", e))?;
+    Ok(app_data.join("sessions.json"))
+}
+
+fn read_sessions(path: &std::path::Path) -> Vec<Session> {
+    if !path.exists() {
+        return vec![];
+    }
+    let contents = match std::fs::read_to_string(path) {
+        Ok(c) => c,
+        Err(e) => {
+            log::warn!("read_sessions: could not read {:?}: {}", path, e);
+            return vec![];
+        }
+    };
+    match serde_json::from_str(&contents) {
+        Ok(sessions) => sessions,
+        Err(e) => {
+            log::warn!("read_sessions: malformed JSON in {:?}: {}", path, e);
+            vec![]
+        }
+    }
+}
+
+fn write_sessions(path: &std::path::Path, sessions: &[Session]) -> Result<(), String> {
+    if let Some(parent) = path.parent() {
+        std::fs::create_dir_all(parent)
+            .map_err(|e| format!("Failed to create sessions directory: {}", e))?;
+    }
+    let json = serde_json::to_string_pretty(sessions)
+        .map_err(|e| format!("Serialize error: {}", e))?;
+    std::fs::write(path, json)
+        .map_err(|e| format!("Failed to write sessions: {}", e))
+}
+
+fn prune_sessions(sessions: Vec<Session>) -> Vec<Session> {
+    let cutoff = chrono::Utc::now() - chrono::Duration::days(90);
+    sessions
+        .into_iter()
+        .filter(|s| {
+            if s.pinned {
+                return true;
+            }
+            chrono::DateTime::parse_from_rfc3339(&s.last_active_at)
+                .map(|dt| dt >= cutoff)
+                .unwrap_or(true) // keep if unparseable
+        })
+        .collect()
+}
+
+pub struct SessionsLock(pub std::sync::Mutex<()>);
+
+fn upsert_session(path: &std::path::Path, session: Session) -> Result<(), String> {
+    let mut sessions = read_sessions(path);
+    match sessions.iter().position(|s| s.id == session.id) {
+        Some(i) => sessions[i] = session,
+        None => sessions.push(session),
+    }
+    write_sessions(path, &sessions)
+}
+
+#[tauri::command]
+pub async fn save_session(
+    app: tauri::AppHandle,
+    state: tauri::State<'_, SessionsLock>,
+    session: Session,
+) -> Result<(), String> {
+    let path = sessions_path(&app)?;
+    let _guard = state.0.lock().map_err(|e| format!("Lock error: {}", e))?;
+    upsert_session(&path, session)
+}
+
+#[tauri::command]
+pub async fn load_sessions(app: tauri::AppHandle) -> Result<Vec<Session>, String> {
+    let path = sessions_path(&app)?;
+    let sessions = read_sessions(&path);
+    let pruned = prune_sessions(sessions);
+    write_sessions(&path, &pruned)?;
+    log::info!("load_sessions: returning {} sessions", pruned.len());
+    Ok(pruned)
+}
+
+fn delete_session_by_id(path: &std::path::Path, id: &str) -> Result<(), String> {
+    let sessions: Vec<Session> = read_sessions(path)
+        .into_iter()
+        .filter(|s| s.id != id)
+        .collect();
+    write_sessions(path, &sessions)
+}
+
+fn set_session_pinned(path: &std::path::Path, id: &str, pinned: bool) -> Result<(), String> {
+    let mut sessions = read_sessions(path);
+    if let Some(s) = sessions.iter_mut().find(|s| s.id == id) {
+        s.pinned = pinned;
+    }
+    write_sessions(path, &sessions)
+}
+
+#[tauri::command]
+pub async fn delete_session(
+    app: tauri::AppHandle,
+    state: tauri::State<'_, SessionsLock>,
+    id: String,
+) -> Result<(), String> {
+    if id.is_empty() {
+        return Err("id must not be empty".to_string());
+    }
+    let path = sessions_path(&app)?;
+    let _guard = state.0.lock().map_err(|e| format!("Lock error: {}", e))?;
+    delete_session_by_id(&path, &id)
+}
+
+#[tauri::command]
+pub async fn pin_session(
+    app: tauri::AppHandle,
+    state: tauri::State<'_, SessionsLock>,
+    id: String,
+    pinned: bool,
+) -> Result<(), String> {
+    if id.is_empty() {
+        return Err("id must not be empty".to_string());
+    }
+    let path = sessions_path(&app)?;
+    let _guard = state.0.lock().map_err(|e| format!("Lock error: {}", e))?;
+    set_session_pinned(&path, &id, pinned)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use tempfile::tempdir;
+
+    fn make_session(id: &str, days_ago: i64, pinned: bool) -> Session {
+        let ts = (chrono::Utc::now() - chrono::Duration::days(days_ago))
+            .to_rfc3339();
+        Session {
+            id: id.to_string(),
+            created_at: ts.clone(),
+            last_active_at: ts,
+            last_mode: "view".to_string(),
+            pinned,
+            messages_all: vec![],
+            messages_compacted: vec![],
+        }
+    }
+
+    #[test]
+    fn test_prune_removes_old_unpinned() {
+        let sessions = vec![make_session("old", 91, false)];
+        let pruned = prune_sessions(sessions);
+        assert!(pruned.is_empty());
+    }
+
+    #[test]
+    fn test_prune_keeps_recent_unpinned() {
+        let sessions = vec![make_session("recent", 10, false)];
+        let pruned = prune_sessions(sessions);
+        assert_eq!(pruned.len(), 1);
+    }
+
+    #[test]
+    fn test_prune_keeps_old_pinned() {
+        let sessions = vec![make_session("old-pinned", 200, true)];
+        let pruned = prune_sessions(sessions);
+        assert_eq!(pruned.len(), 1);
+    }
+
+    #[test]
+    fn test_prune_keeps_recent_pinned() {
+        let sessions = vec![make_session("new-pinned", 5, true)];
+        let pruned = prune_sessions(sessions);
+        assert_eq!(pruned.len(), 1);
+    }
+
+    #[test]
+    fn test_read_sessions_returns_empty_when_no_file() {
+        let dir = tempdir().unwrap();
+        let path = dir.path().join("sessions.json");
+        let sessions = read_sessions(&path);
+        assert!(sessions.is_empty());
+    }
+
+    #[test]
+    fn test_prune_keeps_session_exactly_at_boundary() {
+        // A session exactly 90 days old should be kept (not pruned).
+        // Add 1 second of padding so the session timestamp lands at the
+        // boundary even accounting for the sub-second gap between this call
+        // and the Utc::now() inside prune_sessions.
+        let ts = (chrono::Utc::now() - chrono::Duration::days(90) + chrono::Duration::seconds(1))
+            .to_rfc3339();
+        let session = Session {
+            id: "boundary".to_string(),
+            created_at: ts.clone(),
+            last_active_at: ts,
+            last_mode: "view".to_string(),
+            pinned: false,
+            messages_all: vec![],
+            messages_compacted: vec![],
+        };
+        let pruned = prune_sessions(vec![session]);
+        assert_eq!(pruned.len(), 1);
+    }
+
+    #[test]
+    fn test_write_and_read_round_trip() {
+        let dir = tempdir().unwrap();
+        let path = dir.path().join("sessions.json");
+        let sessions = vec![make_session("abc", 1, false)];
+        write_sessions(&path, &sessions).unwrap();
+        let back = read_sessions(&path);
+        assert_eq!(back.len(), 1);
+        assert_eq!(back[0].id, "abc");
+    }
+
+    #[test]
+    fn test_upsert_appends_new_session() {
+        let dir = tempdir().unwrap();
+        let path = dir.path().join("sessions.json");
+        let s1 = make_session("s1", 1, false);
+        write_sessions(&path, &[s1]).unwrap();
+
+        let s2 = make_session("s2", 2, false);
+        upsert_session(&path, s2).unwrap();
+
+        let back = read_sessions(&path);
+        assert_eq!(back.len(), 2);
+    }
+
+    #[test]
+    fn test_upsert_replaces_existing_session() {
+        let dir = tempdir().unwrap();
+        let path = dir.path().join("sessions.json");
+        let mut s1 = make_session("s1", 1, false);
+        write_sessions(&path, &[s1.clone()]).unwrap();
+
+        s1.last_mode = "edit".to_string();
+        upsert_session(&path, s1).unwrap();
+
+        let back = read_sessions(&path);
+        assert_eq!(back.len(), 1);
+        assert_eq!(back[0].last_mode, "edit");
+    }
+
+    #[test]
+    fn test_upsert_creates_file_on_first_save() {
+        let dir = tempdir().unwrap();
+        let path = dir.path().join("sessions.json");
+        assert!(!path.exists());
+        upsert_session(&path, make_session("s1", 1, false)).unwrap();
+        assert!(path.exists());
+    }
+
+    #[test]
+    fn test_delete_session_removes_by_id() {
+        let dir = tempdir().unwrap();
+        let path = dir.path().join("sessions.json");
+        write_sessions(&path, &[make_session("s1", 1, false), make_session("s2", 1, false)]).unwrap();
+        delete_session_by_id(&path, "s1").unwrap();
+        let back = read_sessions(&path);
+        assert_eq!(back.len(), 1);
+        assert_eq!(back[0].id, "s2");
+    }
+
+    #[test]
+    fn test_delete_session_noop_on_unknown_id() {
+        let dir = tempdir().unwrap();
+        let path = dir.path().join("sessions.json");
+        write_sessions(&path, &[make_session("s1", 1, false)]).unwrap();
+        delete_session_by_id(&path, "unknown").unwrap();
+        let back = read_sessions(&path);
+        assert_eq!(back.len(), 1);
+    }
+
+    #[test]
+    fn test_pin_session_sets_pinned_true() {
+        let dir = tempdir().unwrap();
+        let path = dir.path().join("sessions.json");
+        write_sessions(&path, &[make_session("s1", 1, false)]).unwrap();
+        set_session_pinned(&path, "s1", true).unwrap();
+        let back = read_sessions(&path);
+        assert!(back[0].pinned);
+    }
+
+    #[test]
+    fn test_pin_session_sets_pinned_false() {
+        let dir = tempdir().unwrap();
+        let path = dir.path().join("sessions.json");
+        write_sessions(&path, &[make_session("s1", 1, true)]).unwrap();
+        set_session_pinned(&path, "s1", false).unwrap();
+        let back = read_sessions(&path);
+        assert!(!back[0].pinned);
+    }
+
+    #[test]
+    fn test_pin_session_noop_on_unknown_id() {
+        let dir = tempdir().unwrap();
+        let path = dir.path().join("sessions.json");
+        write_sessions(&path, &[make_session("s1", 1, false)]).unwrap();
+        set_session_pinned(&path, "unknown", true).unwrap();
+        let back = read_sessions(&path);
+        assert_eq!(back.len(), 1);
+        assert!(!back[0].pinned);
+    }
+}
