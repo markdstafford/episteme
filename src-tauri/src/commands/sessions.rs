@@ -13,8 +13,20 @@ fn read_sessions(path: &std::path::Path) -> Vec<Session> {
     if !path.exists() {
         return vec![];
     }
-    let contents = std::fs::read_to_string(path).unwrap_or_default();
-    serde_json::from_str(&contents).unwrap_or_default()
+    let contents = match std::fs::read_to_string(path) {
+        Ok(c) => c,
+        Err(e) => {
+            log::warn!("read_sessions: could not read {:?}: {}", path, e);
+            return vec![];
+        }
+    };
+    match serde_json::from_str(&contents) {
+        Ok(sessions) => sessions,
+        Err(e) => {
+            log::warn!("read_sessions: malformed JSON in {:?}: {}", path, e);
+            vec![]
+        }
+    }
 }
 
 fn write_sessions(path: &std::path::Path, sessions: &[Session]) -> Result<(), String> {
@@ -37,7 +49,7 @@ fn prune_sessions(sessions: Vec<Session>) -> Vec<Session> {
                 return true;
             }
             chrono::DateTime::parse_from_rfc3339(&s.last_active_at)
-                .map(|dt| dt > cutoff)
+                .map(|dt| dt >= cutoff)
                 .unwrap_or(true) // keep if unparseable
         })
         .collect()
@@ -106,6 +118,27 @@ mod tests {
         let path = dir.path().join("sessions.json");
         let sessions = read_sessions(&path);
         assert!(sessions.is_empty());
+    }
+
+    #[test]
+    fn test_prune_keeps_session_exactly_at_boundary() {
+        // A session exactly 90 days old should be kept (not pruned).
+        // Add 1 second of padding so the session timestamp lands at the
+        // boundary even accounting for the sub-second gap between this call
+        // and the Utc::now() inside prune_sessions.
+        let ts = (chrono::Utc::now() - chrono::Duration::days(90) + chrono::Duration::seconds(1))
+            .to_rfc3339();
+        let session = Session {
+            id: "boundary".to_string(),
+            created_at: ts.clone(),
+            last_active_at: ts,
+            last_mode: "view".to_string(),
+            pinned: false,
+            messages_all: vec![],
+            messages_compacted: vec![],
+        };
+        let pruned = prune_sessions(vec![session]);
+        assert_eq!(pruned.len(), 1);
     }
 
     #[test]
