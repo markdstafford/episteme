@@ -1,5 +1,6 @@
 import { render, screen } from "@testing-library/react";
-import { describe, it, expect } from "vitest";
+import userEvent from "@testing-library/user-event";
+import { describe, it, expect, vi } from "vitest";
 import { TitleBar } from "@/components/TitleBar";
 
 describe("TitleBar", () => {
@@ -24,5 +25,26 @@ describe("TitleBar", () => {
     render(<TitleBar folderPath="/some/path" />);
     const newDocBtn = screen.getByRole("button", { name: /new document/i });
     expect(newDocBtn).not.toBeDisabled();
+  });
+});
+
+describe("AI panel toggle button", () => {
+  it("renders with tertiary color when aiPanelOpen is false", () => {
+    render(<TitleBar folderPath={null} aiPanelOpen={false} onToggleAiPanel={vi.fn()} />);
+    const btn = screen.getByRole("button", { name: /toggle ai panel/i });
+    expect(btn).toBeInTheDocument();
+  });
+
+  it("renders with accent color when aiPanelOpen is true", () => {
+    render(<TitleBar folderPath={null} aiPanelOpen={true} onToggleAiPanel={vi.fn()} />);
+    const btn = screen.getByRole("button", { name: /toggle ai panel/i });
+    expect(btn.style.color).toBe("var(--color-accent)");
+  });
+
+  it("calls onToggleAiPanel when clicked", async () => {
+    const onToggle = vi.fn();
+    render(<TitleBar folderPath={null} aiPanelOpen={false} onToggleAiPanel={onToggle} />);
+    await userEvent.click(screen.getByRole("button", { name: /toggle ai panel/i }));
+    expect(onToggle).toHaveBeenCalledTimes(1);
   });
 });

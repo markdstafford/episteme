@@ -1,17 +1,14 @@
 import { useState, useRef, useEffect } from "react";
 import { useAiChatStore } from "@/stores/aiChat";
-import { normalizeCombo, useShortcutsStore } from "@/stores/shortcuts";
 import { ChatMessage } from "@/components/ChatMessage";
-import { MessageSquare, RotateCcw, X, Send, Loader2 } from "lucide-react";
+import { ChatInputCard } from "@/components/ChatInputCard";
+import { MessageSquare, Clock, Loader2 } from "lucide-react";
 
-interface AiChatPanelProps {
-  onClose: () => void;
-}
-
-export function AiChatPanel({ onClose }: AiChatPanelProps) {
+export function AiChatPanel() {
   const [input, setInput] = useState("");
   const [profileInput, setProfileInput] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
 
   const {
     messages,
@@ -25,7 +22,6 @@ export function AiChatPanel({ onClose }: AiChatPanelProps) {
     login,
     sendMessage,
     setAwsProfile,
-    clearConversation,
   } = useAiChatStore();
 
   useEffect(() => {
@@ -40,16 +36,6 @@ export function AiChatPanel({ onClose }: AiChatPanelProps) {
     if (!input.trim() || isStreaming) return;
     sendMessage(input.trim());
     setInput("");
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    const combo = normalizeCombo(e as unknown as KeyboardEvent);
-    const action = useShortcutsStore.getState().actions["chat.send"];
-    const sendBinding = action?.binding ?? "Enter";
-    if (combo === sendBinding) {
-      e.preventDefault();
-      handleSend();
-    }
   };
 
   const handleConnect = async () => {
@@ -177,60 +163,45 @@ export function AiChatPanel({ onClose }: AiChatPanelProps) {
   };
 
   return (
-    <div className="w-96 flex flex-col h-full border-l border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
+    <div
+      ref={panelRef}
+      className="w-96 flex flex-col h-full border-l border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900"
+    >
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
         <div className="flex items-center gap-2">
           <MessageSquare className="w-4 h-4 text-gray-600 dark:text-gray-400" />
           <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
             AI assistant
           </span>
         </div>
-        <div className="flex items-center gap-1">
-          <button
-            onClick={clearConversation}
-            className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded"
-            title="New conversation"
-          >
-            <RotateCcw className="w-4 h-4 text-gray-500" />
-          </button>
-          <button
-            onClick={onClose}
-            className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded"
-            title="Close"
-          >
-            <X className="w-4 h-4 text-gray-500" />
-          </button>
-        </div>
+        <button
+          className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded"
+          title="Session history"
+          onClick={() => {}}
+        >
+          <Clock className="w-4 h-4 text-gray-500" />
+        </button>
       </div>
 
-      {/* Body */}
-      <div className="flex-1 overflow-y-auto p-4">{renderBody()}</div>
+      {/* Content area */}
+      <div className="flex flex-col flex-1 min-h-0">
+        {/* Messages pane */}
+        <div className="flex-1 overflow-y-auto p-4">{renderBody()}</div>
 
-      {/* Input area - only show when authenticated */}
-      {isAuthenticated && (
-        <div className="border-t border-gray-200 dark:border-gray-700 p-3">
-          <div className="flex gap-2">
-            <textarea
+        {/* Input — only rendered when authenticated */}
+        {isAuthenticated && (
+          <div className="p-3 border-t border-gray-200 dark:border-gray-700">
+            <ChatInputCard
               value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Ask a question..."
-              rows={1}
-              disabled={isStreaming}
-              className="flex-1 resize-none px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+              onChange={setInput}
+              onSend={handleSend}
+              isStreaming={isStreaming}
+              panelRef={panelRef}
             />
-            <button
-              onClick={handleSend}
-              disabled={!input.trim() || isStreaming}
-              className="bg-blue-600 hover:bg-blue-700 text-white rounded-lg p-2 disabled:opacity-50 disabled:cursor-not-allowed"
-              title="Send"
-            >
-              <Send className="w-4 h-4" />
-            </button>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }
