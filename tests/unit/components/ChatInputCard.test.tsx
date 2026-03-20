@@ -42,6 +42,22 @@ describe("ChatInputCard", () => {
       expect(onSend).toHaveBeenCalledTimes(1);
     });
 
+    it("Ctrl+Enter calls onSend", () => {
+      const onSend = vi.fn();
+      render(
+        <ChatInputCard
+          value="hello"
+          onChange={vi.fn()}
+          onSend={onSend}
+          isStreaming={false}
+          panelRef={makePanelRef()}
+        />
+      );
+      const textarea = screen.getByPlaceholderText("Ask a question...");
+      fireEvent.keyDown(textarea, { key: "Enter", ctrlKey: true });
+      expect(onSend).toHaveBeenCalledTimes(1);
+    });
+
     it("Shift+Enter does not call onSend", () => {
       const onSend = vi.fn();
       render(
