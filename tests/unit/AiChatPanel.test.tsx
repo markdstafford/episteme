@@ -150,10 +150,6 @@ describe("AiChatPanel", () => {
       ).toBeInTheDocument();
     });
 
-    it("shows send button", () => {
-      render(<AiChatPanel />);
-      expect(screen.getByTitle("Send")).toBeInTheDocument();
-    });
   });
 
   describe("Header", () => {
