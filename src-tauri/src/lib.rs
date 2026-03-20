@@ -26,6 +26,10 @@ pub fn run() {
       commands::skills::count_documents_by_type,
       commands::updater::check_for_update,
       commands::updater::install_update,
+      commands::sessions::load_sessions,
+      commands::sessions::save_session,
+      commands::sessions::delete_session,
+      commands::sessions::pin_session,
     ])
     .setup(|app| {
       if cfg!(debug_assertions) {
