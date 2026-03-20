@@ -121,10 +121,10 @@ export const useAiChatStore = create<AiChatStore>((set, get) => ({
     const workspacePath = useWorkspaceStore.getState().folderPath;
     const currentMessages = get().currentSession?.messages_compacted ?? [];
 
-    const onEvent = new Channel<{ type: string; data: string }>();
+    const onEvent = new Channel<{ type: string; data: unknown }>();
     onEvent.onmessage = (event) => {
       if (event.type === "Token") {
-        set((s) => ({ streamingContent: s.streamingContent + event.data }));
+        set((s) => ({ streamingContent: s.streamingContent + (event.data as string) }));
       } else if (event.type === "Done") {
         const { content: doneContent, model } = event.data as { content: string; model: string };
         const assistantSessionMsg: SessionMessage = {
@@ -155,15 +155,16 @@ export const useAiChatStore = create<AiChatStore>((set, get) => ({
         }));
         void get().saveCurrentSession();
       } else if (event.type === "Error") {
-        const isAuthError = event.data.startsWith("auth:");
+        const errData = event.data as string;
+        const isAuthError = errData.startsWith("auth:");
         set({
           isStreaming: false,
           streamingContent: "",
-          error: event.data,
+          error: errData,
           ...(isAuthError ? { isAuthenticated: false } : {}),
         });
       } else if (event.type === "DocumentUpdated") {
-        const filePath = event.data;
+        const filePath = event.data as string;
         set((s) => ({
           authoringFilePath: filePath,
           documentReloadCounter: s.documentReloadCounter + 1,
