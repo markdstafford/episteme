@@ -78,6 +78,8 @@ mod tests {
         let back: Session = serde_json::from_str(&json).unwrap();
         assert_eq!(back.id, "test-id");
         assert_eq!(back.name, "");
+        assert_eq!(back.messages_all.len(), 1);
+        assert_eq!(back.messages_compacted.len(), 1);
     }
 
     #[test]
@@ -93,8 +95,7 @@ mod tests {
     fn test_session_scope_document_serialization() {
         let scope = SessionScope::Document { path: "/path/to/doc.md".to_string() };
         let json = serde_json::to_string(&scope).unwrap();
-        assert!(json.contains(r#""type":"document""#));
-        assert!(json.contains(r#""path":"/path/to/doc.md""#));
+        assert_eq!(json, r#"{"type":"document","path":"/path/to/doc.md"}"#);
         let back: SessionScope = serde_json::from_str(&json).unwrap();
         assert!(matches!(back, SessionScope::Document { .. }));
     }
