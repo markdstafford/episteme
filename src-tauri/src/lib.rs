@@ -1,5 +1,6 @@
 mod commands;
 mod context;
+mod session;
 mod skill_loader;
 
 use tauri::menu::{Menu, MenuItem, Submenu};
