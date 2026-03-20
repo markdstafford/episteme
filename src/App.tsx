@@ -16,10 +16,12 @@ import { parsePreferences } from "@/lib/preferences";
 import { Loader2 } from "lucide-react";
 import { DesignKitchen } from "@/components/DesignKitchen";
 import { ShortcutsPanel } from "@/components/ShortcutsPanel";
+import { AiChatPanel } from "@/components/AiChatPanel";
 
 function App() {
   const [showKitchenSink, setShowKitchenSink] = useState(false);
   const [shortcutsPanelOpen, setShortcutsPanelOpen] = useState(false);
+  const [aiPanelOpen, setAiPanelOpen] = useState(false);
   const folderPath = useWorkspaceStore((s) => s.folderPath);
   const isLoading = useWorkspaceStore((s) => s.isLoading);
   const loadSavedFolder = useWorkspaceStore((s) => s.loadSavedFolder);
@@ -178,8 +180,12 @@ function App() {
   if (isLoading && !folderPath) {
     return (
       <div className="flex flex-col h-screen">
-        {/* TODO: re-wire to keyboard shortcut when AI chat panel toggle is implemented */}
-        <TitleBar folderPath={null} onStartAuthoring={() => {}} />
+        <TitleBar
+          folderPath={null}
+          onStartAuthoring={() => {}}
+          aiPanelOpen={aiPanelOpen}
+          onToggleAiPanel={() => setAiPanelOpen((v) => !v)}
+        />
         <div className="flex flex-1 items-center justify-center bg-(--color-bg-app)">
           <div className="text-center">
             <Loader2 className="w-8 h-8 animate-spin text-(--color-accent) mx-auto" />
@@ -196,8 +202,12 @@ function App() {
   if (!folderPath) {
     return (
       <div className="flex flex-col h-screen">
-        {/* TODO: re-wire to keyboard shortcut when AI chat panel toggle is implemented */}
-        <TitleBar folderPath={null} onStartAuthoring={() => {}} />
+        <TitleBar
+          folderPath={null}
+          onStartAuthoring={() => {}}
+          aiPanelOpen={aiPanelOpen}
+          onToggleAiPanel={() => setAiPanelOpen((v) => !v)}
+        />
         <WelcomeScreen />
         {shortcutsPanelOverlay}
       </div>
@@ -206,10 +216,11 @@ function App() {
 
   return (
     <div className="flex flex-col h-screen">
-      {/* TODO: re-wire to keyboard shortcut when AI chat panel toggle is implemented */}
       <TitleBar
         folderPath={folderPath}
         onStartAuthoring={() => {}}
+        aiPanelOpen={aiPanelOpen}
+        onToggleAiPanel={() => setAiPanelOpen((v) => !v)}
       />
       <div className="flex flex-1 min-h-0">
         <Sidebar>
@@ -220,10 +231,11 @@ function App() {
             <SettingsPanel />
           </div>
         ) : (
-          <div className="flex-1 flex flex-col min-w-0 animate-fade-in">
+          <div className="flex flex-1 min-w-0 overflow-hidden">
             <div className="flex-1 flex flex-col overflow-hidden">
               <DocumentViewer />
             </div>
+            {aiPanelOpen && <AiChatPanel />}
           </div>
         )}
       </div>
