@@ -1,11 +1,17 @@
 // src/lib/session.ts
 // Types mirror src-tauri/src/session.rs — serde uses snake_case field names
 
+export type SessionScope =
+  | { type: "document"; path: string }
+  | { type: "workspace" };
+
 export interface Session {
   id: string;
   created_at: string;
   last_active_at: string;
   last_mode: string;
+  name: string;        // "" until first message sent
+  scope: SessionScope; // set at creation; never mutated
   pinned: boolean;
   messages_all: SessionMessage[];
   messages_compacted: CanonicalMessage[];
@@ -36,13 +42,15 @@ export function makeTextBlock(text: string): CanonicalBlock {
   return { type: "text", text };
 }
 
-export function newSession(lastMode: string): Session {
+export function newSession(lastMode: string, scope: SessionScope): Session {
   const now = new Date().toISOString();
   return {
     id: crypto.randomUUID(),
     created_at: now,
     last_active_at: now,
     last_mode: lastMode,
+    name: "",
+    scope,
     pinned: false,
     messages_all: [],
     messages_compacted: [],
