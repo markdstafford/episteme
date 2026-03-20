@@ -135,6 +135,7 @@ pub async fn pin_session(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::session::SessionScope;
     use tempfile::tempdir;
 
     fn make_session(id: &str, days_ago: i64, pinned: bool) -> Session {
@@ -145,6 +146,8 @@ mod tests {
             created_at: ts.clone(),
             last_active_at: ts,
             last_mode: "view".to_string(),
+            name: "".to_string(),
+            scope: SessionScope::Workspace,
             pinned,
             messages_all: vec![],
             messages_compacted: vec![],
@@ -200,6 +203,8 @@ mod tests {
             created_at: ts.clone(),
             last_active_at: ts,
             last_mode: "view".to_string(),
+            name: "".to_string(),
+            scope: SessionScope::Workspace,
             pinned: false,
             messages_all: vec![],
             messages_compacted: vec![],
