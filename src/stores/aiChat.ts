@@ -29,7 +29,6 @@ interface AiChatStore {
   login: () => Promise<void>;
   sendMessage: (content: string) => Promise<void>;
   setAwsProfile: (profile: string) => Promise<void>;
-  clearConversation: () => void;
   startAuthoring: (skillName?: string | null) => void;
   loadSessions: () => Promise<void>;
   saveCurrentSession: () => Promise<void>;
@@ -208,19 +207,6 @@ export const useAiChatStore = create<AiChatStore>((set, get) => ({
     }
   },
 
-  clearConversation: () => {
-    set({
-      messages: [],
-      isStreaming: false,
-      streamingContent: "",
-      error: null,
-      authoringMode: false,
-      authoringFilePath: null,
-      activeSkill: null,
-      documentReloadCounter: 0,
-    });
-  },
-
   startAuthoring: (skillName?: string | null) => {
     set({
       authoringMode: true,
@@ -254,6 +240,7 @@ export const useAiChatStore = create<AiChatStore>((set, get) => ({
     set({
       currentSession: newSession("view"),
       messages: [],
+      isStreaming: false,
       streamingContent: "",
       error: null,
       authoringMode: false,
