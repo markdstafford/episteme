@@ -43,14 +43,14 @@ describe("useAiChatStore authoring state", () => {
     expect(s.activeSkill).toBeNull();
   });
 
-  it("clearConversation resets authoring state", () => {
+  it("newSession resets authoring state", () => {
     useAiChatStore.setState({
       authoringMode: true,
       authoringFilePath: "/workspace/doc.md",
       activeSkill: "product-description",
       documentReloadCounter: 3,
     });
-    useAiChatStore.getState().clearConversation();
+    useAiChatStore.getState().newSession();
     const s = useAiChatStore.getState();
     expect(s.authoringMode).toBe(false);
     expect(s.authoringFilePath).toBeNull();

@@ -227,13 +227,13 @@ describe("useAiChatStore", () => {
     });
   });
 
-  describe("clearConversation", () => {
+  describe("newSession", () => {
     it("resets messages to empty array", () => {
       useAiChatStore.setState({
         messages: [{ role: "user", content: "Hello" }],
       });
 
-      useAiChatStore.getState().clearConversation();
+      useAiChatStore.getState().newSession();
 
       expect(useAiChatStore.getState().messages).toEqual([]);
     });
@@ -241,7 +241,7 @@ describe("useAiChatStore", () => {
     it("resets streamingContent to empty string", () => {
       useAiChatStore.setState({ streamingContent: "partial response" });
 
-      useAiChatStore.getState().clearConversation();
+      useAiChatStore.getState().newSession();
 
       expect(useAiChatStore.getState().streamingContent).toBe("");
     });
@@ -249,7 +249,7 @@ describe("useAiChatStore", () => {
     it("resets error to null", () => {
       useAiChatStore.setState({ error: "some error" });
 
-      useAiChatStore.getState().clearConversation();
+      useAiChatStore.getState().newSession();
 
       expect(useAiChatStore.getState().error).toBeNull();
     });
@@ -257,7 +257,7 @@ describe("useAiChatStore", () => {
     it("resets isStreaming to false", () => {
       useAiChatStore.setState({ isStreaming: true });
 
-      useAiChatStore.getState().clearConversation();
+      useAiChatStore.getState().newSession();
 
       expect(useAiChatStore.getState().isStreaming).toBe(false);
     });
