@@ -73,6 +73,38 @@ describe("ChatInputCard", () => {
       fireEvent.keyDown(textarea, { key: "Enter", shiftKey: true });
       expect(onSend).not.toHaveBeenCalled();
     });
+
+    it("Enter does not call onSend when value is empty", () => {
+      const onSend = vi.fn();
+      render(
+        <ChatInputCard
+          value=""
+          onChange={vi.fn()}
+          onSend={onSend}
+          isStreaming={false}
+          panelRef={makePanelRef()}
+        />
+      );
+      const textarea = screen.getByPlaceholderText("Ask a question...");
+      fireEvent.keyDown(textarea, { key: "Enter" });
+      expect(onSend).not.toHaveBeenCalled();
+    });
+
+    it("Enter does not call onSend when isStreaming is true", () => {
+      const onSend = vi.fn();
+      render(
+        <ChatInputCard
+          value="hello"
+          onChange={vi.fn()}
+          onSend={onSend}
+          isStreaming={true}
+          panelRef={makePanelRef()}
+        />
+      );
+      const textarea = screen.getByPlaceholderText("Ask a question...");
+      fireEvent.keyDown(textarea, { key: "Enter" });
+      expect(onSend).not.toHaveBeenCalled();
+    });
   });
 
   describe("Send button disabled states", () => {

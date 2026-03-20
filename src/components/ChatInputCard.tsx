@@ -25,18 +25,18 @@ export function ChatInputCard({
     const panel = panelRef.current;
     if (!textarea) return;
     textarea.style.height = "auto";
-    const maxHeight = panel ? panel.offsetHeight * 0.5 : Infinity;
+    const maxHeight = panel ? panel.offsetHeight * 0.5 : 9999;
     textarea.style.height = Math.min(textarea.scrollHeight, maxHeight) + "px";
-  }, [value, panelRef]);
+  }, [value]);
+
+  const canSend = value.trim().length > 0 && !isStreaming;
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === "Enter" && !e.shiftKey) {
+    if (e.key === "Enter" && !e.shiftKey && canSend) {
       e.preventDefault();
       onSend();
     }
   };
-
-  const canSend = value.trim().length > 0 && !isStreaming;
 
   return (
     <div className="rounded-xl border border-gray-200 dark:border-gray-700 focus-within:ring-2 focus-within:ring-blue-500">
