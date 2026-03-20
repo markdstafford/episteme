@@ -2,13 +2,9 @@ import { useState, useRef, useEffect } from "react";
 import { useAiChatStore } from "@/stores/aiChat";
 import { normalizeCombo, useShortcutsStore } from "@/stores/shortcuts";
 import { ChatMessage } from "@/components/ChatMessage";
-import { MessageSquare, RotateCcw, X, Send, Loader2 } from "lucide-react";
+import { MessageSquare, Clock, Send, Loader2 } from "lucide-react";
 
-interface AiChatPanelProps {
-  onClose: () => void;
-}
-
-export function AiChatPanel({ onClose }: AiChatPanelProps) {
+export function AiChatPanel() {
   const [input, setInput] = useState("");
   const [profileInput, setProfileInput] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -25,7 +21,6 @@ export function AiChatPanel({ onClose }: AiChatPanelProps) {
     login,
     sendMessage,
     setAwsProfile,
-    clearConversation,
   } = useAiChatStore();
 
   useEffect(() => {
@@ -188,18 +183,11 @@ export function AiChatPanel({ onClose }: AiChatPanelProps) {
         </div>
         <div className="flex items-center gap-1">
           <button
-            onClick={clearConversation}
             className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded"
-            title="New conversation"
+            title="Session history"
+            onClick={() => {}}
           >
-            <RotateCcw className="w-4 h-4 text-gray-500" />
-          </button>
-          <button
-            onClick={onClose}
-            className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded"
-            title="Close"
-          >
-            <X className="w-4 h-4 text-gray-500" />
+            <Clock className="w-4 h-4 text-gray-500" />
           </button>
         </div>
       </div>

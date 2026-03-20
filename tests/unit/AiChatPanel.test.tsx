@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // Mock Tauri API before importing components
@@ -32,7 +32,7 @@ beforeEach(() => {
 describe("AiChatPanel", () => {
   describe("Auth checking state", () => {
     it("shows loading spinner when authChecked is false", () => {
-      const { container } = render(<AiChatPanel onClose={vi.fn()} />);
+      const { container } = render(<AiChatPanel />);
       const spinner = container.querySelector(".animate-spin");
       expect(spinner).toBeInTheDocument();
     });
@@ -48,19 +48,19 @@ describe("AiChatPanel", () => {
     });
 
     it("shows 'Connect to AWS Bedrock' text", () => {
-      render(<AiChatPanel onClose={vi.fn()} />);
+      render(<AiChatPanel />);
       expect(screen.getByText("Connect to AWS Bedrock")).toBeInTheDocument();
     });
 
     it("shows profile input field with placeholder", () => {
-      render(<AiChatPanel onClose={vi.fn()} />);
+      render(<AiChatPanel />);
       expect(
         screen.getByPlaceholderText("e.g., ai-prod-llm"),
       ).toBeInTheDocument();
     });
 
     it("shows 'Connect' button", () => {
-      render(<AiChatPanel onClose={vi.fn()} />);
+      render(<AiChatPanel />);
       expect(
         screen.getByRole("button", { name: "Connect" }),
       ).toBeInTheDocument();
@@ -77,19 +77,19 @@ describe("AiChatPanel", () => {
     });
 
     it("shows 'Session expired' text", () => {
-      render(<AiChatPanel onClose={vi.fn()} />);
+      render(<AiChatPanel />);
       expect(screen.getByText("Session expired")).toBeInTheDocument();
     });
 
     it("shows 'Re-authenticate' button", () => {
-      render(<AiChatPanel onClose={vi.fn()} />);
+      render(<AiChatPanel />);
       expect(
         screen.getByRole("button", { name: "Re-authenticate" }),
       ).toBeInTheDocument();
     });
 
     it("shows 'Change profile' link", () => {
-      render(<AiChatPanel onClose={vi.fn()} />);
+      render(<AiChatPanel />);
       expect(
         screen.getByRole("button", { name: "Change profile" }),
       ).toBeInTheDocument();
@@ -106,7 +106,7 @@ describe("AiChatPanel", () => {
     });
 
     it("shows suggested prompts", () => {
-      render(<AiChatPanel onClose={vi.fn()} />);
+      render(<AiChatPanel />);
       expect(
         screen.getByText("Summarize this document"),
       ).toBeInTheDocument();
@@ -119,7 +119,7 @@ describe("AiChatPanel", () => {
     });
 
     it("shows 'Summarize this document' as a clickable button", () => {
-      render(<AiChatPanel onClose={vi.fn()} />);
+      render(<AiChatPanel />);
       const button = screen.getByText("Summarize this document");
       expect(button.tagName).toBe("BUTTON");
     });
@@ -138,20 +138,20 @@ describe("AiChatPanel", () => {
     });
 
     it("renders messages", () => {
-      render(<AiChatPanel onClose={vi.fn()} />);
+      render(<AiChatPanel />);
       expect(screen.getByText("Hello there")).toBeInTheDocument();
       expect(screen.getByText("Hi! How can I help?")).toBeInTheDocument();
     });
 
     it("shows input textarea", () => {
-      render(<AiChatPanel onClose={vi.fn()} />);
+      render(<AiChatPanel />);
       expect(
         screen.getByPlaceholderText("Ask a question..."),
       ).toBeInTheDocument();
     });
 
     it("shows send button", () => {
-      render(<AiChatPanel onClose={vi.fn()} />);
+      render(<AiChatPanel />);
       expect(screen.getByTitle("Send")).toBeInTheDocument();
     });
   });
@@ -162,16 +162,9 @@ describe("AiChatPanel", () => {
     });
 
     it("shows 'AI Assistant' text", () => {
-      render(<AiChatPanel onClose={vi.fn()} />);
+      render(<AiChatPanel />);
       expect(screen.getByText("AI assistant")).toBeInTheDocument();
     });
 
-    it("close button calls onClose", () => {
-      const onClose = vi.fn();
-      render(<AiChatPanel onClose={onClose} />);
-      const closeButton = screen.getByTitle("Close");
-      fireEvent.click(closeButton);
-      expect(onClose).toHaveBeenCalledTimes(1);
-    });
   });
 });
