@@ -20,7 +20,7 @@ pub struct ChatMessage {
 #[serde(tag = "type", content = "data")]
 pub enum StreamEvent {
     Token(String),
-    Done(String),
+    Done { content: String, model: String },
     Error(String),
     DocumentUpdated(String), // absolute file path
 }
@@ -429,7 +429,10 @@ pub async fn ai_chat(
         break;
     }
 
-    let _ = on_event.send(StreamEvent::Done(full_response));
+    let _ = on_event.send(StreamEvent::Done {
+        content: full_response,
+        model: "us.anthropic.claude-sonnet-4-6".to_string(),
+    });
     Ok(())
 }
 
