@@ -161,8 +161,15 @@ fn resolve_file_refs(
                         }
                     }
                     let full_path = canonical_workspace.join(file_path);
+                    // Check for existence before canonicalizing (canonicalize fails on missing files)
+                    if !full_path.exists() {
+                        log::warn!("file_ref: file not found: {}", path);
+                        return Ok(CanonicalBlock::Text {
+                            text: format!("[attachment unavailable: {}]", path),
+                        });
+                    }
                     let canonical_full = std::fs::canonicalize(&full_path)
-                        .map_err(|_e| format!("file_ref: cannot resolve path {}", path))?;
+                        .map_err(|e| format!("file_ref: cannot resolve path {}: {}", path, e))?;
                     if !canonical_full.starts_with(&canonical_workspace) {
                         return Err(format!("Access denied: {} is outside workspace", path));
                     }
@@ -667,6 +674,29 @@ mod tests {
         }];
         let result = resolve_file_refs(messages, "/tmp").unwrap();
         assert!(matches!(result[0].content[0], CanonicalBlock::Text { .. }));
+    }
+
+    #[test]
+    fn test_file_ref_missing_file_returns_placeholder() {
+        use crate::session::{CanonicalBlock, CanonicalMessage};
+        let dir = tempfile::tempdir().unwrap();
+        // File does NOT exist in the workspace
+        let messages = vec![CanonicalMessage {
+            role: "user".to_string(),
+            content: vec![CanonicalBlock::FileRef {
+                path: "nonexistent.md".to_string(),
+                name: "nonexistent.md".to_string(),
+                media_type: "text/markdown".to_string(),
+            }],
+        }];
+        let result = resolve_file_refs(messages, dir.path().to_str().unwrap()).unwrap();
+        // Should succeed (not Err) and return a text placeholder
+        match &result[0].content[0] {
+            CanonicalBlock::Text { text } => {
+                assert!(text.contains("unavailable") || text.contains("nonexistent"));
+            }
+            other => panic!("expected Text placeholder, got {:?}", other),
+        }
     }
 
     #[test]
