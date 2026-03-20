@@ -98,10 +98,11 @@ export const useAiChatStore = create<AiChatStore>((set, get) => ({
       if (event.type === "Token") {
         set((s) => ({ streamingContent: s.streamingContent + event.data }));
       } else if (event.type === "Done") {
+        const { content, model } = event.data as { content: string; model: string };
         set((s) => ({
           messages: [
             ...s.messages,
-            { role: "assistant" as const, content: event.data },
+            { role: "assistant" as const, content },
           ],
           isStreaming: false,
           streamingContent: "",
