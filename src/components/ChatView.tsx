@@ -94,10 +94,10 @@ export function ChatView({ onShowHistory, onNewSession }: ChatViewProps) {
   return (
     <div
       ref={panelRef}
-      className="w-96 flex flex-col h-full border-l border-(--color-border-default) bg-(--color-bg-base)"
+      className="w-96 flex flex-col h-full border-l border-(--color-border-subtle) bg-(--color-bg-base)"
     >
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-(--color-border-default) flex-shrink-0">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-(--color-border-subtle) flex-shrink-0">
         <div className="flex items-center gap-2">
           <MessageSquare className="w-4 h-4 text-(--color-text-tertiary)" />
           <span className="text-[length:var(--font-size-ui-md)] font-medium text-(--color-text-primary)">
@@ -130,7 +130,7 @@ export function ChatView({ onShowHistory, onNewSession }: ChatViewProps) {
         <div className="flex-1 overflow-y-auto p-4">{renderBody()}</div>
 
         {/* Input — always rendered in ChatView; disabled via isStreaming when session not yet ready */}
-        <div className="p-3 border-t border-(--color-border-default)">
+        <div className="p-3 border-t border-(--color-border-subtle)">
           <ChatInputCard
             value={input}
             onChange={setInput}

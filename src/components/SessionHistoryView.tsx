@@ -51,9 +51,9 @@ export function SessionHistoryView({
     .sort((a, b) => (b.last_active_at > a.last_active_at ? 1 : -1));
 
   return (
-    <div className="w-96 flex flex-col h-full border-l border-(--color-border-default) bg-(--color-bg-base)">
+    <div className="w-96 flex flex-col h-full border-l border-(--color-border-subtle) bg-(--color-bg-base)">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-(--color-border-default) flex-shrink-0">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-(--color-border-subtle) flex-shrink-0">
         <div className="flex items-center gap-2">
           <button
             onClick={onBack}
@@ -84,7 +84,7 @@ export function SessionHistoryView({
             </p>
             <button
               onClick={onNewSession}
-              className="px-3 py-1.5 text-[length:var(--font-size-ui-base)] text-(--color-accent) border border-(--color-border-default) rounded-(--radius-base) hover:bg-(--color-bg-hover) transition-colors duration-(--duration-fast)"
+              className="px-3 py-1.5 text-[length:var(--font-size-ui-base)] text-(--color-accent) border border-(--color-border-subtle) rounded-(--radius-base) hover:bg-(--color-bg-hover) transition-colors duration-(--duration-fast)"
             >
               Start a conversation
             </button>
