@@ -67,6 +67,16 @@ export function SessionHistoryView({
   const skipNextBlurRef = useRef(false);
   const prevIsSuggestingIdRef = useRef<string | null>(null);
 
+  // Dismiss delete confirmation on Escape regardless of focus
+  useEffect(() => {
+    if (deletingId === null) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setDeletingId(null);
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [deletingId]);
+
   // Focus the input when rename mode is entered.
   // requestAnimationFrame defers until after Radix's setTimeout(0) focus
   // restoration, so focus sticks. It also doesn't run inside React's act(),
