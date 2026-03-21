@@ -32,7 +32,7 @@ export function ConfigurationView() {
   return (
     <div className="w-96 flex flex-col h-full border-l border-(--color-border-subtle) bg-(--color-bg-base)">
       {/* Header */}
-      <div className="flex items-center px-4 py-3 border-b border-(--color-border-subtle) flex-shrink-0">
+      <div className="flex items-center px-4 h-(--height-titlebar) border-b border-(--color-border-subtle) flex-shrink-0">
         <span className="text-[length:var(--font-size-ui-md)] font-medium text-(--color-text-primary)">
           AI settings
         </span>
