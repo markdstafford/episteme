@@ -118,6 +118,52 @@ describe("resumeSession", () => {
   });
 });
 
+describe("saveCurrentSession — in-memory sync", () => {
+  const makeSession = (id: string) => ({
+    id,
+    created_at: "2026-01-01T00:00:00Z",
+    last_active_at: "2026-01-01T00:00:00Z",
+    last_mode: "view",
+    name: "Test",
+    scope: { type: "workspace" as const },
+    pinned: false,
+    messages_all: [],
+    messages_compacted: [],
+  });
+
+  beforeEach(async () => {
+    const { invoke } = await import("@tauri-apps/api/core");
+    vi.mocked(invoke).mockResolvedValue(undefined);
+  });
+
+  it("appends currentSession to sessions[] when it is new", async () => {
+    const session = makeSession("new-1");
+    useAiChatStore.setState({ currentSession: session, sessions: [] });
+    await useAiChatStore.getState().saveCurrentSession();
+    expect(useAiChatStore.getState().sessions).toHaveLength(1);
+    expect(useAiChatStore.getState().sessions[0].id).toBe("new-1");
+  });
+
+  it("upserts currentSession in sessions[] when it already exists", async () => {
+    const original = makeSession("existing-1");
+    const updated = { ...original, name: "Updated name" };
+    useAiChatStore.setState({ currentSession: updated, sessions: [original] });
+    await useAiChatStore.getState().saveCurrentSession();
+    const sessions = useAiChatStore.getState().sessions;
+    expect(sessions).toHaveLength(1);
+    expect(sessions[0].name).toBe("Updated name");
+  });
+
+  it("does not modify sessions[] when invoke fails", async () => {
+    const { invoke } = await import("@tauri-apps/api/core");
+    vi.mocked(invoke).mockRejectedValueOnce(new Error("disk error"));
+    const session = makeSession("fail-1");
+    useAiChatStore.setState({ currentSession: session, sessions: [] });
+    await useAiChatStore.getState().saveCurrentSession();
+    expect(useAiChatStore.getState().sessions).toHaveLength(0);
+  });
+});
+
 describe("sendMessage — session name auto-population", () => {
   beforeEach(async () => {
     const { invoke } = await import("@tauri-apps/api/core");
