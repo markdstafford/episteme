@@ -107,6 +107,9 @@ export function ChatView({ onShowHistory, onNewSession }: ChatViewProps) {
       <div className="flex items-center justify-between px-4 h-(--height-titlebar) border-b border-(--color-border-subtle) flex-shrink-0">
         <div className="group flex items-center gap-1 min-w-0">
           <MessageSquare className="w-4 h-4 text-(--color-text-tertiary) flex-shrink-0" />
+          <span className="text-[length:var(--font-size-ui-md)] font-medium text-(--color-text-primary) truncate">
+            {currentSession?.name || "AI assistant"}
+          </span>
           <Popover.Root
             open={isRenameOpen}
             onOpenChange={(open) => {
@@ -114,11 +117,6 @@ export function ChatView({ onShowHistory, onNewSession }: ChatViewProps) {
               setIsRenameOpen(open);
             }}
           >
-            <Popover.Anchor asChild>
-              <span className="text-[length:var(--font-size-ui-md)] font-medium text-(--color-text-primary) truncate">
-                {currentSession?.name || "AI assistant"}
-              </span>
-            </Popover.Anchor>
             <Popover.Trigger asChild>
               <button
                 aria-label="Rename session"
@@ -127,6 +125,7 @@ export function ChatView({ onShowHistory, onNewSession }: ChatViewProps) {
                 <Pencil className="w-3 h-3 text-(--color-text-tertiary)" />
               </button>
             </Popover.Trigger>
+            <Popover.Portal>
               <Popover.Content
                 className="bg-(--color-bg-elevated) border border-(--color-border-subtle) rounded-(--radius-base) shadow-(--shadow-md) p-2 z-50 flex items-center gap-1"
                 side="bottom"
@@ -185,6 +184,7 @@ export function ChatView({ onShowHistory, onNewSession }: ChatViewProps) {
                   }
                 </button>
               </Popover.Content>
+            </Popover.Portal>
           </Popover.Root>
         </div>
         <div className="flex items-center gap-1">
