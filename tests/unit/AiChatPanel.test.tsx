@@ -1,7 +1,6 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent, act } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-// Mock Tauri API before importing components
 vi.mock("@tauri-apps/api/core", () => ({
   invoke: vi.fn(),
   Channel: function () {
@@ -14,7 +13,6 @@ import { useAiChatStore } from "@/stores/aiChat";
 
 beforeEach(() => {
   vi.clearAllMocks();
-  // jsdom does not implement scrollIntoView
   Element.prototype.scrollIntoView = vi.fn();
   useAiChatStore.setState({
     messages: [],
@@ -23,143 +21,54 @@ beforeEach(() => {
     isAuthenticated: false,
     authChecked: false,
     awsProfile: null,
+    currentSession: null,
+    sessions: [],
     error: null,
-    // Override checkAuth so the useEffect on mount does not change state
     checkAuth: vi.fn() as unknown as () => Promise<void>,
+    login: vi.fn() as unknown as () => Promise<void>,
+    setAwsProfile: vi.fn() as unknown as (profile: string) => Promise<void>,
+    clearAwsProfile: vi.fn() as unknown as () => Promise<void>,
+    sendMessage: vi.fn() as unknown as (content: string) => Promise<void>,
+    newSession: vi.fn() as unknown as () => void,
+    resumeSession: vi.fn() as unknown as (id: string) => void,
   });
 });
 
-describe("AiChatPanel", () => {
-  describe("Auth checking state", () => {
-    it("shows loading spinner when authChecked is false", () => {
-      const { container } = render(<AiChatPanel />);
-      const spinner = container.querySelector(".animate-spin");
-      expect(spinner).toBeInTheDocument();
-    });
+describe("AiChatPanel routing", () => {
+  it("renders ConfigurationView when authChecked is false", () => {
+    render(<AiChatPanel />);
+    expect(screen.getByText("AI settings")).toBeInTheDocument();
   });
 
-  describe("Not authenticated, no profile", () => {
-    beforeEach(() => {
-      useAiChatStore.setState({
-        authChecked: true,
-        isAuthenticated: false,
-        awsProfile: null,
-      });
-    });
-
-    it("shows 'Connect to AWS Bedrock' text", () => {
-      render(<AiChatPanel />);
-      expect(screen.getByText("Connect to AWS Bedrock")).toBeInTheDocument();
-    });
-
-    it("shows profile input field with placeholder", () => {
-      render(<AiChatPanel />);
-      expect(
-        screen.getByPlaceholderText("e.g., ai-prod-llm"),
-      ).toBeInTheDocument();
-    });
-
-    it("shows 'Connect' button", () => {
-      render(<AiChatPanel />);
-      expect(
-        screen.getByRole("button", { name: "Connect" }),
-      ).toBeInTheDocument();
-    });
+  it("renders ConfigurationView when not authenticated", () => {
+    useAiChatStore.setState({ authChecked: true, isAuthenticated: false });
+    render(<AiChatPanel />);
+    expect(screen.getByText("AI settings")).toBeInTheDocument();
   });
 
-  describe("Not authenticated, has profile", () => {
-    beforeEach(() => {
-      useAiChatStore.setState({
-        authChecked: true,
-        isAuthenticated: false,
-        awsProfile: "my-profile",
-      });
-    });
-
-    it("shows 'Session expired' text", () => {
-      render(<AiChatPanel />);
-      expect(screen.getByText("Session expired")).toBeInTheDocument();
-    });
-
-    it("shows 'Re-authenticate' button", () => {
-      render(<AiChatPanel />);
-      expect(
-        screen.getByRole("button", { name: "Re-authenticate" }),
-      ).toBeInTheDocument();
-    });
-
-    it("shows 'Change profile' link", () => {
-      render(<AiChatPanel />);
-      expect(
-        screen.getByRole("button", { name: "Change profile" }),
-      ).toBeInTheDocument();
-    });
+  it("renders ChatView when authenticated", () => {
+    useAiChatStore.setState({ authChecked: true, isAuthenticated: true });
+    render(<AiChatPanel />);
+    expect(screen.getByText("AI assistant")).toBeInTheDocument();
   });
 
-  describe("Authenticated empty state", () => {
-    beforeEach(() => {
-      useAiChatStore.setState({
-        authChecked: true,
-        isAuthenticated: true,
-        messages: [],
-      });
+  it("renders ConfigurationView when credentials expire while in history view", async () => {
+    useAiChatStore.setState({ authChecked: true, isAuthenticated: true });
+    render(<AiChatPanel />);
+    // Navigate to history view
+    fireEvent.click(screen.getByLabelText("Session history"));
+    // Credentials expire
+    act(() => {
+      useAiChatStore.setState({ isAuthenticated: false });
     });
-
-    it("shows suggested prompts", () => {
-      render(<AiChatPanel />);
-      expect(
-        screen.getByText("Summarize this document"),
-      ).toBeInTheDocument();
-      expect(
-        screen.getByText("What documents relate to this one?"),
-      ).toBeInTheDocument();
-      expect(
-        screen.getByText("What context do I need to understand this?"),
-      ).toBeInTheDocument();
-    });
-
-    it("shows 'Summarize this document' as a clickable button", () => {
-      render(<AiChatPanel />);
-      const button = screen.getByText("Summarize this document");
-      expect(button.tagName).toBe("BUTTON");
-    });
+    // ConfigurationView should take precedence
+    expect(screen.getByText("AI settings")).toBeInTheDocument();
   });
 
-  describe("Authenticated with messages", () => {
-    beforeEach(() => {
-      useAiChatStore.setState({
-        authChecked: true,
-        isAuthenticated: true,
-        messages: [
-          { role: "user", content: "Hello there" },
-          { role: "assistant", content: "Hi! How can I help?" },
-        ],
-      });
-    });
-
-    it("renders messages", () => {
-      render(<AiChatPanel />);
-      expect(screen.getByText("Hello there")).toBeInTheDocument();
-      expect(screen.getByText("Hi! How can I help?")).toBeInTheDocument();
-    });
-
-    it("shows input textarea", () => {
-      render(<AiChatPanel />);
-      expect(
-        screen.getByPlaceholderText("Ask a question..."),
-      ).toBeInTheDocument();
-    });
-  });
-
-  describe("Header", () => {
-    beforeEach(() => {
-      useAiChatStore.setState({ authChecked: true });
-    });
-
-    it("shows 'AI Assistant' text", () => {
-      render(<AiChatPanel />);
-      expect(screen.getByText("AI assistant")).toBeInTheDocument();
-    });
-
+  it("renders SessionHistoryView when navigating to history", async () => {
+    useAiChatStore.setState({ authChecked: true, isAuthenticated: true });
+    render(<AiChatPanel />);
+    fireEvent.click(screen.getByLabelText("Session history"));
+    expect(screen.getByText("Conversation history")).toBeInTheDocument();
   });
 });

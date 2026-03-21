@@ -29,6 +29,7 @@ interface AiChatStore {
   login: () => Promise<void>;
   sendMessage: (content: string) => Promise<void>;
   setAwsProfile: (profile: string) => Promise<void>;
+  clearAwsProfile: () => Promise<void>;
   startAuthoring: (skillName?: string | null) => void;
   loadSessions: () => Promise<void>;
   saveCurrentSession: () => Promise<void>;
@@ -211,6 +212,21 @@ export const useAiChatStore = create<AiChatStore>((set, get) => ({
         preferences: { ...existingPrefs, aws_profile: profile },
       });
       await get().checkAuth();
+    } catch (e) {
+      set({
+        error: e instanceof Error ? e.message : String(e),
+      });
+    }
+  },
+
+  clearAwsProfile: async () => {
+    set({ awsProfile: null, authChecked: true, isAuthenticated: false });
+    try {
+      const existingRaw = await invoke("load_preferences");
+      const existingPrefs = parsePreferences(existingRaw);
+      await invoke("save_preferences", {
+        preferences: { ...existingPrefs, aws_profile: null },
+      });
     } catch (e) {
       set({
         error: e instanceof Error ? e.message : String(e),
