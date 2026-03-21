@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 vi.mock("@tauri-apps/api/core", () => ({
@@ -101,6 +101,60 @@ describe("ChatView", () => {
       render(<ChatView onShowHistory={onShowHistory} onNewSession={onNewSession} />);
       screen.getByText("Summarize this document").click();
       expect(sendMessage).toHaveBeenCalledWith("Summarize this document");
+    });
+  });
+
+  describe("Header rename popover", () => {
+    beforeEach(() => {
+      useAiChatStore.setState({
+        currentSession: makeSession({ id: "s1", name: "My session", messages_compacted: [
+          { role: "user" as const, content: [{ type: "text" as const, text: "hi" }] }
+        ]}),
+        renameSession: vi.fn().mockResolvedValue(undefined) as unknown as (id: string, name: string) => Promise<void>,
+        suggestSessionName: vi.fn().mockResolvedValue("AI suggested name") as unknown as (sessionId: string) => Promise<string>,
+      });
+    });
+
+    it("shows pencil button in header", () => {
+      render(<ChatView onShowHistory={onShowHistory} onNewSession={onNewSession} />);
+      expect(screen.getByLabelText("Rename session")).toBeInTheDocument();
+    });
+
+    it("opens rename popover when pencil clicked", () => {
+      render(<ChatView onShowHistory={onShowHistory} onNewSession={onNewSession} />);
+      fireEvent.click(screen.getByLabelText("Rename session"));
+      expect(screen.getByDisplayValue("My session")).toBeInTheDocument();
+    });
+
+    it("calls renameSession on Enter", async () => {
+      const renameSession = vi.fn().mockResolvedValue(undefined) as unknown as (id: string, name: string) => Promise<void>;
+      useAiChatStore.setState({ renameSession });
+      render(<ChatView onShowHistory={onShowHistory} onNewSession={onNewSession} />);
+      fireEvent.click(screen.getByLabelText("Rename session"));
+      const input = screen.getByDisplayValue("My session");
+      fireEvent.change(input, { target: { value: "Better name" } });
+      fireEvent.keyDown(input, { key: "Enter" });
+      expect(renameSession).toHaveBeenCalledWith("s1", "Better name");
+    });
+
+    it("does not call renameSession on Esc", () => {
+      const renameSession = vi.fn().mockResolvedValue(undefined) as unknown as (id: string, name: string) => Promise<void>;
+      useAiChatStore.setState({ renameSession });
+      render(<ChatView onShowHistory={onShowHistory} onNewSession={onNewSession} />);
+      fireEvent.click(screen.getByLabelText("Rename session"));
+      fireEvent.keyDown(screen.getByDisplayValue("My session"), { key: "Escape" });
+      expect(renameSession).not.toHaveBeenCalled();
+    });
+
+    it("disables sparkle when session has no messages", () => {
+      useAiChatStore.setState({
+        currentSession: makeSession({ id: "s1", name: "My session", messages_compacted: [] }),
+        renameSession: vi.fn() as unknown as (id: string, name: string) => Promise<void>,
+        suggestSessionName: vi.fn() as unknown as (sessionId: string) => Promise<string>,
+      });
+      render(<ChatView onShowHistory={onShowHistory} onNewSession={onNewSession} />);
+      fireEvent.click(screen.getByLabelText("Rename session"));
+      expect(screen.getByTestId("header-suggest-btn")).toBeDisabled();
     });
   });
 
