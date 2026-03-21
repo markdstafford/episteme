@@ -145,7 +145,11 @@ export function SessionHistoryView({
                     >
                       {deletingId === session.id ? (
                         // Inline delete confirmation — avoids Portal/overflow/DismissableLayer conflicts
-                        <div className="flex-1 flex items-center gap-2 px-3 py-2 bg-(--color-bg-hover)" onClick={e => e.stopPropagation()}>
+                        <div
+                          className="flex-1 flex items-center gap-2 px-3 py-2 bg-(--color-bg-hover)"
+                          onClick={e => e.stopPropagation()}
+                          onKeyDown={e => { if (e.key === "Escape") setDeletingId(null); }}
+                        >
                           <span className="text-[length:var(--font-size-ui-xs)] text-(--color-text-secondary) flex-1 min-w-0">
                             {currentSessionId === session.id
                               ? "This is your active conversation. Deleting it will start a new one."
