@@ -62,6 +62,7 @@ export function SessionHistoryView({
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState("");
   const [isSuggestingId, setIsSuggestingId] = useState<string | null>(null);
+  const renameInputRef = useRef<HTMLInputElement>(null);
   const renameCommittedRef = useRef(false);
   const skipNextBlurRef = useRef(false);
 
@@ -154,6 +155,7 @@ export function SessionHistoryView({
                               <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
                                 <input
                                   autoFocus
+                                  ref={renameInputRef}
                                   className="flex-1 min-w-0 text-[length:var(--font-size-ui-base)] bg-(--color-bg-subtle) border border-(--color-border-subtle) rounded-(--radius-sm) px-1.5 py-0.5 text-(--color-text-primary) outline-none focus:border-(--color-accent)"
                                   value={renameValue}
                                   onChange={e => setRenameValue(e.target.value)}
@@ -190,6 +192,7 @@ export function SessionHistoryView({
                                     try {
                                       const suggested = await onSuggestName(session.id);
                                       setRenameValue(suggested);
+                                      renameInputRef.current?.focus();
                                     } finally {
                                       setIsSuggestingId(null);
                                     }

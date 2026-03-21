@@ -16,6 +16,7 @@ export function ChatView({ onShowHistory, onNewSession }: ChatViewProps) {
   const [renameValue, setRenameValue] = useState("");
   const [isSuggesting, setIsSuggesting] = useState(false);
   const skipNextBlurRef = useRef(false);
+  const renameInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
 
@@ -136,6 +137,7 @@ export function ChatView({ onShowHistory, onNewSession }: ChatViewProps) {
               >
                 <input
                   autoFocus
+                  ref={renameInputRef}
                   aria-label="Session name"
                   disabled={isSuggesting}
                   className="flex-1 min-w-0 text-[length:var(--font-size-ui-base)] bg-(--color-bg-subtle) border border-(--color-border-subtle) rounded-(--radius-sm) px-2 py-1 text-(--color-text-primary) outline-none focus:border-(--color-accent)"
@@ -163,14 +165,15 @@ export function ChatView({ onShowHistory, onNewSession }: ChatViewProps) {
                 <button
                   data-testid="header-suggest-btn"
                   disabled={!currentSession || currentSession.messages_compacted.length === 0 || isSuggesting}
+                  onMouseDown={() => { skipNextBlurRef.current = true; }}
                   onClick={async (e) => {
                     e.stopPropagation();
                     if (!currentSession) return;
-                    skipNextBlurRef.current = true;
                     setIsSuggesting(true);
                     try {
                       const suggested = await suggestSessionName(currentSession.id);
                       setRenameValue(suggested);
+                      renameInputRef.current?.focus();
                     } finally {
                       setIsSuggesting(false);
                     }
