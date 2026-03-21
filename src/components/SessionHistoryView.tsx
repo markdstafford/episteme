@@ -67,6 +67,19 @@ export function SessionHistoryView({
   const skipNextBlurRef = useRef(false);
   const prevIsSuggestingIdRef = useRef<string | null>(null);
 
+  // Focus the input when rename mode is entered.
+  // requestAnimationFrame defers until after Radix's setTimeout(0) focus
+  // restoration, so focus sticks. It also doesn't run inside React's act(),
+  // so tests are unaffected.
+  useEffect(() => {
+    if (renamingId !== null) {
+      const raf = requestAnimationFrame(() => {
+        renameInputRef.current?.focus();
+      });
+      return () => cancelAnimationFrame(raf);
+    }
+  }, [renamingId]);
+
   // Focus the input after AI suggestion completes (input was disabled during loading)
   useEffect(() => {
     if (prevIsSuggestingIdRef.current !== null && isSuggestingId === null && renamingId !== null) {
@@ -200,8 +213,7 @@ export function SessionHistoryView({
                                   onBlur={() => {
                                     if (skipNextBlurRef.current) {
                                       skipNextBlurRef.current = false;
-                                      // Radix stole focus back — immediately reclaim it
-                                      renameInputRef.current?.focus();
+                                      // Radix stole focus — suppressed; useEffect will re-focus
                                       return;
                                     }
                                     if (renameCommittedRef.current) {
