@@ -368,16 +368,16 @@ No new logging beyond what's already covered by existing commands. `save_session
       - [x] Unit tests: context menu opens on right-click; dropdown opens on ellipsis click; all items present; pin calls `onPin`; rename enters edit mode
     - **Dependencies**: "Task: Add pin icon and ellipsis button with hover behavior"
 
-  - [ ] **Task: Implement inline rename with AI suggest**
+  - [x] **Task: Implement inline rename with AI suggest**
     - **Description**: When `renamingId` matches a session's id, replace the session name `<p>` with a text `<input>` pre-populated with the current name, and a ✦ (Sparkle) button to its right. On Enter or blur: call `onRename(session.id, inputValue)` and clear `renamingId`. On Esc: clear `renamingId` without calling `onRename`. On ✦ click: set `isSuggestingId` state, call `onSuggestName(session.id)`, await the result, populate the input, clear `isSuggestingId`. While suggestion is loading: disable the input and show a `Loader2` spinner in place of the ✦ icon. Disable ✦ when `session.messages_compacted.length === 0`.
     - **Acceptance criteria**:
-      - [ ] Input pre-populated with current session name
-      - [ ] Enter calls `onRename` with new value and exits edit mode
-      - [ ] Blur calls `onRename` with current value and exits edit mode
-      - [ ] Esc exits edit mode without calling `onRename`
-      - [ ] ✦ disabled when session has no messages
-      - [ ] ✦ click calls `onSuggestName`; input disabled and spinner shown while loading; input populated and re-enabled on resolution
-      - [ ] Unit tests cover all cases above
+      - [x] Input pre-populated with current session name
+      - [x] Enter calls `onRename` with new value and exits edit mode
+      - [x] Blur calls `onRename` with current value and exits edit mode
+      - [x] Esc exits edit mode without calling `onRename`
+      - [x] ✦ disabled when session has no messages
+      - [x] ✦ click calls `onSuggestName`; input disabled and spinner shown while loading; input populated and re-enabled on resolution
+      - [x] Unit tests cover all cases above
     - **Dependencies**: "Task: Add context menu to session rows"
 
   - [ ] **Task: Implement delete confirmation popover**
