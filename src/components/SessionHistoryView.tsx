@@ -1,9 +1,8 @@
 import { ArrowLeft, Plus, Pin, PinOff, Ellipsis, Loader2, Sparkles } from "lucide-react";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { type Session, type SessionScope } from "@/lib/session";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import * as ContextMenu from "@radix-ui/react-context-menu";
-import * as Popover from "@radix-ui/react-popover";
 
 interface SessionHistoryViewProps {
   sessions: Session[];
@@ -66,6 +65,15 @@ export function SessionHistoryView({
   const originalRenameValueRef = useRef("");
   const renameCommittedRef = useRef(false);
   const skipNextBlurRef = useRef(false);
+  const prevIsSuggestingIdRef = useRef<string | null>(null);
+
+  // Focus the input after AI suggestion completes (input was disabled during loading)
+  useEffect(() => {
+    if (prevIsSuggestingIdRef.current !== null && isSuggestingId === null && renamingId !== null) {
+      renameInputRef.current?.focus();
+    }
+    prevIsSuggestingIdRef.current = isSuggestingId;
+  }, [isSuggestingId, renamingId]);
 
   const filtered = sessions
     .filter((s) => matchesScope(s, currentScope))
@@ -115,19 +123,36 @@ export function SessionHistoryView({
             {filtered.map((session) => {
               const isCurrent = session.id === currentSessionId;
               return (
-                <Popover.Root
-                  key={session.id}
-                  open={deletingId === session.id}
-                  onOpenChange={(open) => { if (!open) setDeletingId(null); }}
-                >
-                  <Popover.Anchor asChild>
-                    <ContextMenu.Root>
-                      <ContextMenu.Trigger asChild>
-                        <li
-                          data-testid={`session-row-${session.id}`}
-                          data-current={isCurrent ? "true" : undefined}
-                          className="group flex items-stretch cursor-pointer hover:bg-(--color-bg-hover) border-b border-(--color-border-subtle)"
-                        >
+                <ContextMenu.Root key={session.id}>
+                  <ContextMenu.Trigger asChild>
+                    <li
+                      data-testid={`session-row-${session.id}`}
+                      data-current={isCurrent ? "true" : undefined}
+                      className="group flex items-stretch border-b border-(--color-border-subtle)"
+                    >
+                      {deletingId === session.id ? (
+                        // Inline delete confirmation — avoids Portal/overflow/DismissableLayer conflicts
+                        <div className="flex-1 flex items-center gap-2 px-3 py-2 bg-(--color-bg-hover)" onClick={e => e.stopPropagation()}>
+                          <span className="text-[length:var(--font-size-ui-xs)] text-(--color-text-secondary) flex-1 min-w-0">
+                            {currentSessionId === session.id
+                              ? "This is your active conversation. Deleting it will start a new one."
+                              : "Delete this conversation?"}
+                          </span>
+                          <button
+                            onClick={() => setDeletingId(null)}
+                            className="px-1.5 py-0.5 text-[length:var(--font-size-ui-xs)] text-(--color-text-secondary) hover:bg-(--color-bg-subtle) rounded-(--radius-sm) flex-shrink-0"
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            onClick={() => { onDelete(session.id); setDeletingId(null); }}
+                            className="px-1.5 py-0.5 text-[length:var(--font-size-ui-xs)] text-(--color-state-danger) hover:bg-(--color-bg-subtle) rounded-(--radius-sm) flex-shrink-0"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      ) : (
+                        <>
                           {/* Accent left border */}
                           <div style={{ width: 3, flexShrink: 0, backgroundColor: isCurrent ? "var(--color-accent)" : "transparent" }} />
 
@@ -175,6 +200,8 @@ export function SessionHistoryView({
                                   onBlur={() => {
                                     if (skipNextBlurRef.current) {
                                       skipNextBlurRef.current = false;
+                                      // Radix stole focus back — immediately reclaim it
+                                      renameInputRef.current?.focus();
                                       return;
                                     }
                                     if (renameCommittedRef.current) {
@@ -267,62 +294,35 @@ export function SessionHistoryView({
                               </DropdownMenu.Content>
                             </DropdownMenu.Portal>
                           </DropdownMenu.Root>
-                        </li>
-                      </ContextMenu.Trigger>
-                      <ContextMenu.Portal>
-                        <ContextMenu.Content
-                          className="min-w-36 bg-(--color-bg-elevated) border border-(--color-border-subtle) rounded-(--radius-base) shadow-(--shadow-md) p-1 z-50"
-                        >
-                          <ContextMenu.Item
-                            className="px-3 py-1.5 text-[length:var(--font-size-ui-base)] text-(--color-text-primary) cursor-pointer hover:bg-(--color-bg-hover) outline-none rounded-(--radius-sm)"
-                            onSelect={() => onPin(session.id, !session.pinned)}
-                          >
-                            {session.pinned ? "Unpin" : "Pin"}
-                          </ContextMenu.Item>
-                          <ContextMenu.Item
-                            className="px-3 py-1.5 text-[length:var(--font-size-ui-base)] text-(--color-text-primary) cursor-pointer hover:bg-(--color-bg-hover) outline-none rounded-(--radius-sm)"
-                            onSelect={() => { skipNextBlurRef.current = true; originalRenameValueRef.current = session.name; setRenamingId(session.id); setRenameValue(session.name); }}
-                          >
-                            Rename
-                          </ContextMenu.Item>
-                          <ContextMenu.Item
-                            className="px-3 py-1.5 text-[length:var(--font-size-ui-base)] text-(--color-state-danger) cursor-pointer hover:bg-(--color-bg-hover) outline-none rounded-(--radius-sm)"
-                            onSelect={() => setDeletingId(session.id)}
-                          >
-                            Delete
-                          </ContextMenu.Item>
-                        </ContextMenu.Content>
-                      </ContextMenu.Portal>
-                    </ContextMenu.Root>
-                  </Popover.Anchor>
-                    <Popover.Content
-                      className="bg-(--color-bg-elevated) border border-(--color-border-subtle) rounded-(--radius-base) shadow-(--shadow-md) p-3 max-w-56 z-50"
-                      side="bottom"
-                      align="start"
-                      onInteractOutside={(e) => e.preventDefault()}
+                      </>
+                      )}
+                    </li>
+                  </ContextMenu.Trigger>
+                  <ContextMenu.Portal>
+                    <ContextMenu.Content
+                      className="min-w-36 bg-(--color-bg-elevated) border border-(--color-border-subtle) rounded-(--radius-base) shadow-(--shadow-md) p-1 z-50"
                     >
-                      <p className="text-[length:var(--font-size-ui-sm)] text-(--color-text-primary) mb-3">
-                        {currentSessionId === session.id
-                          ? "This is your active conversation. Deleting it will start a new one."
-                          : "Delete this conversation?"
-                        }
-                      </p>
-                      <div className="flex gap-2 justify-end">
-                        <button
-                          onClick={() => setDeletingId(null)}
-                          className="px-2 py-1 text-[length:var(--font-size-ui-sm)] text-(--color-text-secondary) hover:bg-(--color-bg-hover) rounded-(--radius-sm)"
-                        >
-                          Cancel
-                        </button>
-                        <button
-                          onClick={() => { onDelete(session.id); setDeletingId(null); }}
-                          className="px-2 py-1 text-[length:var(--font-size-ui-sm)] text-(--color-state-danger) hover:bg-(--color-bg-hover) rounded-(--radius-sm)"
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </Popover.Content>
-                </Popover.Root>
+                      <ContextMenu.Item
+                        className="px-3 py-1.5 text-[length:var(--font-size-ui-base)] text-(--color-text-primary) cursor-pointer hover:bg-(--color-bg-hover) outline-none rounded-(--radius-sm)"
+                        onSelect={() => onPin(session.id, !session.pinned)}
+                      >
+                        {session.pinned ? "Unpin" : "Pin"}
+                      </ContextMenu.Item>
+                      <ContextMenu.Item
+                        className="px-3 py-1.5 text-[length:var(--font-size-ui-base)] text-(--color-text-primary) cursor-pointer hover:bg-(--color-bg-hover) outline-none rounded-(--radius-sm)"
+                        onSelect={() => { skipNextBlurRef.current = true; originalRenameValueRef.current = session.name; setRenamingId(session.id); setRenameValue(session.name); }}
+                      >
+                        Rename
+                      </ContextMenu.Item>
+                      <ContextMenu.Item
+                        className="px-3 py-1.5 text-[length:var(--font-size-ui-base)] text-(--color-state-danger) cursor-pointer hover:bg-(--color-bg-hover) outline-none rounded-(--radius-sm)"
+                        onSelect={() => setDeletingId(session.id)}
+                      >
+                        Delete
+                      </ContextMenu.Item>
+                    </ContextMenu.Content>
+                  </ContextMenu.Portal>
+                </ContextMenu.Root>
               );
             })}
           </ul>

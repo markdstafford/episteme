@@ -18,6 +18,7 @@ export function ChatView({ onShowHistory, onNewSession }: ChatViewProps) {
   const skipNextBlurRef = useRef(false);
   const originalRenameValueRef = useRef("");
   const renameInputRef = useRef<HTMLInputElement>(null);
+  const prevIsSuggestingRef = useRef(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
 
@@ -35,6 +36,14 @@ export function ChatView({ onShowHistory, onNewSession }: ChatViewProps) {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, streamingContent]);
+
+  // Focus the rename input after AI suggestion completes (input was disabled during loading)
+  useEffect(() => {
+    if (prevIsSuggestingRef.current && !isSuggesting && isRenameOpen) {
+      renameInputRef.current?.focus();
+    }
+    prevIsSuggestingRef.current = isSuggesting;
+  }, [isSuggesting, isRenameOpen]);
 
   const handleSend = () => {
     if (!input.trim() || isStreaming) return;
