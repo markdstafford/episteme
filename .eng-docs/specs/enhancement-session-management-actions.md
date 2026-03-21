@@ -344,7 +344,7 @@ No new logging beyond what's already covered by existing commands. `save_session
       - [x] Unit tests cover all acceptance criteria above
     - **Dependencies**: "Task: Register `ai_suggest_session_name` in `lib.rs`"
 
-- [ ] **Story: Session history row actions**
+- [x] **Story: Session history row actions**
   - [x] **Task: Add pin icon and ellipsis button with hover behavior**
     - **Description**: In `SessionHistoryView`, add per-row hover state using Tailwind `group` class and `group-hover:` utilities. Add a `Pin` (or `PinOff`) Lucide icon on the left of the row content — always visible at full opacity for pinned sessions, visible on hover for unpinned, but always occupying space so rows don't shift. Add an `Ellipsis` Lucide icon on the right — visible on hover for all rows, always occupying space. Clicking the pin icon calls `onPin(session.id, !session.pinned)` directly (no menu required).
     - **Acceptance criteria**:
@@ -363,7 +363,7 @@ No new logging beyond what's already covered by existing commands. `save_session
       - [x] Both menus contain Pin/Unpin, Rename, and Delete items
       - [x] Pin/Unpin label reflects current pinned state
       - [x] Selecting Pin/Unpin calls `onPin` with the toggled value
-      - [ ] Selecting Rename enters inline edit mode (Task 5)
+      - [x] Selecting Rename enters inline edit mode (Task 5)
       - [x] Delete item styled with danger color
       - [x] Unit tests: context menu opens on right-click; dropdown opens on ellipsis click; all items present; pin calls `onPin`; rename enters edit mode
     - **Dependencies**: "Task: Add pin icon and ellipsis button with hover behavior"
@@ -380,36 +380,36 @@ No new logging beyond what's already covered by existing commands. `save_session
       - [x] Unit tests cover all cases above
     - **Dependencies**: "Task: Add context menu to session rows"
 
-  - [ ] **Task: Implement delete confirmation popover**
+  - [x] **Task: Implement delete confirmation popover**
     - **Description**: When `deletingId` matches a session's id, show a Radix `Popover` anchored to that row. If the session id matches `currentSessionId`, text reads: "This is your active conversation. Deleting it will start a new one." Otherwise: "Delete this conversation?" Both variants include a destructive **Delete** button (calls `onDelete(session.id)`, clears `deletingId`) and a **Cancel** button (clears `deletingId`). Style the Delete button with `--color-state-danger`.
     - **Acceptance criteria**:
-      - [ ] Shows "Delete this conversation?" for inactive sessions
-      - [ ] Shows active-session-specific text when id matches `currentSessionId`
-      - [ ] Delete button calls `onDelete` with correct id and closes popover
-      - [ ] Cancel closes popover without calling `onDelete`
-      - [ ] Unit tests cover both text variants and both button actions
+      - [x] Shows "Delete this conversation?" for inactive sessions
+      - [x] Shows active-session-specific text when id matches `currentSessionId`
+      - [x] Delete button calls `onDelete` with correct id and closes popover
+      - [x] Cancel closes popover without calling `onDelete`
+      - [x] Unit tests cover both text variants and both button actions
     - **Dependencies**: "Task: Add context menu to session rows"
 
-  - [ ] **Task: Wire new callbacks in `AiChatPanel`**
+  - [x] **Task: Wire new callbacks in `AiChatPanel`**
     - **Description**: Pass the four new props to `SessionHistoryView` from `AiChatPanel`: `onRename` calls `renameSession`, `onPin` calls `pinSession`, `onSuggestName` calls `suggestSessionName`, `onDelete` calls `deleteSession` and — if the deleted id matches `currentSession?.id` — also calls `setView("chat")`.
     - **Acceptance criteria**:
-      - [ ] All four props wired to the corresponding store actions
-      - [ ] `setView("chat")` called after deleting the active session
-      - [ ] TypeScript compiles with no errors
+      - [x] All four props wired to the corresponding store actions
+      - [x] `setView("chat")` called after deleting the active session
+      - [x] TypeScript compiles with no errors
     - **Dependencies**: "Task: Implement inline rename with AI suggest", "Task: Implement delete confirmation popover"
 
-- [ ] **Story: Chat header rename**
-  - [ ] **Task: Add rename popover to chat header in `ChatView`**
+- [x] **Story: Chat header rename**
+  - [x] **Task: Add rename popover to chat header in `ChatView`**
     - **Description**: In `ChatView`, wrap the session name `<span>` and `MessageSquare` icon in a Tailwind `group`. On hover, show a `Pencil` icon button to the right of the name. Clicking the button opens a Radix `Popover` anchored below containing: a text input pre-populated with `currentSession.name`, and a ✦ (Sparkle) button. On Enter or clicking outside the popover: call `renameSession(currentSession.id, inputValue)` from the store and close the popover. On Esc: close without saving. On ✦ click: call `suggestSessionName(currentSession.id)`, disable input and show `Loader2` spinner while loading, populate field on resolution. Disable ✦ when `currentSession.messages_compacted.length === 0`.
     - **Acceptance criteria**:
-      - [ ] Pencil icon appears on hover of the session name area
-      - [ ] Clicking Pencil opens rename popover below the header
-      - [ ] Input pre-populated with current session name
-      - [ ] Enter calls `renameSession` and closes popover
-      - [ ] Clicking outside calls `renameSession` and closes popover
-      - [ ] Esc closes popover without saving
-      - [ ] ✦ disabled when session has no messages
-      - [ ] ✦ click triggers suggestion; input disabled during loading; field populated on resolution
-      - [ ] Chat header updates reactively after rename (store subscription)
-      - [ ] Unit tests cover all cases above
+      - [x] Pencil icon appears on hover of the session name area
+      - [x] Clicking Pencil opens rename popover below the header
+      - [x] Input pre-populated with current session name
+      - [x] Enter calls `renameSession` and closes popover
+      - [x] Clicking outside calls `renameSession` and closes popover
+      - [x] Esc closes popover without saving
+      - [x] ✦ disabled when session has no messages
+      - [x] ✦ click triggers suggestion; input disabled during loading; field populated on resolution
+      - [x] Chat header updates reactively after rename (store subscription)
+      - [x] Unit tests cover all cases above
     - **Dependencies**: "Task: Add `renameSession`, `pinSession`, `deleteSession`, `suggestSessionName` to `useAiChatStore`"
