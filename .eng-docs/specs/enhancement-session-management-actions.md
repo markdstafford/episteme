@@ -345,27 +345,27 @@ No new logging beyond what's already covered by existing commands. `save_session
     - **Dependencies**: "Task: Register `ai_suggest_session_name` in `lib.rs`"
 
 - [ ] **Story: Session history row actions**
-  - [ ] **Task: Add pin icon and ellipsis button with hover behavior**
+  - [x] **Task: Add pin icon and ellipsis button with hover behavior**
     - **Description**: In `SessionHistoryView`, add per-row hover state using Tailwind `group` class and `group-hover:` utilities. Add a `Pin` (or `PinOff`) Lucide icon on the left of the row content — always visible at full opacity for pinned sessions, visible on hover for unpinned, but always occupying space so rows don't shift. Add an `Ellipsis` Lucide icon on the right — visible on hover for all rows, always occupying space. Clicking the pin icon calls `onPin(session.id, !session.pinned)` directly (no menu required).
     - **Acceptance criteria**:
-      - [ ] Pin icon space always reserved; icon visible without hover for pinned sessions; icon appears on hover for unpinned
-      - [ ] Ellipsis space always reserved; icon appears on hover for all rows
-      - [ ] Clicking pin icon calls `onPin` with the toggled `pinned` value
-      - [ ] Row layout does not shift on hover
-      - [ ] Unit tests: pin visible for pinned without hover; pin visible on hover for unpinned; `onPin` called with correct args
+      - [x] Pin icon space always reserved; icon visible without hover for pinned sessions; icon appears on hover for unpinned
+      - [x] Ellipsis space always reserved; icon appears on hover for all rows
+      - [x] Clicking pin icon calls `onPin` with the toggled `pinned` value
+      - [x] Row layout does not shift on hover
+      - [x] Unit tests: pin visible for pinned without hover; pin visible on hover for unpinned; `onPin` called with correct args
     - **Dependencies**: "Task: Add `renameSession`, `pinSession`, `deleteSession`, `suggestSessionName` to `useAiChatStore`"
 
-  - [ ] **Task: Add context menu to session rows**
+  - [x] **Task: Add context menu to session rows**
     - **Description**: Wrap each session row in a Radix `ContextMenu` (right-click trigger). Wire the `Ellipsis` button from the previous task to open a Radix `DropdownMenu` with the same items. Menu items: **Pin** / **Unpin** (label reflects current state, calls `onPin`), **Rename** (sets local `renamingId` state), **Delete** (sets local `deletingId` state). Style the Delete item text with `--color-state-danger`.
     - **Acceptance criteria**:
-      - [ ] Right-clicking the row opens the context menu
-      - [ ] Clicking the ellipsis button opens the dropdown menu
-      - [ ] Both menus contain Pin/Unpin, Rename, and Delete items
-      - [ ] Pin/Unpin label reflects current pinned state
-      - [ ] Selecting Pin/Unpin calls `onPin` with the toggled value
-      - [ ] Selecting Rename enters inline edit mode
-      - [ ] Delete item styled with danger color
-      - [ ] Unit tests: context menu opens on right-click; dropdown opens on ellipsis click; all items present; pin calls `onPin`; rename enters edit mode
+      - [x] Right-clicking the row opens the context menu
+      - [x] Clicking the ellipsis button opens the dropdown menu
+      - [x] Both menus contain Pin/Unpin, Rename, and Delete items
+      - [x] Pin/Unpin label reflects current pinned state
+      - [x] Selecting Pin/Unpin calls `onPin` with the toggled value
+      - [ ] Selecting Rename enters inline edit mode (Task 5)
+      - [x] Delete item styled with danger color
+      - [x] Unit tests: context menu opens on right-click; dropdown opens on ellipsis click; all items present; pin calls `onPin`; rename enters edit mode
     - **Dependencies**: "Task: Add pin icon and ellipsis button with hover behavior"
 
   - [ ] **Task: Implement inline rename with AI suggest**
