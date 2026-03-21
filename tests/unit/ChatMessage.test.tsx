@@ -41,7 +41,7 @@ describe("ChatMessage", () => {
     expect(outerDiv.className).toContain("justify-start");
   });
 
-  it("user messages have blue background", () => {
+  it("user messages have accent background", () => {
     render(
       <ChatMessage
         message={{ role: "user", content: "Blue user msg" }}
@@ -49,10 +49,10 @@ describe("ChatMessage", () => {
     );
     const msgEl = screen.getByText("Blue user msg").closest("div.max-w-\\[85\\%\\]") ||
       screen.getByText("Blue user msg").parentElement;
-    expect(msgEl?.className).toContain("bg-blue-600");
+    expect(msgEl?.className).toContain("bg-[--color-accent]");
   });
 
-  it("assistant messages have gray background", () => {
+  it("assistant messages have subtle background", () => {
     render(
       <ChatMessage
         message={{ role: "assistant", content: "Gray assistant msg" }}
@@ -60,6 +60,6 @@ describe("ChatMessage", () => {
     );
     const msgEl = screen.getByText("Gray assistant msg").closest("div.max-w-\\[85\\%\\]") ||
       screen.getByText("Gray assistant msg").parentElement;
-    expect(msgEl?.className).toContain("bg-gray-100");
+    expect(msgEl?.className).toContain("bg-[--color-bg-subtle]");
   });
 });
