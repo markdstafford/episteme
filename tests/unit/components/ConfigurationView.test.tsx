@@ -1,4 +1,5 @@
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 vi.mock("@tauri-apps/api/core", () => ({
@@ -73,5 +74,31 @@ describe("ConfigurationView", () => {
     useAiChatStore.setState({ authChecked: true, error: "Something went wrong" });
     render(<ConfigurationView />);
     expect(screen.getByText("Something went wrong")).toBeInTheDocument();
+  });
+
+  it("calls setAwsProfile then login when Connect is clicked", async () => {
+    const setAwsProfile = vi.fn().mockResolvedValue(undefined);
+    const login = vi.fn().mockResolvedValue(undefined);
+    useAiChatStore.setState({ authChecked: true, setAwsProfile, login });
+    const { getByPlaceholderText, getByRole } = render(<ConfigurationView />);
+    await userEvent.type(getByPlaceholderText("e.g., ai-prod-llm"), "my-profile");
+    await userEvent.click(getByRole("button", { name: "Connect" }));
+    expect(setAwsProfile).toHaveBeenCalledWith("my-profile");
+    expect(login).toHaveBeenCalled();
+  });
+
+  it("calls login when Re-authenticate is clicked", async () => {
+    const login = vi.fn().mockResolvedValue(undefined);
+    useAiChatStore.setState({ authChecked: true, awsProfile: "my-profile", login });
+    const { getByRole } = render(<ConfigurationView />);
+    await userEvent.click(getByRole("button", { name: "Re-authenticate" }));
+    expect(login).toHaveBeenCalled();
+  });
+
+  it("resets awsProfile when Change profile is clicked", async () => {
+    useAiChatStore.setState({ authChecked: true, awsProfile: "my-profile" });
+    const { getByRole } = render(<ConfigurationView />);
+    await userEvent.click(getByRole("button", { name: "Change profile" }));
+    expect(useAiChatStore.getState().awsProfile).toBeNull();
   });
 });
