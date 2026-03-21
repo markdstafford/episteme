@@ -1,10 +1,10 @@
 ---
 created: 2026-03-20
 last_updated: 2026-03-20
-status: approved
+status: complete
 issue: 94
 specced_by: markdstafford
-implemented_by: null
+implemented_by: markdstafford
 superseded_by: null
 ---
 
