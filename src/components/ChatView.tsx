@@ -50,7 +50,7 @@ export function ChatView({ onShowHistory, onNewSession }: ChatViewProps) {
               <button
                 key={prompt}
                 onClick={() => sendMessage(prompt)}
-                className="w-full px-3 py-2 text-[--font-size-ui-base] text-left text-[--color-text-secondary] bg-[--color-bg-subtle] hover:bg-[--color-bg-hover] rounded-[--radius-base] transition-colors duration-[--duration-fast]"
+                className="w-full px-3 py-2 text-[--font-size-ui-base] text-left text-[--color-text-secondary] bg-[--color-bg-subtle] hover:bg-[--color-bg-hover] rounded-[--radius-base] transition-colors duration-(--duration-fast)"
               >
                 {prompt}
               </button>
