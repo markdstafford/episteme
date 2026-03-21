@@ -11,14 +11,14 @@ export function ChatMessage({ message }: ChatMessageProps) {
   return (
     <div className={`flex ${isUser ? "justify-end" : "justify-start"} mb-3`}>
       <div
-        className={`max-w-[85%] px-4 py-2 rounded-[--radius-md] ${
+        className={`max-w-[85%] px-4 py-2 rounded-(--radius-md) ${
           isUser
-            ? "bg-[--color-accent] text-[--color-text-on-accent]"
-            : "bg-[--color-bg-subtle] text-[--color-text-primary]"
+            ? "bg-(--color-accent) text-(--color-text-on-accent)"
+            : "bg-(--color-bg-subtle) text-(--color-text-primary)"
         }`}
       >
         {isUser ? (
-          <p className="text-[--font-size-ui-base] whitespace-pre-wrap">
+          <p className="text-[length:var(--font-size-ui-base)] whitespace-pre-wrap">
             {message.content}
           </p>
         ) : (

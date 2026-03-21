@@ -27,7 +27,7 @@ export function Sidebar({ children }: SidebarProps) {
             {folderName && (
               <div
                 data-testid="folder-header"
-                className="px-[var(--space-3)] py-[var(--space-2)] flex items-center justify-between border-b border-(--color-border-subtle) shrink-0 cursor-pointer hover:bg-(--color-bg-subtle) rounded"
+                className="px-[var(--space-3)] h-(--height-titlebar) flex items-center justify-between border-b border-(--color-border-subtle) shrink-0 cursor-pointer hover:bg-(--color-bg-subtle) rounded"
                 onClick={() => openFolder()}
               >
                 <button

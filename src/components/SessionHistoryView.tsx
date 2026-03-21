@@ -51,27 +51,27 @@ export function SessionHistoryView({
     .sort((a, b) => (b.last_active_at > a.last_active_at ? 1 : -1));
 
   return (
-    <div className="w-96 flex flex-col h-full border-l border-[--color-border-default] bg-[--color-bg-base]">
+    <div className="w-96 flex flex-col h-full border-l border-(--color-border-subtle) bg-(--color-bg-base)">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-[--color-border-default] flex-shrink-0">
+      <div className="flex items-center justify-between px-4 h-(--height-titlebar) border-b border-(--color-border-subtle) flex-shrink-0">
         <div className="flex items-center gap-2">
           <button
             onClick={onBack}
             aria-label="Back"
-            className="size-7 flex items-center justify-center hover:bg-[--color-bg-hover] rounded-[--radius-base]"
+            className="size-7 flex items-center justify-center hover:bg-(--color-bg-hover) rounded-(--radius-base)"
           >
-            <ArrowLeft className="w-4 h-4 text-[--color-text-tertiary]" />
+            <ArrowLeft className="w-4 h-4 text-(--color-text-tertiary)" />
           </button>
-          <span className="text-[--font-size-ui-md] font-medium text-[--color-text-primary]">
+          <span className="text-[length:var(--font-size-ui-md)] font-medium text-(--color-text-primary)">
             Conversation history
           </span>
         </div>
         <button
           onClick={onNewSession}
           aria-label="New conversation"
-          className="size-7 flex items-center justify-center hover:bg-[--color-bg-hover] rounded-[--radius-base]"
+          className="size-7 flex items-center justify-center hover:bg-(--color-bg-hover) rounded-(--radius-base)"
         >
-          <Plus className="w-4 h-4 text-[--color-text-tertiary]" />
+          <Plus className="w-4 h-4 text-(--color-text-tertiary)" />
         </button>
       </div>
 
@@ -79,12 +79,12 @@ export function SessionHistoryView({
       <div className="flex-1 overflow-y-auto">
         {filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full gap-3 px-4">
-            <p className="text-[--font-size-ui-base] text-[--color-text-tertiary]">
+            <p className="text-[length:var(--font-size-ui-base)] text-(--color-text-tertiary)">
               No conversations yet
             </p>
             <button
               onClick={onNewSession}
-              className="px-3 py-1.5 text-[--font-size-ui-base] text-[--color-accent] border border-[--color-border-default] rounded-[--radius-base] hover:bg-[--color-bg-hover] transition-colors duration-(--duration-fast)"
+              className="px-3 py-1.5 text-[length:var(--font-size-ui-base)] text-(--color-accent) border border-(--color-border-subtle) rounded-(--radius-base) hover:bg-(--color-bg-hover) transition-colors duration-(--duration-fast)"
             >
               Start a conversation
             </button>
@@ -107,7 +107,7 @@ export function SessionHistoryView({
                       onResume(session.id);
                     }
                   }}
-                  className="flex items-stretch cursor-pointer hover:bg-[--color-bg-hover] border-b border-[--color-border-subtle]"
+                  className="flex items-stretch cursor-pointer hover:bg-(--color-bg-hover) border-b border-(--color-border-subtle)"
                 >
                   {/* Accent left border for current session */}
                   <div
@@ -118,14 +118,14 @@ export function SessionHistoryView({
                     }}
                   />
                   <div className="flex-1 px-3 py-3 min-w-0">
-                    <p className="text-[--font-size-ui-base] font-medium text-[--color-text-primary] truncate">
+                    <p className="text-[length:var(--font-size-ui-base)] font-medium text-(--color-text-primary) truncate">
                       {session.name || "Untitled"}
                     </p>
                     <div className="flex items-center gap-2 mt-1">
-                      <span className="text-[--font-size-ui-xs] px-1.5 py-0.5 rounded-[--radius-sm] bg-[--color-bg-subtle] text-[--color-text-secondary]">
+                      <span className="text-[length:var(--font-size-ui-xs)] px-1.5 py-0.5 rounded-(--radius-sm) bg-(--color-bg-subtle) text-(--color-text-secondary)">
                         {session.last_mode}
                       </span>
-                      <span className="text-[--font-size-ui-xs] text-[--color-text-quaternary]">
+                      <span className="text-[length:var(--font-size-ui-xs)] text-(--color-text-quaternary)">
                         {formatRelativeTime(session.last_active_at)}
                       </span>
                     </div>
