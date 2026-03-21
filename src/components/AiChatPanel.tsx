@@ -1,17 +1,23 @@
 import { useState, useRef, useEffect } from "react";
 import { useAiChatStore } from "@/stores/aiChat";
+import { useFileTreeStore } from "@/stores/fileTree";
 import { ChatMessage } from "@/components/ChatMessage";
 import { ChatInputCard } from "@/components/ChatInputCard";
+import { SessionHistoryView } from "@/components/SessionHistoryView";
+import type { SessionScope } from "@/lib/session";
 import { MessageSquare, Clock, Loader2, RotateCcw } from "lucide-react";
 
 export function AiChatPanel() {
   const [input, setInput] = useState("");
   const [profileInput, setProfileInput] = useState("");
+  const [view, setView] = useState<"chat" | "history">("chat");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
 
   const {
     currentSession,
+    sessions,
+    resumeSession,
     messages,
     isStreaming,
     streamingContent,
@@ -25,6 +31,15 @@ export function AiChatPanel() {
     setAwsProfile,
     newSession,
   } = useAiChatStore();
+
+  const selectedFilePath = useFileTreeStore((s) => s.selectedFilePath);
+  // Note: currentScope is derived here for filtering the history view.
+  // The store's newSession() independently derives scope at call time from the
+  // same source, so they agree in normal usage. If scope derivation gains
+  // complexity, centralise it.
+  const currentScope: SessionScope = selectedFilePath
+    ? { type: "document", path: selectedFilePath }
+    : { type: "workspace" };
 
   useEffect(() => {
     checkAuth();
@@ -164,6 +179,25 @@ export function AiChatPanel() {
     );
   };
 
+  if (view === "history") {
+    return (
+      <SessionHistoryView
+        sessions={sessions}
+        currentSessionId={currentSession?.id ?? null}
+        currentScope={currentScope}
+        onResume={(id) => {
+          resumeSession(id);
+          setView("chat");
+        }}
+        onNewSession={() => {
+          newSession();
+          setView("chat");
+        }}
+        onBack={() => setView("chat")}
+      />
+    );
+  }
+
   return (
     <div
       ref={panelRef}
@@ -174,7 +208,7 @@ export function AiChatPanel() {
         <div className="flex items-center gap-2">
           <MessageSquare className="w-4 h-4 text-gray-600 dark:text-gray-400" />
           <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-            AI assistant
+            {currentSession?.name || "AI assistant"}
           </span>
         </div>
         <div className="flex items-center gap-1">
@@ -188,7 +222,8 @@ export function AiChatPanel() {
           <button
             className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded"
             title="Session history"
-            onClick={() => {}}
+            aria-label="Session history"
+            onClick={() => setView("history")}
           >
             <Clock className="w-4 h-4 text-gray-500" />
           </button>

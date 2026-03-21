@@ -3,7 +3,7 @@ import { invoke, Channel } from "@tauri-apps/api/core";
 import { parsePreferences } from "@/lib/preferences";
 import { useFileTreeStore } from "@/stores/fileTree";
 import { useWorkspaceStore } from "@/stores/workspace";
-import { type Session, type SessionMessage, type CanonicalMessage, makeTextBlock, newSession } from "@/lib/session";
+import { type Session, type SessionMessage, type CanonicalMessage, type SessionScope, makeTextBlock, newSession } from "@/lib/session";
 
 export interface ChatMessage {
   role: "user" | "assistant";
@@ -33,6 +33,7 @@ interface AiChatStore {
   loadSessions: () => Promise<void>;
   saveCurrentSession: () => Promise<void>;
   newSession: () => void;
+  resumeSession: (id: string) => void;
 }
 
 export const useAiChatStore = create<AiChatStore>((set, get) => ({
@@ -85,6 +86,15 @@ export const useAiChatStore = create<AiChatStore>((set, get) => ({
   },
 
   sendMessage: async (content: string) => {
+    // Auto-populate session name from first message
+    const currentSessionState = get().currentSession;
+    if (currentSessionState && currentSessionState.name === "") {
+      const name = content.length > 60 ? content.slice(0, 60) + "…" : content;
+      set((s) => ({
+        currentSession: s.currentSession ? { ...s.currentSession, name } : s.currentSession,
+      }));
+    }
+
     const userMessage: ChatMessage = { role: "user", content };
     const userSessionMsg: SessionMessage = {
       role: "user",
@@ -222,7 +232,11 @@ export const useAiChatStore = create<AiChatStore>((set, get) => ({
 
   loadSessions: async () => {
     const sessions = await invoke<Session[]>("load_sessions");
-    const current = newSession("view");
+    const selectedFilePath = useFileTreeStore.getState().selectedFilePath;
+    const scope: SessionScope = selectedFilePath
+      ? { type: "document", path: selectedFilePath }
+      : { type: "workspace" };
+    const current = newSession("view", scope);
     set({ sessions, currentSession: current });
   },
 
@@ -231,6 +245,17 @@ export const useAiChatStore = create<AiChatStore>((set, get) => ({
     if (!currentSession) return;
     try {
       await invoke("save_session", { session: currentSession });
+      // Keep in-memory sessions list in sync so the history view reflects the
+      // current run's conversations without requiring an app restart.
+      set((s) => {
+        const idx = s.sessions.findIndex((sess) => sess.id === currentSession.id);
+        if (idx >= 0) {
+          const updated = [...s.sessions];
+          updated[idx] = currentSession;
+          return { sessions: updated };
+        }
+        return { sessions: [...s.sessions, currentSession] };
+      });
     } catch (e) {
       // Non-fatal — log but don't surface to user
       console.warn("saveCurrentSession failed:", e);
@@ -238,8 +263,12 @@ export const useAiChatStore = create<AiChatStore>((set, get) => ({
   },
 
   newSession: () => {
+    const selectedFilePath = useFileTreeStore.getState().selectedFilePath;
+    const scope: SessionScope = selectedFilePath
+      ? { type: "document", path: selectedFilePath }
+      : { type: "workspace" };
     set({
-      currentSession: newSession("view"),
+      currentSession: newSession("view", scope),
       messages: [],
       isStreaming: false,
       streamingContent: "",
@@ -248,6 +277,28 @@ export const useAiChatStore = create<AiChatStore>((set, get) => ({
       authoringFilePath: null,
       activeSkill: null,
       documentReloadCounter: 0,
+    });
+  },
+
+  resumeSession: (id: string) => {
+    const { sessions } = get();
+    const session = sessions.find((s) => s.id === id);
+    if (!session) return;
+    const messages: ChatMessage[] = session.messages_all.map((m) => {
+      const textBlock = m.content.find((b) => b.type === "text");
+      return {
+        role: m.role,
+        content: textBlock && textBlock.type === "text" ? textBlock.text : "",
+      };
+    });
+    set({
+      currentSession: session,
+      messages,
+      isStreaming: false,
+      streamingContent: "",
+      error: null,
+      authoringMode: false,
+      authoringFilePath: null,
     });
   },
 }));
