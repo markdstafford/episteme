@@ -125,7 +125,7 @@ export function ChatView({ onShowHistory, onNewSession }: ChatViewProps) {
         {/* Messages pane */}
         <div className="flex-1 overflow-y-auto p-4">{renderBody()}</div>
 
-        {/* Input — always rendered in ChatView (auth guard lives in AiChatPanel) */}
+        {/* Input — always rendered in ChatView; disabled via isStreaming when session not yet ready */}
         <div className="p-3 border-t border-gray-200 dark:border-gray-700">
           <ChatInputCard
             value={input}
