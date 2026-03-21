@@ -1,4 +1,5 @@
-import { ArrowLeft, Plus, Pin, PinOff, Ellipsis } from "lucide-react";
+import { ArrowLeft, Plus, Pin, PinOff, Ellipsis, Loader2, Sparkles } from "lucide-react";
+import { useState, useRef } from "react";
 import { type Session, type SessionScope } from "@/lib/session";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import * as ContextMenu from "@radix-ui/react-context-menu";
@@ -11,7 +12,7 @@ interface SessionHistoryViewProps {
   onNewSession: () => void;
   onBack: () => void;
   onPin: (id: string, pinned: boolean) => void;
-  onRename: (id: string) => void;
+  onRename: (id: string, name: string) => void;
   onDelete: (id: string) => void;
   onSuggestName: (id: string) => Promise<string>;
 }
@@ -56,6 +57,12 @@ export function SessionHistoryView({
   onDelete,
   onSuggestName,
 }: SessionHistoryViewProps) {
+  const [renamingId, setRenamingId] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState("");
+  const [isSuggestingId, setIsSuggestingId] = useState<string | null>(null);
+  const renameCommittedRef = useRef(false);
+  const skipNextBlurRef = useRef(false);
+
   const filtered = sessions
     .filter((s) => matchesScope(s, currentScope))
     .sort((a, b) => (b.last_active_at > a.last_active_at ? 1 : -1));
@@ -135,9 +142,62 @@ export function SessionHistoryView({
                         onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onResume(session.id); } }}
                         className="flex-1 px-2 py-3 min-w-0"
                       >
-                        <p className="text-[length:var(--font-size-ui-base)] font-medium text-(--color-text-primary) truncate">
-                          {session.name || "Untitled"}
-                        </p>
+                        {renamingId === session.id ? (
+                          <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
+                            <input
+                              autoFocus
+                              className="flex-1 min-w-0 text-[length:var(--font-size-ui-base)] bg-(--color-bg-subtle) border border-(--color-border-subtle) rounded-(--radius-sm) px-1.5 py-0.5 text-(--color-text-primary) outline-none focus:border-(--color-accent)"
+                              value={renameValue}
+                              onChange={e => setRenameValue(e.target.value)}
+                              onKeyDown={e => {
+                                if (e.key === "Enter") {
+                                  renameCommittedRef.current = true;
+                                  onRename(session.id, renameValue);
+                                  setRenamingId(null);
+                                } else if (e.key === "Escape") {
+                                  renameCommittedRef.current = true;
+                                  setRenamingId(null);
+                                }
+                              }}
+                              onBlur={() => {
+                                if (skipNextBlurRef.current) {
+                                  skipNextBlurRef.current = false;
+                                  return;
+                                }
+                                if (renameCommittedRef.current) {
+                                  renameCommittedRef.current = false;
+                                  return;
+                                }
+                                onRename(session.id, renameValue);
+                                setRenamingId(null);
+                              }}
+                            />
+                            <button
+                              data-testid={`suggest-btn-${session.id}`}
+                              disabled={session.messages_compacted.length === 0 || isSuggestingId === session.id}
+                              onClick={async () => {
+                                setIsSuggestingId(session.id);
+                                try {
+                                  const suggested = await onSuggestName(session.id);
+                                  setRenameValue(suggested);
+                                } finally {
+                                  setIsSuggestingId(null);
+                                }
+                              }}
+                              className="flex items-center justify-center w-6 h-6 flex-shrink-0 rounded-(--radius-sm) hover:bg-(--color-bg-hover) disabled:opacity-40 disabled:cursor-not-allowed"
+                              aria-label="Suggest name with AI"
+                            >
+                              {isSuggestingId === session.id
+                                ? <Loader2 className="w-3 h-3 animate-spin text-(--color-text-tertiary)" />
+                                : <Sparkles className="w-3 h-3 text-(--color-text-tertiary)" />
+                              }
+                            </button>
+                          </div>
+                        ) : (
+                          <p className="text-[length:var(--font-size-ui-base)] font-medium text-(--color-text-primary) truncate">
+                            {session.name || "Untitled"}
+                          </p>
+                        )}
                         <div className="flex items-center gap-2 mt-1">
                           <span className="text-[length:var(--font-size-ui-xs)] px-1.5 py-0.5 rounded-(--radius-sm) bg-(--color-bg-subtle) text-(--color-text-secondary)">
                             {session.last_mode}
@@ -173,7 +233,7 @@ export function SessionHistoryView({
                             </DropdownMenu.Item>
                             <DropdownMenu.Item
                               className="px-3 py-1.5 text-[length:var(--font-size-ui-base)] text-(--color-text-primary) cursor-pointer hover:bg-(--color-bg-hover) outline-none rounded-(--radius-sm)"
-                              onSelect={() => onRename(session.id)}
+                              onSelect={() => { skipNextBlurRef.current = true; setRenamingId(session.id); setRenameValue(session.name); }}
                             >
                               Rename
                             </DropdownMenu.Item>
@@ -200,7 +260,7 @@ export function SessionHistoryView({
                       </ContextMenu.Item>
                       <ContextMenu.Item
                         className="px-3 py-1.5 text-[length:var(--font-size-ui-base)] text-(--color-text-primary) cursor-pointer hover:bg-(--color-bg-hover) outline-none rounded-(--radius-sm)"
-                        onSelect={() => onRename(session.id)}
+                        onSelect={() => { skipNextBlurRef.current = true; setRenamingId(session.id); setRenameValue(session.name); }}
                       >
                         Rename
                       </ContextMenu.Item>

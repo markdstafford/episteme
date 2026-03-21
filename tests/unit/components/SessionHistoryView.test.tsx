@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor, act } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 Object.defineProperty(window, 'PointerEvent', { value: MouseEvent });
@@ -32,7 +32,7 @@ const defaultProps = {
   onNewSession: vi.fn(),
   onBack: vi.fn(),
   onPin: vi.fn() as (id: string, pinned: boolean) => void,
-  onRename: vi.fn() as (id: string) => void,
+  onRename: vi.fn() as (id: string, name: string) => void,
   onDelete: vi.fn() as (id: string) => void,
   onSuggestName: vi.fn().mockResolvedValue("name") as (id: string) => Promise<string>,
 };
@@ -256,11 +256,13 @@ describe("Context menu", () => {
     expect(onPin).toHaveBeenCalledWith("s1", true);
   });
 
-  it("clicking Rename menu item calls onRename", async () => {
-    const { onRename } = renderWithSession();
+  it("clicking Rename menu item shows inline input", async () => {
+    renderWithSession();
     openDropdown("ellipsis-btn-s1");
-    fireEvent.click(screen.getByRole("menuitem", { name: /rename/i }));
-    expect(onRename).toHaveBeenCalledWith("s1");
+    await act(async () => {
+      fireEvent.click(screen.getByRole("menuitem", { name: /rename/i }));
+    });
+    expect(screen.getByDisplayValue("Chat")).toBeInTheDocument();
   });
 
   it("clicking Delete menu item calls onDelete", async () => {
@@ -268,5 +270,79 @@ describe("Context menu", () => {
     openDropdown("ellipsis-btn-s1");
     fireEvent.click(screen.getByRole("menuitem", { name: /delete/i }));
     expect(onDelete).toHaveBeenCalledWith("s1");
+  });
+});
+
+describe("Inline rename", () => {
+  const renderWithRenaming = async (sessionOverrides?: Partial<Session>) => {
+    const session = makeSession({
+      id: "s1", name: "Old name", scope: workspaceScope,
+      messages_compacted: [{ role: "user" as const, content: [{ type: "text" as const, text: "hi" }] }],
+      ...sessionOverrides,
+    });
+    const onRename = vi.fn();
+    const onSuggestName = vi.fn().mockResolvedValue("AI suggested name");
+    render(
+      <SessionHistoryView
+        {...defaultProps}
+        sessions={[session]}
+        onPin={vi.fn()}
+        onRename={onRename}
+        onDelete={vi.fn()}
+        onSuggestName={onSuggestName}
+      />
+    );
+    // Trigger rename via ellipsis menu
+    const ellipsisBtn = screen.getByTestId("ellipsis-btn-s1");
+    fireEvent.pointerDown(ellipsisBtn);
+    fireEvent.click(ellipsisBtn);
+    await act(async () => {
+      fireEvent.click(screen.getByRole("menuitem", { name: /rename/i }));
+    });
+    return { onRename, onSuggestName };
+  };
+
+  it("shows input pre-populated with current name after Rename selected", async () => {
+    await renderWithRenaming();
+    const input = screen.getByDisplayValue("Old name");
+    expect(input).toBeInTheDocument();
+  });
+
+  it("calls onRename with new value on Enter", async () => {
+    const { onRename } = await renderWithRenaming();
+    const input = screen.getByDisplayValue("Old name");
+    fireEvent.change(input, { target: { value: "New name" } });
+    fireEvent.keyDown(input, { key: "Enter" });
+    expect(onRename).toHaveBeenCalledWith("s1", "New name");
+  });
+
+  it("calls onRename on blur", async () => {
+    const { onRename } = await renderWithRenaming();
+    const input = screen.getByDisplayValue("Old name");
+    fireEvent.change(input, { target: { value: "Blurred name" } });
+    fireEvent.blur(input);
+    expect(onRename).toHaveBeenCalledWith("s1", "Blurred name");
+  });
+
+  it("cancels on Esc without calling onRename", async () => {
+    const { onRename } = await renderWithRenaming();
+    const input = screen.getByDisplayValue("Old name");
+    fireEvent.keyDown(input, { key: "Escape" });
+    expect(onRename).not.toHaveBeenCalled();
+    expect(screen.queryByDisplayValue("Old name")).not.toBeInTheDocument();
+  });
+
+  it("disables sparkle button when session has no messages", async () => {
+    await renderWithRenaming({ messages_compacted: [] });
+    const sparkle = screen.getByTestId("suggest-btn-s1");
+    expect(sparkle).toBeDisabled();
+  });
+
+  it("calls onSuggestName and populates input when sparkle clicked", async () => {
+    const { onSuggestName } = await renderWithRenaming();
+    fireEvent.click(screen.getByTestId("suggest-btn-s1"));
+    expect(onSuggestName).toHaveBeenCalledWith("s1");
+    // Wait for the suggestion to populate
+    await screen.findByDisplayValue("AI suggested name");
   });
 });
