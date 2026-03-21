@@ -274,14 +274,14 @@ describe("useAiChatStore", () => {
       expect(useAiChatStore.getState().awsProfile).toBeNull();
     });
 
-    it("resets authChecked and isAuthenticated to false immediately", async () => {
+    it("resets isAuthenticated to false and keeps authChecked true immediately", async () => {
       useAiChatStore.setState({ awsProfile: "old-profile", isAuthenticated: true, authChecked: true });
       mockInvoke.mockResolvedValueOnce({ last_opened_folder: null, aws_profile: "old-profile" }); // load_preferences
       mockInvoke.mockResolvedValueOnce(undefined); // save_preferences
 
       await useAiChatStore.getState().clearAwsProfile();
 
-      expect(useAiChatStore.getState().authChecked).toBe(false);
+      expect(useAiChatStore.getState().authChecked).toBe(true);
       expect(useAiChatStore.getState().isAuthenticated).toBe(false);
     });
 

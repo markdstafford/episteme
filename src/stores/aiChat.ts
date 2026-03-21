@@ -220,7 +220,7 @@ export const useAiChatStore = create<AiChatStore>((set, get) => ({
   },
 
   clearAwsProfile: async () => {
-    set({ awsProfile: null, authChecked: false, isAuthenticated: false });
+    set({ awsProfile: null, authChecked: true, isAuthenticated: false });
     try {
       const existingRaw = await invoke("load_preferences");
       const existingPrefs = parsePreferences(existingRaw);
