@@ -239,6 +239,16 @@ describe("pinSession", () => {
     await useAiChatStore.getState().pinSession("s1", true);
     expect(invoke).toHaveBeenCalledWith("pin_session", { id: "s1", pinned: true });
   });
+
+  it("updates pinned to false when unpinning", async () => {
+    const { invoke } = await import("@tauri-apps/api/core");
+    vi.mocked(invoke).mockResolvedValue(undefined);
+    const session = makeFullSession("s1", { pinned: true });
+    useAiChatStore.setState({ sessions: [session] });
+    await useAiChatStore.getState().pinSession("s1", false);
+    expect(useAiChatStore.getState().sessions[0].pinned).toBe(false);
+    expect(invoke).toHaveBeenCalledWith("pin_session", { id: "s1", pinned: false });
+  });
 });
 
 describe("deleteSession", () => {
@@ -274,6 +284,11 @@ describe("deleteSession", () => {
 });
 
 describe("suggestSessionName", () => {
+  it("throws when session id is not found", async () => {
+    useAiChatStore.setState({ sessions: [] });
+    await expect(useAiChatStore.getState().suggestSessionName("missing")).rejects.toThrow("Session not found");
+  });
+
   it("returns string from Tauri command", async () => {
     const { invoke } = await import("@tauri-apps/api/core");
     vi.mocked(invoke).mockResolvedValue("Product spec review");

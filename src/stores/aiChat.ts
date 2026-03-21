@@ -350,11 +350,10 @@ export const useAiChatStore = create<AiChatStore>((set, get) => ({
   },
 
   deleteSession: async (id: string) => {
+    const isActive = get().currentSession?.id === id;
     await invoke("delete_session", { id });
     set(s => ({ sessions: s.sessions.filter(sess => sess.id !== id) }));
-    if (get().currentSession?.id === id) {
-      get().newSession();
-    }
+    if (isActive) get().newSession();
   },
 
   suggestSessionName: async (sessionId: string) => {
