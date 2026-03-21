@@ -30,9 +30,9 @@ export function ConfigurationView() {
   };
 
   return (
-    <div className="w-96 flex flex-col h-full border-l border-(--color-border-default) bg-(--color-bg-base)">
+    <div className="w-96 flex flex-col h-full border-l border-(--color-border-subtle) bg-(--color-bg-base)">
       {/* Header */}
-      <div className="flex items-center px-4 py-3 border-b border-(--color-border-default) flex-shrink-0">
+      <div className="flex items-center px-4 py-3 border-b border-(--color-border-subtle) flex-shrink-0">
         <span className="text-[length:var(--font-size-ui-md)] font-medium text-(--color-text-primary)">
           AI settings
         </span>
@@ -55,7 +55,7 @@ export function ConfigurationView() {
               onChange={(e) => setProfileInput(e.target.value)}
               placeholder="e.g., ai-prod-llm"
               data-ui-input
-              className="w-full px-3 py-1.5 text-[length:var(--font-size-ui-base)] border border-(--color-border-default) rounded-(--radius-base) bg-(--color-bg-subtle) text-(--color-text-primary) focus:outline-none focus:border-(--color-accent) focus:shadow-[0_0_0_2px_color-mix(in_oklch,var(--color-accent)_25%,transparent)]"
+              className="w-full px-3 py-1.5 text-[length:var(--font-size-ui-base)] border border-(--color-border-subtle) rounded-(--radius-base) bg-(--color-bg-subtle) text-(--color-text-primary) focus:outline-none focus:border-(--color-accent) focus:shadow-[0_0_0_2px_color-mix(in_oklch,var(--color-accent)_25%,transparent)]"
               onKeyDown={(e) => {
                 if (e.key === "Enter") handleConnect();
               }}
