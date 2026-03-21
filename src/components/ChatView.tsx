@@ -127,7 +127,6 @@ export function ChatView({ onShowHistory, onNewSession }: ChatViewProps) {
                 <Pencil className="w-3 h-3 text-(--color-text-tertiary)" />
               </button>
             </Popover.Trigger>
-            <Popover.Portal>
               <Popover.Content
                 className="bg-(--color-bg-elevated) border border-(--color-border-subtle) rounded-(--radius-base) shadow-(--shadow-md) p-2 z-50 flex items-center gap-1"
                 side="bottom"
@@ -186,7 +185,6 @@ export function ChatView({ onShowHistory, onNewSession }: ChatViewProps) {
                   }
                 </button>
               </Popover.Content>
-            </Popover.Portal>
           </Popover.Root>
         </div>
         <div className="flex items-center gap-1">

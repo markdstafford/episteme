@@ -534,49 +534,40 @@ pub async fn ai_suggest_session_name(
 
     let client = BedrockClient::new(&config);
 
-    let mut bedrock_messages = Vec::new();
+    // Serialize the conversation as a transcript so the model acts as an
+    // outside observer rather than a participant. Passing messages as the
+    // conversation history causes the model to continue the thread instead
+    // of naming it.
+    let mut transcript = String::from("Transcript:\n");
     for msg in &messages {
-        let role = match msg.role.as_str() {
-            "user" => ConversationRole::User,
-            "assistant" => ConversationRole::Assistant,
+        let label = match msg.role.as_str() {
+            "user" => "user",
+            "assistant" => "assistant",
             _ => continue,
         };
-        let content_blocks: Vec<ContentBlock> = msg.content.iter().filter_map(|block| {
-            match block {
-                CanonicalBlock::Text { text } => Some(ContentBlock::Text(text.clone())),
-                _ => None,
+        for block in &msg.content {
+            if let CanonicalBlock::Text { text } = block {
+                transcript.push_str(&format!("[{}]: {}\n", label, text));
             }
-        }).collect();
-        if content_blocks.is_empty() {
-            continue;
         }
-        bedrock_messages.push(
-            Message::builder()
-                .role(role)
-                .set_content(Some(content_blocks))
-                .build()
-                .map_err(|e| format!("Failed to build message: {}", e))?,
-        );
     }
+    transcript.push_str("\nTitle:");
 
-    // Bedrock requires the conversation to end with a user message.
-    // Trim trailing assistant messages (normal after a completed exchange).
-    while bedrock_messages.last().map(|m| m.role() == &ConversationRole::Assistant).unwrap_or(false) {
-        bedrock_messages.pop();
-    }
+    let system_prompt = "You generate short titles for saved conversations. \
+        Given a conversation transcript, reply with only a 3-5 word title in sentence case. \
+        No punctuation, no quotes, no explanation.";
 
-    if bedrock_messages.is_empty() {
-        return Err("messages must not be empty".to_string());
-    }
-
-    let system_prompt = "Based on the following conversation, suggest a short session name \
-        (5 words or fewer). Respond with only the name — no punctuation, no quotes, no explanation.";
+    let user_message = Message::builder()
+        .role(ConversationRole::User)
+        .content(ContentBlock::Text(transcript))
+        .build()
+        .map_err(|e| format!("Failed to build message: {}", e))?;
 
     let response = client
         .converse()
         .model_id("us.anthropic.claude-sonnet-4-6")
         .system(SystemContentBlock::Text(system_prompt.to_string()))
-        .set_messages(Some(bedrock_messages))
+        .messages(user_message)
         .send()
         .await
         .map_err(|e| {
