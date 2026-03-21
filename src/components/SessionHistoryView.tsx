@@ -1,5 +1,7 @@
 import { ArrowLeft, Plus, Pin, PinOff, Ellipsis } from "lucide-react";
 import { type Session, type SessionScope } from "@/lib/session";
+import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
+import * as ContextMenu from "@radix-ui/react-context-menu";
 
 interface SessionHistoryViewProps {
   sessions: Session[];
@@ -102,59 +104,115 @@ export function SessionHistoryView({
             {filtered.map((session) => {
               const isCurrent = session.id === currentSessionId;
               return (
-                <li
-                  key={session.id}
-                  data-testid={`session-row-${session.id}`}
-                  data-current={isCurrent ? "true" : undefined}
-                  className="group flex items-stretch cursor-pointer hover:bg-(--color-bg-hover) border-b border-(--color-border-subtle)"
-                >
-                  {/* Accent left border */}
-                  <div style={{ width: 3, flexShrink: 0, backgroundColor: isCurrent ? "var(--color-accent)" : "transparent" }} />
+                <ContextMenu.Root key={session.id}>
+                  <ContextMenu.Trigger asChild>
+                    <li
+                      data-testid={`session-row-${session.id}`}
+                      data-current={isCurrent ? "true" : undefined}
+                      className="group flex items-stretch cursor-pointer hover:bg-(--color-bg-hover) border-b border-(--color-border-subtle)"
+                    >
+                      {/* Accent left border */}
+                      <div style={{ width: 3, flexShrink: 0, backgroundColor: isCurrent ? "var(--color-accent)" : "transparent" }} />
 
-                  {/* Pin icon — always reserves space; visible always for pinned, on hover for unpinned */}
-                  <button
-                    data-testid={`pin-btn-${session.id}`}
-                    onClick={(e) => { e.stopPropagation(); onPin(session.id, !session.pinned); }}
-                    aria-label={session.pinned ? "Unpin session" : "Pin session"}
-                    className={`flex items-center justify-center w-6 flex-shrink-0 self-stretch transition-opacity duration-(--duration-fast) ${session.pinned ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}
-                  >
-                    {session.pinned
-                      ? <PinOff className="w-3 h-3 text-(--color-accent)" />
-                      : <Pin className="w-3 h-3 text-(--color-text-tertiary)" />
-                    }
-                  </button>
+                      {/* Pin icon */}
+                      <button
+                        data-testid={`pin-btn-${session.id}`}
+                        onClick={(e) => { e.stopPropagation(); onPin(session.id, !session.pinned); }}
+                        aria-label={session.pinned ? "Unpin session" : "Pin session"}
+                        className={`flex items-center justify-center w-6 flex-shrink-0 self-stretch transition-opacity duration-(--duration-fast) ${session.pinned ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}
+                      >
+                        {session.pinned
+                          ? <PinOff className="w-3 h-3 text-(--color-accent)" />
+                          : <Pin className="w-3 h-3 text-(--color-text-tertiary)" />
+                        }
+                      </button>
 
-                  {/* Row content — clicking this resumes the session */}
-                  <div
-                    role="button"
-                    tabIndex={0}
-                    onClick={() => onResume(session.id)}
-                    onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onResume(session.id); } }}
-                    className="flex-1 px-2 py-3 min-w-0"
-                  >
-                    <p className="text-[length:var(--font-size-ui-base)] font-medium text-(--color-text-primary) truncate">
-                      {session.name || "Untitled"}
-                    </p>
-                    <div className="flex items-center gap-2 mt-1">
-                      <span className="text-[length:var(--font-size-ui-xs)] px-1.5 py-0.5 rounded-(--radius-sm) bg-(--color-bg-subtle) text-(--color-text-secondary)">
-                        {session.last_mode}
-                      </span>
-                      <span className="text-[length:var(--font-size-ui-xs)] text-(--color-text-quaternary)">
-                        {formatRelativeTime(session.last_active_at)}
-                      </span>
-                    </div>
-                  </div>
+                      {/* Row content */}
+                      <div
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => onResume(session.id)}
+                        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onResume(session.id); } }}
+                        className="flex-1 px-2 py-3 min-w-0"
+                      >
+                        <p className="text-[length:var(--font-size-ui-base)] font-medium text-(--color-text-primary) truncate">
+                          {session.name || "Untitled"}
+                        </p>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className="text-[length:var(--font-size-ui-xs)] px-1.5 py-0.5 rounded-(--radius-sm) bg-(--color-bg-subtle) text-(--color-text-secondary)">
+                            {session.last_mode}
+                          </span>
+                          <span className="text-[length:var(--font-size-ui-xs)] text-(--color-text-quaternary)">
+                            {formatRelativeTime(session.last_active_at)}
+                          </span>
+                        </div>
+                      </div>
 
-                  {/* Ellipsis button — always reserves space, visible on hover */}
-                  <button
-                    data-testid={`ellipsis-btn-${session.id}`}
-                    onClick={(e) => e.stopPropagation()}
-                    aria-label="Session options"
-                    className="flex items-center justify-center w-7 flex-shrink-0 self-stretch opacity-0 group-hover:opacity-100 transition-opacity duration-(--duration-fast)"
-                  >
-                    <Ellipsis className="w-4 h-4 text-(--color-text-tertiary)" />
-                  </button>
-                </li>
+                      {/* Ellipsis — DropdownMenu trigger */}
+                      <DropdownMenu.Root>
+                        <DropdownMenu.Trigger asChild>
+                          <button
+                            data-testid={`ellipsis-btn-${session.id}`}
+                            onClick={(e) => e.stopPropagation()}
+                            aria-label="Session options"
+                            className="flex items-center justify-center w-7 flex-shrink-0 self-stretch opacity-0 group-hover:opacity-100 transition-opacity duration-(--duration-fast)"
+                          >
+                            <Ellipsis className="w-4 h-4 text-(--color-text-tertiary)" />
+                          </button>
+                        </DropdownMenu.Trigger>
+                        <DropdownMenu.Portal>
+                          <DropdownMenu.Content
+                            className="min-w-36 bg-(--color-bg-elevated) border border-(--color-border-subtle) rounded-(--radius-base) shadow-(--shadow-md) p-1 z-50"
+                            align="end"
+                          >
+                            <DropdownMenu.Item
+                              className="px-3 py-1.5 text-[length:var(--font-size-ui-base)] text-(--color-text-primary) cursor-pointer hover:bg-(--color-bg-hover) outline-none rounded-(--radius-sm)"
+                              onSelect={() => onPin(session.id, !session.pinned)}
+                            >
+                              {session.pinned ? "Unpin" : "Pin"}
+                            </DropdownMenu.Item>
+                            <DropdownMenu.Item
+                              className="px-3 py-1.5 text-[length:var(--font-size-ui-base)] text-(--color-text-primary) cursor-pointer hover:bg-(--color-bg-hover) outline-none rounded-(--radius-sm)"
+                              onSelect={() => onRename(session.id)}
+                            >
+                              Rename
+                            </DropdownMenu.Item>
+                            <DropdownMenu.Item
+                              className="px-3 py-1.5 text-[length:var(--font-size-ui-base)] text-(--color-state-danger) cursor-pointer hover:bg-(--color-bg-hover) outline-none rounded-(--radius-sm)"
+                              onSelect={() => onDelete(session.id)}
+                            >
+                              Delete
+                            </DropdownMenu.Item>
+                          </DropdownMenu.Content>
+                        </DropdownMenu.Portal>
+                      </DropdownMenu.Root>
+                    </li>
+                  </ContextMenu.Trigger>
+                  <ContextMenu.Portal>
+                    <ContextMenu.Content
+                      className="min-w-36 bg-(--color-bg-elevated) border border-(--color-border-subtle) rounded-(--radius-base) shadow-(--shadow-md) p-1 z-50"
+                    >
+                      <ContextMenu.Item
+                        className="px-3 py-1.5 text-[length:var(--font-size-ui-base)] text-(--color-text-primary) cursor-pointer hover:bg-(--color-bg-hover) outline-none rounded-(--radius-sm)"
+                        onSelect={() => onPin(session.id, !session.pinned)}
+                      >
+                        {session.pinned ? "Unpin" : "Pin"}
+                      </ContextMenu.Item>
+                      <ContextMenu.Item
+                        className="px-3 py-1.5 text-[length:var(--font-size-ui-base)] text-(--color-text-primary) cursor-pointer hover:bg-(--color-bg-hover) outline-none rounded-(--radius-sm)"
+                        onSelect={() => onRename(session.id)}
+                      >
+                        Rename
+                      </ContextMenu.Item>
+                      <ContextMenu.Item
+                        className="px-3 py-1.5 text-[length:var(--font-size-ui-base)] text-(--color-state-danger) cursor-pointer hover:bg-(--color-bg-hover) outline-none rounded-(--radius-sm)"
+                        onSelect={() => onDelete(session.id)}
+                      >
+                        Delete
+                      </ContextMenu.Item>
+                    </ContextMenu.Content>
+                  </ContextMenu.Portal>
+                </ContextMenu.Root>
               );
             })}
           </ul>

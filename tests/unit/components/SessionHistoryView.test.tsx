@@ -1,5 +1,10 @@
 import { render, screen, fireEvent } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
+
+Object.defineProperty(window, 'PointerEvent', { value: MouseEvent });
+window.HTMLElement.prototype.hasPointerCapture = vi.fn() as unknown as typeof HTMLElement.prototype.hasPointerCapture;
+window.HTMLElement.prototype.releasePointerCapture = vi.fn();
+window.HTMLElement.prototype.setPointerCapture = vi.fn();
 import { SessionHistoryView } from "@/components/SessionHistoryView";
 import type { Session, SessionScope } from "@/lib/session";
 
@@ -204,5 +209,64 @@ describe("Pin icon hover behavior", () => {
       />
     );
     expect(screen.getByTestId("ellipsis-btn-s1")).toBeInTheDocument();
+  });
+});
+
+describe("Context menu", () => {
+  const renderWithSession = (sessionOverrides?: Partial<Session>) => {
+    const session = makeSession({ id: "s1", name: "Chat", scope: workspaceScope, ...sessionOverrides });
+    const onPin = vi.fn();
+    const onRename = vi.fn();
+    const onDelete = vi.fn();
+    render(
+      <SessionHistoryView
+        {...defaultProps}
+        sessions={[session]}
+        onPin={onPin}
+        onRename={onRename}
+        onDelete={onDelete}
+        onSuggestName={vi.fn().mockResolvedValue("name")}
+      />
+    );
+    return { onPin, onRename, onDelete };
+  };
+
+  const openDropdown = (testId: string) => {
+    const btn = screen.getByTestId(testId);
+    fireEvent.pointerDown(btn, { button: 0, ctrlKey: false });
+    fireEvent.click(btn);
+  };
+
+  it("opens dropdown menu when ellipsis button is clicked", async () => {
+    renderWithSession();
+    openDropdown("ellipsis-btn-s1");
+    expect(screen.getByRole("menuitem", { name: /pin/i })).toBeInTheDocument();
+  });
+
+  it("shows Unpin when session is pinned", async () => {
+    renderWithSession({ pinned: true });
+    openDropdown("ellipsis-btn-s1");
+    expect(screen.getByRole("menuitem", { name: /unpin/i })).toBeInTheDocument();
+  });
+
+  it("clicking Pin menu item calls onPin", async () => {
+    const { onPin } = renderWithSession({ pinned: false });
+    openDropdown("ellipsis-btn-s1");
+    fireEvent.click(screen.getByRole("menuitem", { name: /^pin$/i }));
+    expect(onPin).toHaveBeenCalledWith("s1", true);
+  });
+
+  it("clicking Rename menu item calls onRename", async () => {
+    const { onRename } = renderWithSession();
+    openDropdown("ellipsis-btn-s1");
+    fireEvent.click(screen.getByRole("menuitem", { name: /rename/i }));
+    expect(onRename).toHaveBeenCalledWith("s1");
+  });
+
+  it("clicking Delete menu item calls onDelete", async () => {
+    const { onDelete } = renderWithSession();
+    openDropdown("ellipsis-btn-s1");
+    fireEvent.click(screen.getByRole("menuitem", { name: /delete/i }));
+    expect(onDelete).toHaveBeenCalledWith("s1");
   });
 });
