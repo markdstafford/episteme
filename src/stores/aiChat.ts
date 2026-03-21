@@ -86,6 +86,15 @@ export const useAiChatStore = create<AiChatStore>((set, get) => ({
   },
 
   sendMessage: async (content: string) => {
+    // Auto-populate session name from first message
+    const currentSessionState = get().currentSession;
+    if (currentSessionState && currentSessionState.name === "") {
+      const name = content.length > 60 ? content.slice(0, 60) + "…" : content;
+      set((s) => ({
+        currentSession: s.currentSession ? { ...s.currentSession, name } : s.currentSession,
+      }));
+    }
+
     const userMessage: ChatMessage = { role: "user", content };
     const userSessionMsg: SessionMessage = {
       role: "user",
