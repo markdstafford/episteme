@@ -35,6 +35,10 @@ interface AiChatStore {
   saveCurrentSession: () => Promise<void>;
   newSession: () => void;
   resumeSession: (id: string) => void;
+  renameSession: (id: string, name: string) => Promise<void>;
+  pinSession: (id: string, pinned: boolean) => Promise<void>;
+  deleteSession: (id: string) => Promise<void>;
+  suggestSessionName: (sessionId: string) => Promise<string>;
 }
 
 export const useAiChatStore = create<AiChatStore>((set, get) => ({
@@ -315,6 +319,51 @@ export const useAiChatStore = create<AiChatStore>((set, get) => ({
       error: null,
       authoringMode: false,
       authoringFilePath: null,
+    });
+  },
+
+  renameSession: async (id: string, name: string) => {
+    const { sessions, currentSession } = get();
+    const idx = sessions.findIndex(s => s.id === id);
+    if (idx < 0) return;
+    const updated = { ...sessions[idx], name };
+    const newSessions = [...sessions];
+    newSessions[idx] = updated;
+    set({
+      sessions: newSessions,
+      ...(currentSession?.id === id ? { currentSession: { ...currentSession, name } } : {}),
+    });
+    try {
+      await invoke("save_session", { session: updated });
+    } catch (e) {
+      console.warn("renameSession: save failed", e);
+    }
+  },
+
+  pinSession: async (id: string, pinned: boolean) => {
+    await invoke("pin_session", { id, pinned });
+    set(s => ({
+      sessions: s.sessions.map(sess =>
+        sess.id === id ? { ...sess, pinned } : sess
+      ),
+      ...(s.currentSession?.id === id ? { currentSession: { ...s.currentSession, pinned } } : {}),
+    }));
+  },
+
+  deleteSession: async (id: string) => {
+    const isActive = get().currentSession?.id === id;
+    await invoke("delete_session", { id });
+    set(s => ({ sessions: s.sessions.filter(sess => sess.id !== id) }));
+    if (isActive) get().newSession();
+  },
+
+  suggestSessionName: async (sessionId: string) => {
+    const { sessions, awsProfile } = get();
+    const session = sessions.find(s => s.id === sessionId);
+    if (!session) throw new Error("Session not found");
+    return await invoke<string>("ai_suggest_session_name", {
+      messages: session.messages_compacted,
+      awsProfile,
     });
   },
 }));

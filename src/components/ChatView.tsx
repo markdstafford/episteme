@@ -1,8 +1,9 @@
 import { useState, useRef, useEffect } from "react";
+import * as Popover from "@radix-ui/react-popover";
 import { useAiChatStore } from "@/stores/aiChat";
 import { ChatMessage } from "@/components/ChatMessage";
 import { ChatInputCard } from "@/components/ChatInputCard";
-import { MessageSquare, Clock, Plus } from "lucide-react";
+import { MessageSquare, Clock, Plus, Pencil, Sparkles, Loader2 } from "lucide-react";
 
 interface ChatViewProps {
   onShowHistory: () => void;
@@ -11,6 +12,13 @@ interface ChatViewProps {
 
 export function ChatView({ onShowHistory, onNewSession }: ChatViewProps) {
   const [input, setInput] = useState("");
+  const [isRenameOpen, setIsRenameOpen] = useState(false);
+  const [renameValue, setRenameValue] = useState("");
+  const [isSuggesting, setIsSuggesting] = useState(false);
+  const skipNextBlurRef = useRef(false);
+  const originalRenameValueRef = useRef("");
+  const renameInputRef = useRef<HTMLInputElement>(null);
+  const prevIsSuggestingRef = useRef(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
 
@@ -21,11 +29,21 @@ export function ChatView({ onShowHistory, onNewSession }: ChatViewProps) {
     streamingContent,
     error,
     sendMessage,
+    renameSession,
+    suggestSessionName,
   } = useAiChatStore();
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, streamingContent]);
+
+  // Focus the rename input after AI suggestion completes (input was disabled during loading)
+  useEffect(() => {
+    if (prevIsSuggestingRef.current && !isSuggesting && isRenameOpen) {
+      renameInputRef.current?.focus();
+    }
+    prevIsSuggestingRef.current = isSuggesting;
+  }, [isSuggesting, isRenameOpen]);
 
   const handleSend = () => {
     if (!input.trim() || isStreaming) return;
@@ -98,11 +116,98 @@ export function ChatView({ onShowHistory, onNewSession }: ChatViewProps) {
     >
       {/* Header */}
       <div className="flex items-center justify-between px-4 h-(--height-titlebar) border-b border-(--color-border-subtle) flex-shrink-0">
-        <div className="flex items-center gap-2">
-          <MessageSquare className="w-4 h-4 text-(--color-text-tertiary)" />
-          <span className="text-[length:var(--font-size-ui-md)] font-medium text-(--color-text-primary)">
+        <div className="group flex items-center gap-1 min-w-0">
+          <MessageSquare className="w-4 h-4 text-(--color-text-tertiary) flex-shrink-0" />
+          <span className="text-[length:var(--font-size-ui-md)] font-medium text-(--color-text-primary) truncate">
             {currentSession?.name || "AI assistant"}
           </span>
+          <Popover.Root
+            open={isRenameOpen}
+            onOpenChange={(open) => {
+              if (open) {
+                const name = currentSession?.name ?? "";
+                setRenameValue(name);
+                originalRenameValueRef.current = name;
+              }
+              setIsRenameOpen(open);
+            }}
+          >
+            <Popover.Trigger asChild>
+              <button
+                aria-label="Rename session"
+                className="opacity-0 group-hover:opacity-100 flex items-center justify-center w-5 h-5 flex-shrink-0 rounded-(--radius-sm) hover:bg-(--color-bg-hover) transition-opacity duration-(--duration-fast)"
+              >
+                <Pencil className="w-3 h-3 text-(--color-text-tertiary)" />
+              </button>
+            </Popover.Trigger>
+            <Popover.Portal>
+              <Popover.Content
+                className="bg-(--color-bg-elevated) border border-(--color-border-subtle) rounded-(--radius-base) shadow-(--shadow-md) p-2 z-50 flex items-center gap-1"
+                side="bottom"
+                align="start"
+                onKeyDown={(e) => {
+                  if (e.key === "Escape") setIsRenameOpen(false);
+                }}
+              >
+                <input
+                  autoFocus
+                  ref={renameInputRef}
+                  aria-label="Session name"
+                  disabled={isSuggesting}
+                  className="flex-1 min-w-0 text-[length:var(--font-size-ui-base)] bg-(--color-bg-subtle) border border-(--color-border-subtle) rounded-(--radius-sm) px-2 py-1 text-(--color-text-primary) outline-none focus:border-(--color-accent)"
+                  value={renameValue}
+                  onChange={e => setRenameValue(e.target.value)}
+                  onKeyDown={async (e) => {
+                    if (e.key === "Enter" && currentSession) {
+                      if (renameValue !== originalRenameValueRef.current) {
+                        await renameSession(currentSession.id, renameValue);
+                      }
+                      setIsRenameOpen(false);
+                    } else if (e.key === "Escape") {
+                      setIsRenameOpen(false);
+                    }
+                  }}
+                  onBlur={() => {
+                    // Blur alone discards — only Enter explicitly saves.
+                    // Skip if focus is moving to the sparkle button.
+                    if (skipNextBlurRef.current) {
+                      skipNextBlurRef.current = false;
+                      return;
+                    }
+                    setIsRenameOpen(false);
+                  }}
+                />
+                <button
+                  data-testid="header-suggest-btn"
+                  disabled={!currentSession || currentSession.messages_compacted.length === 0 || isSuggesting}
+                  onMouseDown={() => { skipNextBlurRef.current = true; }}
+                  onClick={async (e) => {
+                    e.stopPropagation();
+                    if (!currentSession) return;
+                    setIsSuggesting(true);
+                    try {
+                      const suggested = await Promise.race([
+                        suggestSessionName(currentSession.id),
+                        new Promise<never>((_, reject) => setTimeout(() => reject(new Error("Timed out")), 5000)),
+                      ]);
+                      setRenameValue(suggested);
+                    } catch {
+                      // Timed out or errored — leave the field as-is
+                    } finally {
+                      setIsSuggesting(false);
+                    }
+                  }}
+                  className="flex items-center justify-center w-6 h-6 flex-shrink-0 rounded-(--radius-sm) hover:bg-(--color-bg-hover) disabled:opacity-40 disabled:cursor-not-allowed"
+                  aria-label="Suggest name with AI"
+                >
+                  {isSuggesting
+                    ? <Loader2 className="w-3 h-3 animate-spin text-(--color-text-tertiary)" />
+                    : <Sparkles className="w-3 h-3 text-(--color-text-tertiary)" />
+                  }
+                </button>
+              </Popover.Content>
+            </Popover.Portal>
+          </Popover.Root>
         </div>
         <div className="flex items-center gap-1">
           <button

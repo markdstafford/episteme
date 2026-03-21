@@ -1,5 +1,10 @@
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, act } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
+
+Object.defineProperty(window, 'PointerEvent', { value: MouseEvent });
+window.HTMLElement.prototype.hasPointerCapture = vi.fn() as unknown as typeof HTMLElement.prototype.hasPointerCapture;
+window.HTMLElement.prototype.releasePointerCapture = vi.fn();
+window.HTMLElement.prototype.setPointerCapture = vi.fn();
 import { SessionHistoryView } from "@/components/SessionHistoryView";
 import type { Session, SessionScope } from "@/lib/session";
 
@@ -26,12 +31,20 @@ const defaultProps = {
   onResume: vi.fn(),
   onNewSession: vi.fn(),
   onBack: vi.fn(),
+  onPin: vi.fn() as (id: string, pinned: boolean) => void,
+  onRename: vi.fn() as (id: string, name: string) => void,
+  onDelete: vi.fn() as (id: string) => void,
+  onSuggestName: vi.fn().mockResolvedValue("name") as (id: string) => Promise<string>,
 };
 
 beforeEach(() => {
   defaultProps.onResume = vi.fn();
   defaultProps.onNewSession = vi.fn();
   defaultProps.onBack = vi.fn();
+  defaultProps.onPin = vi.fn();
+  defaultProps.onRename = vi.fn();
+  defaultProps.onDelete = vi.fn();
+  defaultProps.onSuggestName = vi.fn().mockResolvedValue("name");
 });
 
 describe("SessionHistoryView", () => {
@@ -115,9 +128,289 @@ describe("SessionHistoryView", () => {
   it("calls onResume when Enter is pressed on a session row", () => {
     const onResume = vi.fn();
     const sessions = [makeSession({ id: "abc", name: "My chat", scope: workspaceScope })];
-    render(<SessionHistoryView {...defaultProps} sessions={sessions} onResume={onResume} />);
+    render(
+      <SessionHistoryView
+        {...defaultProps}
+        sessions={sessions}
+        onResume={onResume}
+        onPin={vi.fn()}
+        onRename={vi.fn()}
+        onDelete={vi.fn()}
+        onSuggestName={vi.fn().mockResolvedValue("name")}
+      />
+    );
     const row = screen.getByTestId("session-row-abc");
-    fireEvent.keyDown(row, { key: "Enter" });
+    const contentDiv = row.querySelector('[role="button"]') as HTMLElement;
+    fireEvent.keyDown(contentDiv, { key: "Enter" });
     expect(onResume).toHaveBeenCalledWith("abc");
+  });
+});
+
+describe("Pin icon hover behavior", () => {
+  it("renders pin button for each session row", () => {
+    const sessions = [makeSession({ id: "s1", name: "Chat", scope: workspaceScope, pinned: false })];
+    render(
+      <SessionHistoryView
+        {...defaultProps}
+        sessions={sessions}
+        onPin={vi.fn()}
+        onRename={vi.fn()}
+        onDelete={vi.fn()}
+        onSuggestName={vi.fn().mockResolvedValue("name")}
+      />
+    );
+    expect(screen.getByTestId("pin-btn-s1")).toBeInTheDocument();
+  });
+
+  it("calls onPin with toggled value when pin button clicked", () => {
+    const onPin = vi.fn();
+    const sessions = [makeSession({ id: "s1", name: "Chat", scope: workspaceScope, pinned: false })];
+    render(
+      <SessionHistoryView
+        {...defaultProps}
+        sessions={sessions}
+        onPin={onPin}
+        onRename={vi.fn()}
+        onDelete={vi.fn()}
+        onSuggestName={vi.fn().mockResolvedValue("name")}
+      />
+    );
+    fireEvent.click(screen.getByTestId("pin-btn-s1"));
+    expect(onPin).toHaveBeenCalledWith("s1", true);
+  });
+
+  it("calls onPin with false when pinned session pin button clicked", () => {
+    const onPin = vi.fn();
+    const sessions = [makeSession({ id: "s1", name: "Chat", scope: workspaceScope, pinned: true })];
+    render(
+      <SessionHistoryView
+        {...defaultProps}
+        sessions={sessions}
+        onPin={onPin}
+        onRename={vi.fn()}
+        onDelete={vi.fn()}
+        onSuggestName={vi.fn().mockResolvedValue("name")}
+      />
+    );
+    fireEvent.click(screen.getByTestId("pin-btn-s1"));
+    expect(onPin).toHaveBeenCalledWith("s1", false);
+  });
+
+  it("renders ellipsis button for each session row", () => {
+    const sessions = [makeSession({ id: "s1", name: "Chat", scope: workspaceScope })];
+    render(
+      <SessionHistoryView
+        {...defaultProps}
+        sessions={sessions}
+        onPin={vi.fn()}
+        onRename={vi.fn()}
+        onDelete={vi.fn()}
+        onSuggestName={vi.fn().mockResolvedValue("name")}
+      />
+    );
+    expect(screen.getByTestId("ellipsis-btn-s1")).toBeInTheDocument();
+  });
+});
+
+describe("Context menu", () => {
+  const renderWithSession = (sessionOverrides?: Partial<Session>) => {
+    const session = makeSession({ id: "s1", name: "Chat", scope: workspaceScope, ...sessionOverrides });
+    const onPin = vi.fn();
+    const onRename = vi.fn();
+    const onDelete = vi.fn();
+    render(
+      <SessionHistoryView
+        {...defaultProps}
+        sessions={[session]}
+        onPin={onPin}
+        onRename={onRename}
+        onDelete={onDelete}
+        onSuggestName={vi.fn().mockResolvedValue("name")}
+      />
+    );
+    return { onPin, onRename, onDelete };
+  };
+
+  const openDropdown = (testId: string) => {
+    const btn = screen.getByTestId(testId);
+    fireEvent.pointerDown(btn, { button: 0, ctrlKey: false });
+    fireEvent.click(btn);
+  };
+
+  it("opens dropdown menu when ellipsis button is clicked", async () => {
+    renderWithSession();
+    openDropdown("ellipsis-btn-s1");
+    expect(screen.getByRole("menuitem", { name: /pin/i })).toBeInTheDocument();
+  });
+
+  it("shows Unpin when session is pinned", async () => {
+    renderWithSession({ pinned: true });
+    openDropdown("ellipsis-btn-s1");
+    expect(screen.getByRole("menuitem", { name: /unpin/i })).toBeInTheDocument();
+  });
+
+  it("clicking Pin menu item calls onPin", async () => {
+    const { onPin } = renderWithSession({ pinned: false });
+    openDropdown("ellipsis-btn-s1");
+    fireEvent.click(screen.getByRole("menuitem", { name: /^pin$/i }));
+    expect(onPin).toHaveBeenCalledWith("s1", true);
+  });
+
+  it("clicking Rename menu item shows inline input", async () => {
+    renderWithSession();
+    openDropdown("ellipsis-btn-s1");
+    await act(async () => {
+      fireEvent.click(screen.getByRole("menuitem", { name: /rename/i }));
+    });
+    expect(screen.getByDisplayValue("Chat")).toBeInTheDocument();
+  });
+
+  it("clicking Delete menu item shows confirmation popover", async () => {
+    renderWithSession();
+    openDropdown("ellipsis-btn-s1");
+    fireEvent.click(screen.getByRole("menuitem", { name: /delete/i }));
+    expect(await screen.findByText(/delete this conversation/i)).toBeInTheDocument();
+  });
+});
+
+describe("Inline rename", () => {
+  const renderWithRenaming = async (sessionOverrides?: Partial<Session>) => {
+    const session = makeSession({
+      id: "s1", name: "Old name", scope: workspaceScope,
+      messages_compacted: [{ role: "user" as const, content: [{ type: "text" as const, text: "hi" }] }],
+      ...sessionOverrides,
+    });
+    const onRename = vi.fn();
+    const onSuggestName = vi.fn().mockResolvedValue("AI suggested name");
+    render(
+      <SessionHistoryView
+        {...defaultProps}
+        sessions={[session]}
+        onPin={vi.fn()}
+        onRename={onRename}
+        onDelete={vi.fn()}
+        onSuggestName={onSuggestName}
+      />
+    );
+    // Trigger rename via ellipsis menu
+    const ellipsisBtn = screen.getByTestId("ellipsis-btn-s1");
+    fireEvent.pointerDown(ellipsisBtn);
+    fireEvent.click(ellipsisBtn);
+    await act(async () => {
+      fireEvent.click(screen.getByRole("menuitem", { name: /rename/i }));
+    });
+    return { onRename, onSuggestName };
+  };
+
+  it("shows input pre-populated with current name after Rename selected", async () => {
+    await renderWithRenaming();
+    const input = screen.getByDisplayValue("Old name");
+    expect(input).toBeInTheDocument();
+  });
+
+  it("calls onRename with new value on Enter when name changed", async () => {
+    const { onRename } = await renderWithRenaming();
+    const input = screen.getByDisplayValue("Old name");
+    fireEvent.change(input, { target: { value: "New name" } });
+    fireEvent.keyDown(input, { key: "Enter" });
+    expect(onRename).toHaveBeenCalledWith("s1", "New name");
+  });
+
+  it("does not call onRename on Enter when name is unchanged", async () => {
+    const { onRename } = await renderWithRenaming();
+    const input = screen.getByDisplayValue("Old name");
+    fireEvent.keyDown(input, { key: "Enter" });
+    expect(onRename).not.toHaveBeenCalled();
+  });
+
+  it("discards on blur without calling onRename", async () => {
+    const { onRename } = await renderWithRenaming();
+    const input = screen.getByDisplayValue("Old name");
+    fireEvent.change(input, { target: { value: "Blurred name" } });
+    fireEvent.blur(input);
+    expect(onRename).not.toHaveBeenCalled();
+    expect(screen.queryByDisplayValue("Blurred name")).not.toBeInTheDocument();
+  });
+
+  it("cancels on Esc without calling onRename", async () => {
+    const { onRename } = await renderWithRenaming();
+    const input = screen.getByDisplayValue("Old name");
+    fireEvent.keyDown(input, { key: "Escape" });
+    expect(onRename).not.toHaveBeenCalled();
+    expect(screen.queryByDisplayValue("Old name")).not.toBeInTheDocument();
+  });
+
+  it("disables sparkle button when session has no messages", async () => {
+    await renderWithRenaming({ messages_compacted: [] });
+    const sparkle = screen.getByTestId("suggest-btn-s1");
+    expect(sparkle).toBeDisabled();
+  });
+
+  it("calls onSuggestName and populates input when sparkle clicked", async () => {
+    const { onSuggestName } = await renderWithRenaming();
+    fireEvent.click(screen.getByTestId("suggest-btn-s1"));
+    expect(onSuggestName).toHaveBeenCalledWith("s1");
+    // Wait for the suggestion to populate
+    await screen.findByDisplayValue("AI suggested name");
+  });
+
+  it("does not call onRename when sparkle is clicked (waits for user to confirm)", async () => {
+    const { onRename, onSuggestName } = await renderWithRenaming();
+    fireEvent.click(screen.getByTestId("suggest-btn-s1"));
+    expect(onSuggestName).toHaveBeenCalledWith("s1");
+    // onRename should NOT be called immediately — only when user confirms with Enter
+    expect(onRename).not.toHaveBeenCalled();
+    // Wait for suggestion to populate
+    await screen.findByDisplayValue("AI suggested name");
+    // Still not called — user hasn't confirmed yet
+    expect(onRename).not.toHaveBeenCalled();
+  });
+});
+
+describe("Delete confirmation", () => {
+  const triggerDelete = (sessionOverrides?: Partial<Session>, currentSessionId?: string) => {
+    const session = makeSession({ id: "s1", name: "Chat", scope: workspaceScope, ...sessionOverrides });
+    const onDelete = vi.fn();
+    render(
+      <SessionHistoryView
+        {...defaultProps}
+        sessions={[session]}
+        currentSessionId={currentSessionId ?? null}
+        onPin={vi.fn()}
+        onRename={vi.fn()}
+        onDelete={onDelete}
+        onSuggestName={vi.fn().mockResolvedValue("name")}
+      />
+    );
+    // Open dropdown and click Delete
+    const ellipsisBtn = screen.getByTestId("ellipsis-btn-s1");
+    fireEvent.pointerDown(ellipsisBtn);
+    fireEvent.click(ellipsisBtn);
+    fireEvent.click(screen.getByRole("menuitem", { name: /delete/i }));
+    return { onDelete };
+  };
+
+  it("shows generic confirmation text for inactive session", async () => {
+    triggerDelete({}, "other-session-id");
+    expect(await screen.findByText(/delete this conversation/i)).toBeInTheDocument();
+  });
+
+  it("shows active session warning text when deleting active session", async () => {
+    triggerDelete({}, "s1");
+    expect(await screen.findByText(/this is your active conversation/i)).toBeInTheDocument();
+  });
+
+  it("calls onDelete when Delete button confirmed", async () => {
+    const { onDelete } = triggerDelete({}, "other-id");
+    await screen.findByText(/delete this conversation/i);
+    fireEvent.click(screen.getByRole("button", { name: /^delete$/i }));
+    expect(onDelete).toHaveBeenCalledWith("s1");
+  });
+
+  it("does not call onDelete when Cancel is clicked", async () => {
+    const { onDelete } = triggerDelete({}, "other-id");
+    await screen.findByText(/delete this conversation/i);
+    fireEvent.click(screen.getByRole("button", { name: /cancel/i }));
+    expect(onDelete).not.toHaveBeenCalled();
   });
 });

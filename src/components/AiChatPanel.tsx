@@ -17,6 +17,10 @@ export function AiChatPanel() {
     resumeSession,
     newSession,
     checkAuth,
+    renameSession,
+    pinSession,
+    deleteSession,
+    suggestSessionName,
   } = useAiChatStore();
 
   const selectedFilePath = useFileTreeStore((s) => s.selectedFilePath);
@@ -41,15 +45,17 @@ export function AiChatPanel() {
         sessions={sessions}
         currentSessionId={currentSession?.id ?? null}
         currentScope={currentScope}
-        onResume={(id) => {
-          resumeSession(id);
-          setView("chat");
-        }}
-        onNewSession={() => {
-          newSession();
-          setView("chat");
-        }}
+        onResume={(id) => { resumeSession(id); setView("chat"); }}
+        onNewSession={() => { newSession(); setView("chat"); }}
         onBack={() => setView("chat")}
+        onPin={(id, pinned) => pinSession(id, pinned)}
+        onRename={(id, name) => renameSession(id, name)}
+        onSuggestName={(id) => suggestSessionName(id)}
+        onDelete={(id) => {
+          const isActive = currentSession?.id === id;
+          deleteSession(id);
+          if (isActive) setView("chat");
+        }}
       />
     );
   }
