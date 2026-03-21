@@ -33,6 +33,10 @@ export function AiChatPanel() {
   } = useAiChatStore();
 
   const selectedFilePath = useFileTreeStore((s) => s.selectedFilePath);
+  // Note: currentScope is derived here for filtering the history view.
+  // The store's newSession() independently derives scope at call time from the
+  // same source, so they agree in normal usage. If scope derivation gains
+  // complexity, centralise it.
   const currentScope: SessionScope = selectedFilePath
     ? { type: "document", path: selectedFilePath }
     : { type: "workspace" };
@@ -218,6 +222,7 @@ export function AiChatPanel() {
           <button
             className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded"
             title="Session history"
+            aria-label="Session history"
             onClick={() => setView("history")}
           >
             <Clock className="w-4 h-4 text-gray-500" />
