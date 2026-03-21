@@ -38,7 +38,7 @@ export function ChatView({ onShowHistory, onNewSession }: ChatViewProps) {
     if (messages.length === 0 && !isStreaming) {
       return (
         <div className="flex flex-col items-center justify-center h-full gap-4">
-          <p className="text-[--font-size-ui-base] text-[--color-text-tertiary]">
+          <p className="text-[length:var(--font-size-ui-base)] text-(--color-text-tertiary)">
             Ask me about this document or your repository
           </p>
           <div className="flex flex-col gap-2 w-full">
@@ -50,14 +50,14 @@ export function ChatView({ onShowHistory, onNewSession }: ChatViewProps) {
               <button
                 key={prompt}
                 onClick={() => sendMessage(prompt)}
-                className="w-full px-3 py-2 text-[--font-size-ui-base] text-left text-[--color-text-secondary] bg-[--color-bg-subtle] hover:bg-[--color-bg-hover] rounded-[--radius-base] transition-colors duration-(--duration-fast)"
+                className="w-full px-3 py-2 text-[length:var(--font-size-ui-base)] text-left text-(--color-text-secondary) bg-(--color-bg-subtle) hover:bg-(--color-bg-hover) rounded-(--radius-base) transition-colors duration-(--duration-fast)"
               >
                 {prompt}
               </button>
             ))}
           </div>
           {error && (
-            <p className="text-[--font-size-ui-base] text-[--color-state-danger] mt-2">
+            <p className="text-[length:var(--font-size-ui-base)] text-(--color-state-danger) mt-2">
               {error}
             </p>
           )}
@@ -78,11 +78,11 @@ export function ChatView({ onShowHistory, onNewSession }: ChatViewProps) {
         )}
         {isStreaming && !streamingContent && (
           <div className="flex justify-start mb-3">
-            <span className="inline-block w-2 h-2 bg-[--color-text-tertiary] rounded-full animate-pulse" />
+            <span className="inline-block w-2 h-2 bg-(--color-text-tertiary) rounded-full animate-pulse" />
           </div>
         )}
         {error && (
-          <p className="text-[--font-size-ui-base] text-[--color-state-danger] mt-2">
+          <p className="text-[length:var(--font-size-ui-base)] text-(--color-state-danger) mt-2">
             {error}
           </p>
         )}
@@ -94,32 +94,32 @@ export function ChatView({ onShowHistory, onNewSession }: ChatViewProps) {
   return (
     <div
       ref={panelRef}
-      className="w-96 flex flex-col h-full border-l border-[--color-border-default] bg-[--color-bg-base]"
+      className="w-96 flex flex-col h-full border-l border-(--color-border-subtle) bg-(--color-bg-base)"
     >
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-[--color-border-default] flex-shrink-0">
+      <div className="flex items-center justify-between px-4 h-(--height-titlebar) border-b border-(--color-border-subtle) flex-shrink-0">
         <div className="flex items-center gap-2">
-          <MessageSquare className="w-4 h-4 text-[--color-text-tertiary]" />
-          <span className="text-[--font-size-ui-md] font-medium text-[--color-text-primary]">
+          <MessageSquare className="w-4 h-4 text-(--color-text-tertiary)" />
+          <span className="text-[length:var(--font-size-ui-md)] font-medium text-(--color-text-primary)">
             {currentSession?.name || "AI assistant"}
           </span>
         </div>
         <div className="flex items-center gap-1">
           <button
             onClick={onShowHistory}
-            className="size-7 flex items-center justify-center hover:bg-[--color-bg-hover] rounded-[--radius-base]"
+            className="size-7 flex items-center justify-center hover:bg-(--color-bg-hover) rounded-(--radius-base)"
             title="Session history"
             aria-label="Session history"
           >
-            <Clock className="w-4 h-4 text-[--color-text-tertiary]" />
+            <Clock className="w-4 h-4 text-(--color-text-tertiary)" />
           </button>
           <button
             onClick={onNewSession}
-            className="size-7 flex items-center justify-center hover:bg-[--color-bg-hover] rounded-[--radius-base]"
+            className="size-7 flex items-center justify-center hover:bg-(--color-bg-hover) rounded-(--radius-base)"
             title="New conversation"
             aria-label="New conversation"
           >
-            <Plus className="w-4 h-4 text-[--color-text-tertiary]" />
+            <Plus className="w-4 h-4 text-(--color-text-tertiary)" />
           </button>
         </div>
       </div>
@@ -130,7 +130,7 @@ export function ChatView({ onShowHistory, onNewSession }: ChatViewProps) {
         <div className="flex-1 overflow-y-auto p-4">{renderBody()}</div>
 
         {/* Input — always rendered in ChatView; disabled via isStreaming when session not yet ready */}
-        <div className="p-3 border-t border-[--color-border-default]">
+        <div className="p-1.5">
           <ChatInputCard
             value={input}
             onChange={setInput}

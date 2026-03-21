@@ -49,7 +49,7 @@ describe("ChatMessage", () => {
     );
     const msgEl = screen.getByText("Blue user msg").closest("div.max-w-\\[85\\%\\]") ||
       screen.getByText("Blue user msg").parentElement;
-    expect(msgEl?.className).toContain("bg-[--color-accent]");
+    expect(msgEl?.className).toContain("bg-(--color-accent)");
   });
 
   it("assistant messages have subtle background", () => {
@@ -60,6 +60,6 @@ describe("ChatMessage", () => {
     );
     const msgEl = screen.getByText("Gray assistant msg").closest("div.max-w-\\[85\\%\\]") ||
       screen.getByText("Gray assistant msg").parentElement;
-    expect(msgEl?.className).toContain("bg-[--color-bg-subtle]");
+    expect(msgEl?.className).toContain("bg-(--color-bg-subtle)");
   });
 });
