@@ -319,52 +319,52 @@ No new logging needed. The existing `save_session` DEBUG timing log covers the a
       - [x] TypeScript compiles with no errors
     - **Dependencies**: "Task: Add `SessionScope` enum and `name`/`scope` fields to `session.rs`"
 
-- [ ] **Story: Store updates**
-  - [ ] **Task: Update `newSession` action to derive scope; add `resumeSession` action**
+- [x] **Story: Store updates**
+  - [x] **Task: Update `newSession` action to derive scope; add `resumeSession` action**
     - **Description**: In the `newSession` store action, derive scope at call time: read `useFileTreeStore.getState().selectedFilePath` — if non-null, use `{ type: "document", path: selectedFilePath }`; otherwise `{ type: "workspace" }`. Pass the derived scope to the `newSession()` helper. Add a new `resumeSession(id: string)` action: find the session in `sessions[]` by id (no-op if not found), reconstruct `messages: ChatMessage[]` from `session.messages_all` by extracting the text content of each message, then set `currentSession`, `messages`, `isStreaming: false`, `streamingContent: ""`, `error: null`.
     - **Acceptance criteria**:
-      - [ ] `newSession` action derives `document` scope when a file is selected
-      - [ ] `newSession` action derives `workspace` scope when no file is selected
-      - [ ] `resumeSession` sets `currentSession` to the found session
-      - [ ] `resumeSession` reconstructs `messages[]` correctly from `messages_all`
-      - [ ] `resumeSession` is a no-op when id is not found in `sessions[]`
-      - [ ] `resumeSession` added to the `AiChatStore` interface
-      - [ ] Unit tests cover all cases above
+      - [x] `newSession` action derives `document` scope when a file is selected
+      - [x] `newSession` action derives `workspace` scope when no file is selected
+      - [x] `resumeSession` sets `currentSession` to the found session
+      - [x] `resumeSession` reconstructs `messages[]` correctly from `messages_all`
+      - [x] `resumeSession` is a no-op when id is not found in `sessions[]`
+      - [x] `resumeSession` added to the `AiChatStore` interface
+      - [x] Unit tests cover all cases above
     - **Dependencies**: "Task: Mirror changes in `session.ts`; update `newSession()` signature"
-  - [ ] **Task: Auto-populate session name on first message in `sendMessage`**
+  - [x] **Task: Auto-populate session name on first message in `sendMessage`**
     - **Description**: At the start of `sendMessage`, before appending the user message to the session, check if `currentSession.name === ""`. If so, set `name` to the first 60 characters of `content`, appending `"…"` if truncated. Update `currentSession` with the new name before the `saveCurrentSession` call.
     - **Acceptance criteria**:
-      - [ ] Name is set from message content when session name is empty
-      - [ ] Name is not overwritten if already set
-      - [ ] Truncation appends `"…"` at 60 chars
-      - [ ] Name is persisted via the existing `saveCurrentSession` call (no extra Tauri call)
-      - [ ] Unit tests cover: name set on first message, name unchanged on subsequent messages, truncation
+      - [x] Name is set from message content when session name is empty
+      - [x] Name is not overwritten if already set
+      - [x] Truncation appends `"…"` at 60 chars
+      - [x] Name is persisted via the existing `saveCurrentSession` call (no extra Tauri call)
+      - [x] Unit tests cover: name set on first message, name unchanged on subsequent messages, truncation
     - **Dependencies**: "Task: Update `newSession` action to derive scope; add `resumeSession` action"
 
-- [ ] **Story: `SessionHistoryView` component**
-  - [ ] **Task: Implement `SessionHistoryView` component**
+- [x] **Story: `SessionHistoryView` component**
+  - [x] **Task: Implement `SessionHistoryView` component**
     - **Description**: Create `src/components/SessionHistoryView.tsx` as a purely presentational component (no store access). Props: `sessions`, `currentSessionId`, `currentScope`, `onResume`, `onNewSession`, `onBack`. Filter `sessions` to those matching `currentScope` (exact path match for document scope; type match for workspace), sort newest-first by `last_active_at`. Render a header bar with a `←` back button, "Conversation history" title, and `+` new conversation button. Render a scrollable list of session rows, each showing: session name, mode badge, relative timestamp ("Today, H:MMam/pm" / "Yesterday" / locale date). Apply a vertical accent-colored left border to the row whose id matches `currentSessionId`. Render an empty state with "No conversations yet" and a "Start a conversation" button (calls `onNewSession`) when the filtered list is empty.
     - **Acceptance criteria**:
-      - [ ] Only sessions matching `currentScope` are rendered
-      - [ ] Sessions sorted newest-first
-      - [ ] Each row shows name, mode badge, and relative timestamp
-      - [ ] Current session row has accent left border indicator
-      - [ ] Clicking a row calls `onResume(session.id)`
-      - [ ] Clicking `+` new calls `onNewSession`
-      - [ ] Clicking `←` calls `onBack`
-      - [ ] Empty state renders with CTA when no sessions match scope
-      - [ ] Component has no direct store imports
+      - [x] Only sessions matching `currentScope` are rendered
+      - [x] Sessions sorted newest-first
+      - [x] Each row shows name, mode badge, and relative timestamp
+      - [x] Current session row has accent left border indicator
+      - [x] Clicking a row calls `onResume(session.id)`
+      - [x] Clicking `+` new calls `onNewSession`
+      - [x] Clicking `←` calls `onBack`
+      - [x] Empty state renders with CTA when no sessions match scope
+      - [x] Component has no direct store imports
     - **Dependencies**: "Task: Mirror changes in `session.ts`; update `newSession()` signature"
-  - [ ] **Task: Write unit tests for `SessionHistoryView`**
+  - [x] **Task: Write unit tests for `SessionHistoryView`**
     - **Description**: Create `tests/unit/components/SessionHistoryView.test.tsx`. Cover all behaviour described in the testing plan section of the tech spec.
     - **Acceptance criteria**:
-      - [ ] Renders sessions for current scope; excludes sessions outside scope
-      - [ ] Clicking a row calls `onResume` with correct session id
-      - [ ] Clicking `+` new calls `onNewSession`
-      - [ ] Clicking `←` calls `onBack`
-      - [ ] Current session row has accent indicator
-      - [ ] Empty state renders when no sessions match scope
-      - [ ] All tests pass
+      - [x] Renders sessions for current scope; excludes sessions outside scope
+      - [x] Clicking a row calls `onResume` with correct session id
+      - [x] Clicking `+` new calls `onNewSession`
+      - [x] Clicking `←` calls `onBack`
+      - [x] Current session row has accent indicator
+      - [x] Empty state renders when no sessions match scope
+      - [x] All tests pass
     - **Dependencies**: "Task: Implement `SessionHistoryView` component"
 
 - [ ] **Story: `AiChatPanel` history integration**
