@@ -4,7 +4,9 @@ import { useFileTreeStore } from "@/stores/fileTree";
 
 vi.mock("@tauri-apps/api/core", () => ({
   invoke: vi.fn().mockResolvedValue([]),
-  Channel: vi.fn().mockImplementation(() => ({ onmessage: vi.fn() })),
+  Channel: vi.fn().mockImplementation(function () {
+    this.onmessage = vi.fn();
+  }),
 }));
 
 beforeEach(() => {
@@ -113,5 +115,56 @@ describe("resumeSession", () => {
     useAiChatStore.setState({ sessions: [session], currentSession: session });
     useAiChatStore.getState().resumeSession("does-not-exist");
     expect(useAiChatStore.getState().currentSession?.id).toBe("abc");
+  });
+});
+
+describe("sendMessage — session name auto-population", () => {
+  beforeEach(async () => {
+    const { invoke } = await import("@tauri-apps/api/core");
+    vi.mocked(invoke).mockResolvedValue(undefined);
+    useAiChatStore.setState({
+      currentSession: {
+        id: "sess-1",
+        created_at: "2026-01-01T00:00:00Z",
+        last_active_at: "2026-01-01T00:00:00Z",
+        last_mode: "view",
+        name: "",
+        scope: { type: "workspace" },
+        pinned: false,
+        messages_all: [],
+        messages_compacted: [],
+      },
+      sessions: [],
+      messages: [],
+      isStreaming: false,
+      streamingContent: "",
+      error: null,
+      isAuthenticated: true,
+      authChecked: true,
+      awsProfile: "test-profile",
+    });
+  });
+
+  it("sets name from first message content", async () => {
+    await useAiChatStore.getState().sendMessage("Hello world");
+    expect(useAiChatStore.getState().currentSession?.name).toBe("Hello world");
+  });
+
+  it("truncates name at 60 chars with ellipsis", async () => {
+    const longMessage = "a".repeat(70);
+    await useAiChatStore.getState().sendMessage(longMessage);
+    const name = useAiChatStore.getState().currentSession?.name;
+    expect(name).toBe("a".repeat(60) + "…");
+  });
+
+  it("does not overwrite name if already set", async () => {
+    useAiChatStore.setState({
+      currentSession: {
+        ...useAiChatStore.getState().currentSession!,
+        name: "Existing name",
+      },
+    });
+    await useAiChatStore.getState().sendMessage("New message");
+    expect(useAiChatStore.getState().currentSession?.name).toBe("Existing name");
   });
 });
