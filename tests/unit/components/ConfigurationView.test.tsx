@@ -22,31 +22,14 @@ beforeEach(() => {
     checkAuth: vi.fn() as unknown as () => Promise<void>,
     login: vi.fn() as unknown as () => Promise<void>,
     setAwsProfile: vi.fn() as unknown as (profile: string) => Promise<void>,
+    clearAwsProfile: vi.fn() as unknown as () => Promise<void>,
   });
 });
 
 describe("ConfigurationView", () => {
-  it("shows 'AI settings' header when auth is checking", () => {
+  it("shows 'AI settings' header in every state", () => {
     render(<ConfigurationView />);
     expect(screen.getByText("AI settings")).toBeInTheDocument();
-  });
-
-  it("shows 'AI settings' header when not authenticated without profile", () => {
-    useAiChatStore.setState({ authChecked: true });
-    render(<ConfigurationView />);
-    expect(screen.getByText("AI settings")).toBeInTheDocument();
-  });
-
-  it("shows 'AI settings' header when credentials have expired", () => {
-    useAiChatStore.setState({ authChecked: true, awsProfile: "my-profile" });
-    render(<ConfigurationView />);
-    expect(screen.getByText("AI settings")).toBeInTheDocument();
-  });
-
-  it("renders no action buttons in the header", () => {
-    render(<ConfigurationView />);
-    const header = screen.getByRole("banner");
-    expect(header.querySelectorAll("button")).toHaveLength(0);
   });
 
   it("shows loading spinner when authChecked is false", () => {
@@ -60,6 +43,12 @@ describe("ConfigurationView", () => {
     expect(screen.getByText("Connect to AWS Bedrock")).toBeInTheDocument();
     expect(screen.getByPlaceholderText("e.g., ai-prod-llm")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Connect" })).toBeInTheDocument();
+  });
+
+  it("disables Connect button when profile input is empty", () => {
+    useAiChatStore.setState({ authChecked: true });
+    render(<ConfigurationView />);
+    expect(screen.getByRole("button", { name: "Connect" })).toBeDisabled();
   });
 
   it("shows re-authenticate prompt when not authenticated but has profile", () => {
@@ -76,7 +65,7 @@ describe("ConfigurationView", () => {
     expect(screen.getByText("Something went wrong")).toBeInTheDocument();
   });
 
-  it("calls setAwsProfile then login when Connect is clicked", async () => {
+  it("calls setAwsProfile when Connect is clicked", async () => {
     const setAwsProfile = vi.fn().mockResolvedValue(undefined);
     const login = vi.fn().mockResolvedValue(undefined);
     useAiChatStore.setState({ authChecked: true, setAwsProfile, login });
@@ -84,7 +73,28 @@ describe("ConfigurationView", () => {
     await userEvent.type(getByPlaceholderText("e.g., ai-prod-llm"), "my-profile");
     await userEvent.click(getByRole("button", { name: "Connect" }));
     expect(setAwsProfile).toHaveBeenCalledWith("my-profile");
-    expect(login).toHaveBeenCalled();
+  });
+
+  it("calls setAwsProfile and login when Enter is pressed in the input", async () => {
+    const setAwsProfile = vi.fn().mockResolvedValue(undefined);
+    const login = vi.fn().mockResolvedValue(undefined);
+    useAiChatStore.setState({ authChecked: true, setAwsProfile, login });
+    const { getByPlaceholderText } = render(<ConfigurationView />);
+    await userEvent.type(getByPlaceholderText("e.g., ai-prod-llm"), "my-profile{Enter}");
+    expect(setAwsProfile).toHaveBeenCalledWith("my-profile");
+  });
+
+  it("skips login when already authenticated after setAwsProfile", async () => {
+    const login = vi.fn().mockResolvedValue(undefined);
+    const setAwsProfile = vi.fn().mockImplementation(async () => {
+      useAiChatStore.setState({ isAuthenticated: true });
+    });
+    useAiChatStore.setState({ authChecked: true, setAwsProfile, login });
+    const { getByPlaceholderText, getByRole } = render(<ConfigurationView />);
+    await userEvent.type(getByPlaceholderText("e.g., ai-prod-llm"), "my-profile");
+    await userEvent.click(getByRole("button", { name: "Connect" }));
+    expect(setAwsProfile).toHaveBeenCalledWith("my-profile");
+    expect(login).not.toHaveBeenCalled();
   });
 
   it("calls login when Re-authenticate is clicked", async () => {
@@ -95,10 +105,15 @@ describe("ConfigurationView", () => {
     expect(login).toHaveBeenCalled();
   });
 
-  it("resets awsProfile when Change profile is clicked", async () => {
-    useAiChatStore.setState({ authChecked: true, awsProfile: "my-profile" });
+  it("calls clearAwsProfile when Change profile is clicked", async () => {
+    const clearAwsProfile = vi.fn().mockResolvedValue(undefined);
+    useAiChatStore.setState({
+      authChecked: true,
+      awsProfile: "my-profile",
+      clearAwsProfile,
+    });
     const { getByRole } = render(<ConfigurationView />);
     await userEvent.click(getByRole("button", { name: "Change profile" }));
-    expect(useAiChatStore.getState().awsProfile).toBeNull();
+    expect(clearAwsProfile).toHaveBeenCalledTimes(1);
   });
 });

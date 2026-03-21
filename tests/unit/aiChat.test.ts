@@ -263,6 +263,50 @@ describe("useAiChatStore", () => {
     });
   });
 
+  describe("clearAwsProfile", () => {
+    it("sets awsProfile to null in state", async () => {
+      useAiChatStore.setState({ awsProfile: "old-profile", isAuthenticated: true, authChecked: true });
+      mockInvoke.mockResolvedValueOnce({ last_opened_folder: null, aws_profile: "old-profile" }); // load_preferences
+      mockInvoke.mockResolvedValueOnce(undefined); // save_preferences
+
+      await useAiChatStore.getState().clearAwsProfile();
+
+      expect(useAiChatStore.getState().awsProfile).toBeNull();
+    });
+
+    it("resets authChecked and isAuthenticated to false immediately", async () => {
+      useAiChatStore.setState({ awsProfile: "old-profile", isAuthenticated: true, authChecked: true });
+      mockInvoke.mockResolvedValueOnce({ last_opened_folder: null, aws_profile: "old-profile" }); // load_preferences
+      mockInvoke.mockResolvedValueOnce(undefined); // save_preferences
+
+      await useAiChatStore.getState().clearAwsProfile();
+
+      expect(useAiChatStore.getState().authChecked).toBe(false);
+      expect(useAiChatStore.getState().isAuthenticated).toBe(false);
+    });
+
+    it("calls save_preferences with aws_profile: null", async () => {
+      useAiChatStore.setState({ awsProfile: "old-profile" });
+      mockInvoke.mockResolvedValueOnce({ last_opened_folder: "/workspace", aws_profile: "old-profile" }); // load_preferences
+      mockInvoke.mockResolvedValueOnce(undefined); // save_preferences
+
+      await useAiChatStore.getState().clearAwsProfile();
+
+      expect(mockInvoke).toHaveBeenCalledWith("save_preferences", {
+        preferences: expect.objectContaining({ aws_profile: null }),
+      });
+    });
+
+    it("sets error when invoke throws", async () => {
+      useAiChatStore.setState({ awsProfile: "old-profile" });
+      mockInvoke.mockRejectedValueOnce(new Error("Save failed"));
+
+      await useAiChatStore.getState().clearAwsProfile();
+
+      expect(useAiChatStore.getState().error).toBe("Save failed");
+    });
+  });
+
   describe("setAwsProfile", () => {
     it("sets awsProfile in state", async () => {
       mockInvoke.mockResolvedValueOnce({ last_opened_folder: null, aws_profile: null }); // load_preferences
