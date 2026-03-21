@@ -182,7 +182,6 @@ export function ChatView({ onShowHistory, onNewSession }: ChatViewProps) {
                         new Promise<never>((_, reject) => setTimeout(() => reject(new Error("Timed out")), 5000)),
                       ]);
                       setRenameValue(suggested);
-                      renameInputRef.current?.focus();
                     } catch {
                       // Timed out or errored — leave the field as-is
                     } finally {

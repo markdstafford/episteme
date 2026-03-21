@@ -199,7 +199,6 @@ export function SessionHistoryView({
                                         new Promise<never>((_, reject) => setTimeout(() => reject(new Error("Timed out")), 5000)),
                                       ]);
                                       setRenameValue(suggested);
-                                      renameInputRef.current?.focus();
                                     } catch {
                                       // Timed out or errored — leave the field as-is
                                     } finally {
@@ -296,7 +295,6 @@ export function SessionHistoryView({
                       </ContextMenu.Portal>
                     </ContextMenu.Root>
                   </Popover.Anchor>
-                  <Popover.Portal>
                     <Popover.Content
                       className="bg-(--color-bg-elevated) border border-(--color-border-subtle) rounded-(--radius-base) shadow-(--shadow-md) p-3 max-w-56 z-50"
                       side="bottom"
@@ -324,7 +322,6 @@ export function SessionHistoryView({
                         </button>
                       </div>
                     </Popover.Content>
-                  </Popover.Portal>
                 </Popover.Root>
               );
             })}
