@@ -146,6 +146,31 @@ describe("ChatView", () => {
       expect(renameSession).not.toHaveBeenCalled();
     });
 
+    it("calls suggestSessionName, disables input during loading, and populates field on resolution", async () => {
+      let resolveSuggestion!: (name: string) => void;
+      const suggestionPromise = new Promise<string>((resolve) => { resolveSuggestion = resolve; });
+      const suggestSessionName = vi.fn().mockReturnValue(suggestionPromise) as unknown as (sessionId: string) => Promise<string>;
+      useAiChatStore.setState({ suggestSessionName });
+
+      render(<ChatView onShowHistory={onShowHistory} onNewSession={onNewSession} />);
+      fireEvent.click(screen.getByLabelText("Rename session"));
+
+      // Click the sparkle button
+      fireEvent.click(screen.getByTestId("header-suggest-btn"));
+      expect(suggestSessionName).toHaveBeenCalledWith("s1");
+
+      // Input should be disabled while suggestion is loading
+      const input = screen.getByRole("textbox", { name: "Session name" });
+      expect(input).toBeDisabled();
+
+      // Resolve the suggestion
+      resolveSuggestion("Suggested Session Name");
+      await screen.findByDisplayValue("Suggested Session Name");
+
+      // Input should be re-enabled
+      expect(input).not.toBeDisabled();
+    });
+
     it("disables sparkle when session has no messages", () => {
       useAiChatStore.setState({
         currentSession: makeSession({ id: "s1", name: "My session", messages_compacted: [] }),
