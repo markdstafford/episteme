@@ -175,7 +175,9 @@ export function SessionHistoryView({
                             <button
                               data-testid={`suggest-btn-${session.id}`}
                               disabled={session.messages_compacted.length === 0 || isSuggestingId === session.id}
-                              onClick={async () => {
+                              onClick={async (e) => {
+                                e.stopPropagation();
+                                skipNextBlurRef.current = true;  // prevent onBlur from committing before suggestion arrives
                                 setIsSuggestingId(session.id);
                                 try {
                                   const suggested = await onSuggestName(session.id);

@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor, act } from "@testing-library/react";
+import { render, screen, fireEvent, act } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 Object.defineProperty(window, 'PointerEvent', { value: MouseEvent });
@@ -344,5 +344,17 @@ describe("Inline rename", () => {
     expect(onSuggestName).toHaveBeenCalledWith("s1");
     // Wait for the suggestion to populate
     await screen.findByDisplayValue("AI suggested name");
+  });
+
+  it("does not call onRename when sparkle is clicked (waits for user to confirm)", async () => {
+    const { onRename, onSuggestName } = await renderWithRenaming();
+    fireEvent.click(screen.getByTestId("suggest-btn-s1"));
+    expect(onSuggestName).toHaveBeenCalledWith("s1");
+    // onRename should NOT be called immediately — only when user confirms with Enter/blur
+    expect(onRename).not.toHaveBeenCalled();
+    // Wait for suggestion to populate
+    await screen.findByDisplayValue("AI suggested name");
+    // Still not called — user hasn't confirmed yet
+    expect(onRename).not.toHaveBeenCalled();
   });
 });
