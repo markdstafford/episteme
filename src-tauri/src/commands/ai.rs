@@ -559,6 +559,16 @@ pub async fn ai_suggest_session_name(
         );
     }
 
+    // Bedrock requires the conversation to end with a user message.
+    // Trim trailing assistant messages (normal after a completed exchange).
+    while bedrock_messages.last().map(|m| m.role() == &ConversationRole::Assistant).unwrap_or(false) {
+        bedrock_messages.pop();
+    }
+
+    if bedrock_messages.is_empty() {
+        return Err("messages must not be empty".to_string());
+    }
+
     let system_prompt = "Based on the following conversation, suggest a short session name \
         (5 words or fewer). Respond with only the name — no punctuation, no quotes, no explanation.";
 
