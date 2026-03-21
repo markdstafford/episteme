@@ -30,10 +30,10 @@ export function ConfigurationView() {
   };
 
   return (
-    <div className="w-96 flex flex-col h-full border-l border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
+    <div className="w-96 flex flex-col h-full border-l border-[--color-border-default] bg-[--color-bg-base]">
       {/* Header */}
-      <div className="flex items-center px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
-        <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+      <div className="flex items-center px-4 py-3 border-b border-[--color-border-default] flex-shrink-0">
+        <span className="text-[--font-size-ui-md] font-medium text-[--color-text-primary]">
           AI settings
         </span>
       </div>
@@ -41,12 +41,12 @@ export function ConfigurationView() {
       {/* Content */}
       <div className="flex flex-col items-center justify-center flex-1 px-4 gap-4">
         {!authChecked && (
-          <Loader2 className="w-6 h-6 text-gray-400 animate-spin" />
+          <Loader2 className="w-6 h-6 text-[--color-text-tertiary] animate-spin" />
         )}
 
         {authChecked && !isAuthenticated && !awsProfile && (
           <>
-            <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+            <p className="text-[--font-size-ui-md] font-medium text-[--color-text-primary]">
               Connect to AWS Bedrock
             </p>
             <input
@@ -54,7 +54,8 @@ export function ConfigurationView() {
               value={profileInput}
               onChange={(e) => setProfileInput(e.target.value)}
               placeholder="e.g., ai-prod-llm"
-              className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              data-ui-input
+              className="w-full px-3 py-1.5 text-[--font-size-ui-base] border border-[--color-border-default] rounded-[--radius-base] bg-[--color-bg-subtle] text-[--color-text-primary] focus:outline-none focus:border-[--color-accent] focus:shadow-[0_0_0_2px_color-mix(in_oklch,var(--color-accent)_25%,transparent)]"
               onKeyDown={(e) => {
                 if (e.key === "Enter") handleConnect();
               }}
@@ -62,7 +63,7 @@ export function ConfigurationView() {
             <button
               onClick={handleConnect}
               disabled={!profileInput.trim() || isConnecting}
-              className="w-full px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full px-4 py-2 text-[--font-size-ui-base] font-medium text-[--color-text-on-accent] bg-[--color-accent] hover:bg-[--color-accent-hover] rounded-[--radius-base] disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isConnecting ? "Connecting…" : "Connect"}
             </button>
@@ -71,25 +72,29 @@ export function ConfigurationView() {
 
         {authChecked && !isAuthenticated && awsProfile && (
           <>
-            <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+            <p className="text-[--font-size-ui-md] font-medium text-[--color-text-primary]">
               Session expired
             </p>
             <button
               onClick={login}
-              className="w-full px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg"
+              className="w-full px-4 py-2 text-[--font-size-ui-base] font-medium text-[--color-text-on-accent] bg-[--color-accent] hover:bg-[--color-accent-hover] rounded-[--radius-base]"
             >
               Re-authenticate
             </button>
             <button
               onClick={clearAwsProfile}
-              className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
+              className="text-[--font-size-ui-sm] text-[--color-accent] hover:underline"
             >
               Change profile
             </button>
           </>
         )}
 
-        {error && <p className="text-red-600 text-sm">{error}</p>}
+        {error && (
+          <p className="text-[--font-size-ui-base] text-[--color-state-danger]">
+            {error}
+          </p>
+        )}
       </div>
     </div>
   );
