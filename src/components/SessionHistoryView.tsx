@@ -84,7 +84,7 @@ export function SessionHistoryView({
             </p>
             <button
               onClick={onNewSession}
-              className="px-3 py-1.5 text-[--font-size-ui-base] text-[--color-accent] border border-[--color-border-default] rounded-[--radius-base] hover:bg-[--color-bg-hover] transition-colors duration-[--duration-fast]"
+              className="px-3 py-1.5 text-[--font-size-ui-base] text-[--color-accent] border border-[--color-border-default] rounded-[--radius-base] hover:bg-[--color-bg-hover] transition-colors duration-(--duration-fast)"
             >
               Start a conversation
             </button>
@@ -122,7 +122,7 @@ export function SessionHistoryView({
                       {session.name || "Untitled"}
                     </p>
                     <div className="flex items-center gap-2 mt-1">
-                      <span className="text-[--font-size-ui-xs] px-1.5 py-0.5 rounded-[--radius-sm] bg-[--color-bg-hover] text-[--color-text-secondary]">
+                      <span className="text-[--font-size-ui-xs] px-1.5 py-0.5 rounded-[--radius-sm] bg-[--color-bg-subtle] text-[--color-text-secondary]">
                         {session.last_mode}
                       </span>
                       <span className="text-[--font-size-ui-xs] text-[--color-text-quaternary]">

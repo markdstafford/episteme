@@ -54,7 +54,8 @@ export function ConfigurationView() {
               value={profileInput}
               onChange={(e) => setProfileInput(e.target.value)}
               placeholder="e.g., ai-prod-llm"
-              className="w-full px-3 py-1.5 text-[--font-size-ui-base] border border-[--color-border-default] rounded-[--radius-base] bg-[--color-bg-subtle] text-[--color-text-primary] placeholder-[--color-text-tertiary] focus:outline-none focus:border-[--color-accent] focus:shadow-[0_0_0_2px_color-mix(in_oklch,var(--color-accent)_25%,transparent)]"
+              data-ui-input
+              className="w-full px-3 py-1.5 text-[--font-size-ui-base] border border-[--color-border-default] rounded-[--radius-base] bg-[--color-bg-subtle] text-[--color-text-primary] focus:outline-none focus:border-[--color-accent] focus:shadow-[0_0_0_2px_color-mix(in_oklch,var(--color-accent)_25%,transparent)]"
               onKeyDown={(e) => {
                 if (e.key === "Enter") handleConnect();
               }}

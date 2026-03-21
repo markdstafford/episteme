@@ -48,7 +48,8 @@ export function ChatInputCard({
         placeholder="Ask a question..."
         rows={1}
         disabled={isStreaming}
-        className="w-full resize-none bg-transparent border-none outline-none px-3 pt-3 text-[--font-size-ui-base] text-[--color-text-primary] placeholder-[--color-text-tertiary] overflow-y-auto disabled:opacity-50"
+        data-ui-input
+        className="w-full resize-none bg-transparent border-none outline-none px-3 pt-3 text-[--font-size-ui-base] text-[--color-text-primary] overflow-y-auto disabled:opacity-50"
       />
       <div className="flex items-center justify-between px-2 py-1.5 border-t border-[--color-border-default]">
         <div>{modeButton}</div>
