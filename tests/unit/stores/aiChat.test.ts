@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { useAiChatStore } from "@/stores/aiChat";
 import { useFileTreeStore } from "@/stores/fileTree";
+import type { Session } from "@/lib/session";
 
 vi.mock("@tauri-apps/api/core", () => ({
   invoke: vi.fn().mockResolvedValue([]),
@@ -161,6 +162,131 @@ describe("saveCurrentSession — in-memory sync", () => {
     useAiChatStore.setState({ currentSession: session, sessions: [] });
     await useAiChatStore.getState().saveCurrentSession();
     expect(useAiChatStore.getState().sessions).toHaveLength(0);
+  });
+});
+
+// Helper reused across new tests
+function makeFullSession(id: string, overrides: Partial<Session> = {}): Session {
+  return {
+    id,
+    created_at: "2026-01-01T00:00:00Z",
+    last_active_at: "2026-01-01T00:00:00Z",
+    last_mode: "view",
+    name: "Test session",
+    scope: { type: "workspace" as const },
+    pinned: false,
+    messages_all: [],
+    messages_compacted: [],
+    ...overrides,
+  };
+}
+
+describe("renameSession", () => {
+  beforeEach(async () => {
+    const { invoke } = await import("@tauri-apps/api/core");
+    vi.mocked(invoke).mockResolvedValue(undefined);
+  });
+
+  it("updates name on matching session in sessions[]", async () => {
+    const session = makeFullSession("s1");
+    useAiChatStore.setState({ sessions: [session], currentSession: null });
+    await useAiChatStore.getState().renameSession("s1", "New Name");
+    expect(useAiChatStore.getState().sessions[0].name).toBe("New Name");
+  });
+
+  it("also updates currentSession.name when id matches", async () => {
+    const session = makeFullSession("s1");
+    useAiChatStore.setState({ sessions: [session], currentSession: session });
+    await useAiChatStore.getState().renameSession("s1", "New Name");
+    expect(useAiChatStore.getState().currentSession?.name).toBe("New Name");
+  });
+
+  it("calls save_session with the updated session", async () => {
+    const { invoke } = await import("@tauri-apps/api/core");
+    const session = makeFullSession("s1");
+    useAiChatStore.setState({ sessions: [session], currentSession: null });
+    await useAiChatStore.getState().renameSession("s1", "New Name");
+    expect(invoke).toHaveBeenCalledWith("save_session", expect.objectContaining({
+      session: expect.objectContaining({ id: "s1", name: "New Name" }),
+    }));
+  });
+
+  it("is a no-op when id not found", async () => {
+    const session = makeFullSession("s1");
+    useAiChatStore.setState({ sessions: [session] });
+    await useAiChatStore.getState().renameSession("does-not-exist", "X");
+    expect(useAiChatStore.getState().sessions[0].name).toBe("Test session");
+  });
+});
+
+describe("pinSession", () => {
+  beforeEach(async () => {
+    const { invoke } = await import("@tauri-apps/api/core");
+    vi.mocked(invoke).mockResolvedValue(undefined);
+  });
+
+  it("updates pinned state in sessions[]", async () => {
+    const session = makeFullSession("s1", { pinned: false });
+    useAiChatStore.setState({ sessions: [session] });
+    await useAiChatStore.getState().pinSession("s1", true);
+    expect(useAiChatStore.getState().sessions[0].pinned).toBe(true);
+  });
+
+  it("calls pin_session Tauri command", async () => {
+    const { invoke } = await import("@tauri-apps/api/core");
+    const session = makeFullSession("s1");
+    useAiChatStore.setState({ sessions: [session] });
+    await useAiChatStore.getState().pinSession("s1", true);
+    expect(invoke).toHaveBeenCalledWith("pin_session", { id: "s1", pinned: true });
+  });
+});
+
+describe("deleteSession", () => {
+  beforeEach(async () => {
+    const { invoke } = await import("@tauri-apps/api/core");
+    vi.mocked(invoke).mockResolvedValue(undefined);
+  });
+
+  it("removes session from sessions[]", async () => {
+    const s1 = makeFullSession("s1");
+    const s2 = makeFullSession("s2");
+    useAiChatStore.setState({ sessions: [s1, s2], currentSession: s2 });
+    await useAiChatStore.getState().deleteSession("s1");
+    expect(useAiChatStore.getState().sessions.map(s => s.id)).toEqual(["s2"]);
+  });
+
+  it("calls delete_session Tauri command", async () => {
+    const { invoke } = await import("@tauri-apps/api/core");
+    const s1 = makeFullSession("s1");
+    useAiChatStore.setState({ sessions: [s1], currentSession: null });
+    await useAiChatStore.getState().deleteSession("s1");
+    expect(invoke).toHaveBeenCalledWith("delete_session", { id: "s1" });
+  });
+
+  it("calls newSession when deleting the active session", async () => {
+    const s1 = makeFullSession("s1");
+    useAiChatStore.setState({ sessions: [s1], currentSession: s1 });
+    await useAiChatStore.getState().deleteSession("s1");
+    // A new session is created — it will have a different id
+    expect(useAiChatStore.getState().currentSession?.id).not.toBe("s1");
+    expect(useAiChatStore.getState().currentSession).not.toBeNull();
+  });
+});
+
+describe("suggestSessionName", () => {
+  it("returns string from Tauri command", async () => {
+    const { invoke } = await import("@tauri-apps/api/core");
+    vi.mocked(invoke).mockResolvedValue("Product spec review");
+    const session = makeFullSession("s1", {
+      messages_compacted: [{ role: "user", content: [{ type: "text", text: "hi" }] }],
+    });
+    useAiChatStore.setState({ sessions: [session], awsProfile: "my-profile" });
+    const name = await useAiChatStore.getState().suggestSessionName("s1");
+    expect(name).toBe("Product spec review");
+    expect(invoke).toHaveBeenCalledWith("ai_suggest_session_name", {
+      messages: session.messages_compacted,
+      awsProfile: "my-profile",
+    });
   });
 });
 
