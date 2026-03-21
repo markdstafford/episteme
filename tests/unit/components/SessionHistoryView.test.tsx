@@ -111,4 +111,13 @@ describe("SessionHistoryView", () => {
     fireEvent.click(screen.getByRole("button", { name: /start a conversation/i }));
     expect(onNewSession).toHaveBeenCalledTimes(1);
   });
+
+  it("calls onResume when Enter is pressed on a session row", () => {
+    const onResume = vi.fn();
+    const sessions = [makeSession({ id: "abc", name: "My chat", scope: workspaceScope })];
+    render(<SessionHistoryView {...defaultProps} sessions={sessions} onResume={onResume} />);
+    const row = screen.getByTestId("session-row-abc");
+    fireEvent.keyDown(row, { key: "Enter" });
+    expect(onResume).toHaveBeenCalledWith("abc");
+  });
 });
