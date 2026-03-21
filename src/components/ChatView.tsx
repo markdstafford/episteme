@@ -76,7 +76,7 @@ export function ChatView({ onShowHistory, onNewSession }: ChatViewProps) {
             message={{ role: "assistant", content: streamingContent }}
           />
         )}
-        {isStreaming && (
+        {isStreaming && !streamingContent && (
           <div className="flex justify-start mb-3">
             <span className="inline-block w-2 h-2 bg-gray-400 rounded-full animate-pulse" />
           </div>

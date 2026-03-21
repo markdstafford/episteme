@@ -10,6 +10,22 @@ vi.mock("@tauri-apps/api/core", () => ({
 
 import { ChatView } from "@/components/ChatView";
 import { useAiChatStore } from "@/stores/aiChat";
+import type { Session } from "@/lib/session";
+
+function makeSession(overrides: Partial<Session> = {}): Session {
+  return {
+    id: crypto.randomUUID(),
+    name: "",
+    last_mode: "view",
+    last_active_at: new Date().toISOString(),
+    created_at: new Date().toISOString(),
+    scope: { type: "workspace" },
+    messages_all: [],
+    messages_compacted: [],
+    pinned: false,
+    ...overrides,
+  };
+}
 
 const onShowHistory = vi.fn();
 const onNewSession = vi.fn();
@@ -38,14 +54,7 @@ describe("ChatView", () => {
 
     it("shows session name when currentSession has a name", () => {
       useAiChatStore.setState({
-        currentSession: {
-          id: "s1",
-          name: "My session",
-          last_mode: "view",
-          last_active_at: new Date().toISOString(),
-          scope: { type: "workspace" },
-          messages_all: [],
-        },
+        currentSession: makeSession({ id: "s1", name: "My session" }),
       });
       render(<ChatView onShowHistory={onShowHistory} onNewSession={onNewSession} />);
       expect(screen.getByText("My session")).toBeInTheDocument();
@@ -68,6 +77,11 @@ describe("ChatView", () => {
     });
   });
 
+  it("renders the chat input card", () => {
+    render(<ChatView onShowHistory={onShowHistory} onNewSession={onNewSession} />);
+    expect(screen.getByPlaceholderText("Ask a question...")).toBeInTheDocument();
+  });
+
   describe("Empty state", () => {
     it("shows suggested prompts when no messages", () => {
       render(<ChatView onShowHistory={onShowHistory} onNewSession={onNewSession} />);
@@ -79,6 +93,14 @@ describe("ChatView", () => {
     it("shows suggested prompts as clickable buttons", () => {
       render(<ChatView onShowHistory={onShowHistory} onNewSession={onNewSession} />);
       expect(screen.getByText("Summarize this document").tagName).toBe("BUTTON");
+    });
+
+    it("calls sendMessage when a suggested prompt is clicked", async () => {
+      const sendMessage = vi.fn() as unknown as (content: string) => Promise<void>;
+      useAiChatStore.setState({ sendMessage });
+      render(<ChatView onShowHistory={onShowHistory} onNewSession={onNewSession} />);
+      screen.getByText("Summarize this document").click();
+      expect(sendMessage).toHaveBeenCalledWith("Summarize this document");
     });
   });
 
@@ -96,11 +118,6 @@ describe("ChatView", () => {
       render(<ChatView onShowHistory={onShowHistory} onNewSession={onNewSession} />);
       expect(screen.getByText("Hello there")).toBeInTheDocument();
       expect(screen.getByText("Hi! How can I help?")).toBeInTheDocument();
-    });
-
-    it("shows chat input", () => {
-      render(<ChatView onShowHistory={onShowHistory} onNewSession={onNewSession} />);
-      expect(screen.getByPlaceholderText("Ask a question...")).toBeInTheDocument();
     });
   });
 });
