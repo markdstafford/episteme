@@ -245,6 +245,17 @@ export const useAiChatStore = create<AiChatStore>((set, get) => ({
     if (!currentSession) return;
     try {
       await invoke("save_session", { session: currentSession });
+      // Keep in-memory sessions list in sync so the history view reflects the
+      // current run's conversations without requiring an app restart.
+      set((s) => {
+        const idx = s.sessions.findIndex((sess) => sess.id === currentSession.id);
+        if (idx >= 0) {
+          const updated = [...s.sessions];
+          updated[idx] = currentSession;
+          return { sessions: updated };
+        }
+        return { sessions: [...s.sessions, currentSession] };
+      });
     } catch (e) {
       // Non-fatal — log but don't surface to user
       console.warn("saveCurrentSession failed:", e);
