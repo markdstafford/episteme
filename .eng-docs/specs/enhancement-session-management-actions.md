@@ -309,20 +309,20 @@ No new logging beyond what's already covered by existing commands. `save_session
   - [x] **Task: Implement `ai_suggest_session_name` in `commands/ai.rs`**
     - **Description**: Add a new non-streaming `#[tauri::command]` function `ai_suggest_session_name(messages: Vec<CanonicalMessage>, aws_profile: String)` in `commands/ai.rs`. Validate `aws_profile` using the existing `validate_aws_profile()` helper. Return `Err` if `messages` is empty. Build an AWS config and Bedrock client using the same pattern as `ai_chat`. Call `client.converse()` (not `converse_stream()`) with a system prompt: "Based on the following conversation, suggest a short session name (5 words or fewer). Respond with only the name — no punctuation, no quotes, no explanation." Pass the messages converted to Bedrock format (text blocks only; skip non-text blocks as in `ai_chat`). Extract and return the text content of the first response block, trimmed.
     - **Acceptance criteria**:
-      - [ ] Returns `Err("messages must not be empty")` when messages is empty
-      - [ ] Returns `Err` on invalid `aws_profile` (via `validate_aws_profile`)
-      - [ ] Returns a non-empty trimmed string on success
-      - [ ] Uses `client.converse()`, not `converse_stream()`
-      - [ ] Rust unit test: returns `Err` on invalid profile
-      - [ ] Rust unit test: returns `Err` on empty messages
-      - [ ] App compiles with no errors
+      - [x] Returns `Err("messages must not be empty")` when messages is empty
+      - [x] Returns `Err` on invalid `aws_profile` (via `validate_aws_profile`)
+      - [x] Returns a non-empty trimmed string on success
+      - [x] Uses `client.converse()`, not `converse_stream()`
+      - [x] Rust unit test: returns `Err` on invalid profile
+      - [x] Rust unit test: returns `Err` on empty messages
+      - [x] App compiles with no errors
     - **Dependencies**: None
 
   - [x] **Task: Register `ai_suggest_session_name` in `lib.rs`**
     - **Description**: Add `commands::ai::ai_suggest_session_name` to the `invoke_handler` in `lib.rs`, following the same pattern as existing commands.
     - **Acceptance criteria**:
-      - [ ] Command callable from frontend via `invoke("ai_suggest_session_name", ...)`
-      - [ ] App compiles and existing commands unaffected
+      - [x] Command callable from frontend via `invoke("ai_suggest_session_name", ...)`
+      - [x] App compiles and existing commands unaffected
     - **Dependencies**: "Task: Implement `ai_suggest_session_name` in `commands/ai.rs`"
 
 - [ ] **Story: Store session management actions**

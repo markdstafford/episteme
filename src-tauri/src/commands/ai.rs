@@ -632,6 +632,16 @@ mod tests {
         assert!(validate_aws_profile("").is_err());
     }
 
+    #[tokio::test]
+    async fn test_suggest_session_name_rejects_empty_messages() {
+        let result = ai_suggest_session_name(
+            vec![],
+            "valid-profile".to_string(),
+        ).await;
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("must not be empty"));
+    }
+
     #[test]
     fn test_suggest_session_name_rejects_profile_with_spaces() {
         assert!(validate_aws_profile("bad profile!").is_err());
