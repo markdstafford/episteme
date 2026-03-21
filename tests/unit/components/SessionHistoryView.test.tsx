@@ -265,11 +265,11 @@ describe("Context menu", () => {
     expect(screen.getByDisplayValue("Chat")).toBeInTheDocument();
   });
 
-  it("clicking Delete menu item calls onDelete", async () => {
-    const { onDelete } = renderWithSession();
+  it("clicking Delete menu item shows confirmation popover", async () => {
+    renderWithSession();
     openDropdown("ellipsis-btn-s1");
     fireEvent.click(screen.getByRole("menuitem", { name: /delete/i }));
-    expect(onDelete).toHaveBeenCalledWith("s1");
+    expect(await screen.findByText(/delete this conversation/i)).toBeInTheDocument();
   });
 });
 
@@ -356,5 +356,53 @@ describe("Inline rename", () => {
     await screen.findByDisplayValue("AI suggested name");
     // Still not called — user hasn't confirmed yet
     expect(onRename).not.toHaveBeenCalled();
+  });
+});
+
+describe("Delete confirmation", () => {
+  const triggerDelete = (sessionOverrides?: Partial<Session>, currentSessionId?: string) => {
+    const session = makeSession({ id: "s1", name: "Chat", scope: workspaceScope, ...sessionOverrides });
+    const onDelete = vi.fn();
+    render(
+      <SessionHistoryView
+        {...defaultProps}
+        sessions={[session]}
+        currentSessionId={currentSessionId ?? null}
+        onPin={vi.fn()}
+        onRename={vi.fn()}
+        onDelete={onDelete}
+        onSuggestName={vi.fn().mockResolvedValue("name")}
+      />
+    );
+    // Open dropdown and click Delete
+    const ellipsisBtn = screen.getByTestId("ellipsis-btn-s1");
+    fireEvent.pointerDown(ellipsisBtn);
+    fireEvent.click(ellipsisBtn);
+    fireEvent.click(screen.getByRole("menuitem", { name: /delete/i }));
+    return { onDelete };
+  };
+
+  it("shows generic confirmation text for inactive session", async () => {
+    triggerDelete({}, "other-session-id");
+    expect(await screen.findByText(/delete this conversation/i)).toBeInTheDocument();
+  });
+
+  it("shows active session warning text when deleting active session", async () => {
+    triggerDelete({}, "s1");
+    expect(await screen.findByText(/this is your active conversation/i)).toBeInTheDocument();
+  });
+
+  it("calls onDelete when Delete button confirmed", async () => {
+    const { onDelete } = triggerDelete({}, "other-id");
+    await screen.findByText(/delete this conversation/i);
+    fireEvent.click(screen.getByRole("button", { name: /^delete$/i }));
+    expect(onDelete).toHaveBeenCalledWith("s1");
+  });
+
+  it("does not call onDelete when Cancel is clicked", async () => {
+    const { onDelete } = triggerDelete({}, "other-id");
+    await screen.findByText(/delete this conversation/i);
+    fireEvent.click(screen.getByRole("button", { name: /cancel/i }));
+    expect(onDelete).not.toHaveBeenCalled();
   });
 });
