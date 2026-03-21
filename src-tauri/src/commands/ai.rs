@@ -516,6 +516,80 @@ pub async fn ai_chat(
     Ok(())
 }
 
+#[tauri::command]
+pub async fn ai_suggest_session_name(
+    messages: Vec<CanonicalMessage>,
+    aws_profile: String,
+) -> Result<String, String> {
+    validate_aws_profile(&aws_profile)?;
+
+    if messages.is_empty() {
+        return Err("messages must not be empty".to_string());
+    }
+
+    let config = aws_config::defaults(BehaviorVersion::latest())
+        .profile_name(&aws_profile)
+        .load()
+        .await;
+
+    let client = BedrockClient::new(&config);
+
+    let mut bedrock_messages = Vec::new();
+    for msg in &messages {
+        let role = match msg.role.as_str() {
+            "user" => ConversationRole::User,
+            "assistant" => ConversationRole::Assistant,
+            _ => continue,
+        };
+        let content_blocks: Vec<ContentBlock> = msg.content.iter().filter_map(|block| {
+            match block {
+                CanonicalBlock::Text { text } => Some(ContentBlock::Text(text.clone())),
+                _ => None,
+            }
+        }).collect();
+        if content_blocks.is_empty() {
+            continue;
+        }
+        bedrock_messages.push(
+            Message::builder()
+                .role(role)
+                .set_content(Some(content_blocks))
+                .build()
+                .map_err(|e| format!("Failed to build message: {}", e))?,
+        );
+    }
+
+    let system_prompt = "Based on the following conversation, suggest a short session name \
+        (5 words or fewer). Respond with only the name — no punctuation, no quotes, no explanation.";
+
+    let response = client
+        .converse()
+        .model_id("us.anthropic.claude-sonnet-4-6")
+        .system(SystemContentBlock::Text(system_prompt.to_string()))
+        .set_messages(Some(bedrock_messages))
+        .send()
+        .await
+        .map_err(|e| {
+            log::error!("ai_suggest_session_name: Bedrock error: {:?}", e);
+            format!("Bedrock error: {:?}", e)
+        })?;
+
+    let name = response
+        .output()
+        .and_then(|o| o.as_message().ok())
+        .and_then(|m| m.content().first())
+        .and_then(|b| b.as_text().ok())
+        .map(|s| s.trim().to_string())
+        .unwrap_or_default();
+
+    if name.is_empty() {
+        return Err("Bedrock returned empty name".to_string());
+    }
+
+    log::info!("ai_suggest_session_name: name generated");
+    Ok(name)
+}
+
 fn extract_str_field(json: &str, field: &str) -> Option<String> {
     serde_json::from_str::<serde_json::Value>(json)
         .ok()
@@ -552,6 +626,21 @@ fn json_value_to_document(value: serde_json::Value) -> Document {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_suggest_session_name_rejects_empty_profile() {
+        assert!(validate_aws_profile("").is_err());
+    }
+
+    #[test]
+    fn test_suggest_session_name_rejects_profile_with_spaces() {
+        assert!(validate_aws_profile("bad profile!").is_err());
+    }
+
+    #[test]
+    fn test_suggest_session_name_accepts_valid_profile() {
+        assert!(validate_aws_profile("my-profile_123").is_ok());
+    }
     use tempfile::tempdir;
 
     #[test]
