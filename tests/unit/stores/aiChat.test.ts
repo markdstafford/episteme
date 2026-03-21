@@ -96,6 +96,18 @@ describe("resumeSession", () => {
     expect(useAiChatStore.getState().error).toBeNull();
   });
 
+  it("clears authoringMode and authoringFilePath on resume", () => {
+    const session = makeSession("abc", "hello");
+    useAiChatStore.setState({
+      sessions: [session],
+      authoringMode: true,
+      authoringFilePath: "/some/file.md",
+    });
+    useAiChatStore.getState().resumeSession("abc");
+    expect(useAiChatStore.getState().authoringMode).toBe(false);
+    expect(useAiChatStore.getState().authoringFilePath).toBeNull();
+  });
+
   it("is a no-op when id is not found", () => {
     const session = makeSession("abc", "hello");
     useAiChatStore.setState({ sessions: [session], currentSession: session });

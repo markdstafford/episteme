@@ -277,6 +277,8 @@ export const useAiChatStore = create<AiChatStore>((set, get) => ({
       isStreaming: false,
       streamingContent: "",
       error: null,
+      authoringMode: false,
+      authoringFilePath: null,
     });
   },
 }));
