@@ -48,7 +48,7 @@ export function SessionHistoryView({
 }: SessionHistoryViewProps) {
   const filtered = sessions
     .filter((s) => matchesScope(s, currentScope))
-    .sort((a, b) => b.last_active_at.localeCompare(a.last_active_at));
+    .sort((a, b) => (b.last_active_at > a.last_active_at ? 1 : -1));
 
   return (
     <div className="w-96 flex flex-col h-full border-l border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
@@ -96,7 +96,15 @@ export function SessionHistoryView({
                   key={session.id}
                   data-testid={`session-row-${session.id}`}
                   data-current={isCurrent ? "true" : undefined}
+                  role="button"
+                  tabIndex={0}
                   onClick={() => onResume(session.id)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      onResume(session.id);
+                    }
+                  }}
                   className="flex items-stretch cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 border-b border-gray-100 dark:border-gray-800"
                 >
                   {/* Accent left border for current session */}
