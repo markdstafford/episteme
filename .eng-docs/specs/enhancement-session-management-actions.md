@@ -325,23 +325,23 @@ No new logging beyond what's already covered by existing commands. `save_session
       - [x] App compiles and existing commands unaffected
     - **Dependencies**: "Task: Implement `ai_suggest_session_name` in `commands/ai.rs`"
 
-- [ ] **Story: Store session management actions**
-  - [ ] **Task: Add `renameSession`, `pinSession`, `deleteSession`, `suggestSessionName` to `useAiChatStore`**
+- [x] **Story: Store session management actions**
+  - [x] **Task: Add `renameSession`, `pinSession`, `deleteSession`, `suggestSessionName` to `useAiChatStore`**
     - **Description**: Add four new actions to `useAiChatStore` and the `AiChatStore` interface:
       - `renameSession(id, name)`: find session in `sessions[]` by id; update its `name`; if id matches `currentSession.id`, also update `currentSession.name`; call `invoke("save_session", { session: updatedSession })`
       - `pinSession(id, pinned)`: call `invoke("pin_session", { id, pinned })`; update `sessions[i].pinned` in local state
       - `deleteSession(id)`: call `invoke("delete_session", { id })`; remove session from `sessions[]`; if id matches `currentSession.id`, call `get().newSession()`
       - `suggestSessionName(sessionId)`: find session by id in `sessions[]`; call `invoke<string>("ai_suggest_session_name", { messages: session.messages_compacted, awsProfile: get().awsProfile })`; return the resulting string
     - **Acceptance criteria**:
-      - [ ] `renameSession`: updates `sessions[i].name` for matching id
-      - [ ] `renameSession`: updates `currentSession.name` when id matches `currentSession.id`
-      - [ ] `renameSession`: calls `save_session` with the updated session
-      - [ ] `pinSession`: calls `pin_session` Tauri command; updates `sessions[i].pinned` in local state
-      - [ ] `deleteSession`: removes session from `sessions[]`
-      - [ ] `deleteSession`: calls `newSession()` when deleting the active session
-      - [ ] `suggestSessionName`: returns string from Tauri command
-      - [ ] All four actions added to the `AiChatStore` interface
-      - [ ] Unit tests cover all acceptance criteria above
+      - [x] `renameSession`: updates `sessions[i].name` for matching id
+      - [x] `renameSession`: updates `currentSession.name` when id matches `currentSession.id`
+      - [x] `renameSession`: calls `save_session` with the updated session
+      - [x] `pinSession`: calls `pin_session` Tauri command; updates `sessions[i].pinned` in local state
+      - [x] `deleteSession`: removes session from `sessions[]`
+      - [x] `deleteSession`: calls `newSession()` when deleting the active session
+      - [x] `suggestSessionName`: returns string from Tauri command
+      - [x] All four actions added to the `AiChatStore` interface
+      - [x] Unit tests cover all acceptance criteria above
     - **Dependencies**: "Task: Register `ai_suggest_session_name` in `lib.rs`"
 
 - [ ] **Story: Session history row actions**
