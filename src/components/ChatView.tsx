@@ -15,6 +15,7 @@ export function ChatView({ onShowHistory, onNewSession }: ChatViewProps) {
   const [isRenameOpen, setIsRenameOpen] = useState(false);
   const [renameValue, setRenameValue] = useState("");
   const [isSuggesting, setIsSuggesting] = useState(false);
+  const skipNextBlurRef = useRef(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
 
@@ -151,6 +152,10 @@ export function ChatView({ onShowHistory, onNewSession }: ChatViewProps) {
                     }
                   }}
                   onBlur={async () => {
+                    if (skipNextBlurRef.current) {
+                      skipNextBlurRef.current = false;
+                      return;
+                    }
                     if (currentSession && isRenameOpen) {
                       await renameSession(currentSession.id, renameValue);
                     }
@@ -163,6 +168,7 @@ export function ChatView({ onShowHistory, onNewSession }: ChatViewProps) {
                   onClick={async (e) => {
                     e.stopPropagation();
                     if (!currentSession) return;
+                    skipNextBlurRef.current = true;
                     setIsSuggesting(true);
                     try {
                       const suggested = await suggestSessionName(currentSession.id);

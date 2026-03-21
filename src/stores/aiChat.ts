@@ -346,6 +346,7 @@ export const useAiChatStore = create<AiChatStore>((set, get) => ({
       sessions: s.sessions.map(sess =>
         sess.id === id ? { ...sess, pinned } : sess
       ),
+      ...(s.currentSession?.id === id ? { currentSession: { ...s.currentSession, pinned } } : {}),
     }));
   },
 
