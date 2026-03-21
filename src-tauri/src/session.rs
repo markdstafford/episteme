@@ -1,11 +1,20 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
+#[serde(tag = "type", rename_all = "snake_case")]
+pub enum SessionScope {
+    Document { path: String },
+    Workspace,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Session {
     pub id: String,
     pub created_at: String,
     pub last_active_at: String,
     pub last_mode: String,
+    pub name: String,
+    pub scope: SessionScope,
     pub pinned: bool,
     pub messages_all: Vec<SessionMessage>,
     pub messages_compacted: Vec<CanonicalMessage>,
@@ -51,6 +60,8 @@ mod tests {
             created_at: "2026-01-01T00:00:00Z".to_string(),
             last_active_at: "2026-01-01T00:00:00Z".to_string(),
             last_mode: "view".to_string(),
+            name: "".to_string(),
+            scope: SessionScope::Workspace,
             pinned: false,
             messages_all: vec![SessionMessage {
                 role: "user".to_string(),
@@ -66,8 +77,46 @@ mod tests {
         let json = serde_json::to_string(&session).unwrap();
         let back: Session = serde_json::from_str(&json).unwrap();
         assert_eq!(back.id, "test-id");
+        assert_eq!(back.name, "");
         assert_eq!(back.messages_all.len(), 1);
         assert_eq!(back.messages_compacted.len(), 1);
+    }
+
+    #[test]
+    fn test_session_scope_workspace_serialization() {
+        let scope = SessionScope::Workspace;
+        let json = serde_json::to_string(&scope).unwrap();
+        assert_eq!(json, r#"{"type":"workspace"}"#);
+        let back: SessionScope = serde_json::from_str(&json).unwrap();
+        assert!(matches!(back, SessionScope::Workspace));
+    }
+
+    #[test]
+    fn test_session_scope_document_serialization() {
+        let scope = SessionScope::Document { path: "/path/to/doc.md".to_string() };
+        let json = serde_json::to_string(&scope).unwrap();
+        assert_eq!(json, r#"{"type":"document","path":"/path/to/doc.md"}"#);
+        let back: SessionScope = serde_json::from_str(&json).unwrap();
+        assert!(matches!(back, SessionScope::Document { .. }));
+    }
+
+    #[test]
+    fn test_session_with_document_scope_round_trip() {
+        let session = Session {
+            id: "doc-session".to_string(),
+            created_at: "2026-01-01T00:00:00Z".to_string(),
+            last_active_at: "2026-01-01T00:00:00Z".to_string(),
+            last_mode: "edit".to_string(),
+            name: "Help with this doc".to_string(),
+            scope: SessionScope::Document { path: "/workspace/docs/spec.md".to_string() },
+            pinned: false,
+            messages_all: vec![],
+            messages_compacted: vec![],
+        };
+        let json = serde_json::to_string(&session).unwrap();
+        let back: Session = serde_json::from_str(&json).unwrap();
+        assert_eq!(back.name, "Help with this doc");
+        assert!(matches!(back.scope, SessionScope::Document { .. }));
     }
 
     #[test]
