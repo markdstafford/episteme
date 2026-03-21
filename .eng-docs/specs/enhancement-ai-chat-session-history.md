@@ -367,21 +367,21 @@ No new logging needed. The existing `save_session` DEBUG timing log covers the a
       - [x] All tests pass
     - **Dependencies**: "Task: Implement `SessionHistoryView` component"
 
-- [ ] **Story: `AiChatPanel` history integration**
-  - [ ] **Task: Wire view state, header swap, and history toggle into `AiChatPanel`**
+- [x] **Story: `AiChatPanel` history integration**
+  - [x] **Task: Wire view state, header swap, and history toggle into `AiChatPanel`**
     - **Description**: Add `const [view, setView] = useState<"chat" | "history">("chat")` to `AiChatPanel`. When `view === "history"`, replace the entire panel content (header + body) with `SessionHistoryView`. Pass `sessions` and `currentSession?.id` from the store, `currentScope` derived from `useFileTreeStore.getState().selectedFilePath`, and callbacks: `onResume` calls `resumeSession(id)` then `setView("chat")`; `onNewSession` calls `newSession()` then `setView("chat")`; `onBack` calls `setView("chat")`. Wire the existing `Clock` icon button to `setView("history")`.
     - **Acceptance criteria**:
-      - [ ] Clicking ⏱ switches to history view
-      - [ ] History view replaces both header and content area
-      - [ ] Resuming a session restores messages and returns to chat view
-      - [ ] Creating a new session from history returns to chat view
-      - [ ] Back arrow returns to chat view without changing session
-      - [ ] `currentScope` correctly reflects selected file or workspace
+      - [x] Clicking ⏱ switches to history view
+      - [x] History view replaces both header and content area
+      - [x] Resuming a session restores messages and returns to chat view
+      - [x] Creating a new session from history returns to chat view
+      - [x] Back arrow returns to chat view without changing session
+      - [x] `currentScope` correctly reflects selected file or workspace
     - **Dependencies**: "Task: Implement `SessionHistoryView` component", "Task: Update `newSession` action to derive scope; add `resumeSession` action"
-  - [ ] **Task: Show session name in chat view header**
+  - [x] **Task: Show session name in chat view header**
     - **Description**: In the chat view header, replace the static "AI assistant" label with the current session's name when `currentSession.name` is non-empty; fall back to "AI assistant" when name is empty (i.e. before first message is sent).
     - **Acceptance criteria**:
-      - [ ] Header shows "AI assistant" before first message is sent
-      - [ ] Header shows session name after first message is sent
-      - [ ] Header updates reactively when name changes (no page reload needed)
+      - [x] Header shows "AI assistant" before first message is sent
+      - [x] Header shows session name after first message is sent
+      - [x] Header updates reactively when name changes (no page reload needed)
     - **Dependencies**: "Task: Wire view state, header swap, and history toggle into `AiChatPanel`"
