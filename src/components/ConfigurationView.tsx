@@ -4,6 +4,7 @@ import { useAiChatStore } from "@/stores/aiChat";
 
 export function ConfigurationView() {
   const [profileInput, setProfileInput] = useState("");
+  const [isConnecting, setIsConnecting] = useState(false);
 
   const {
     authChecked,
@@ -12,25 +13,30 @@ export function ConfigurationView() {
     error,
     login,
     setAwsProfile,
+    clearAwsProfile,
   } = useAiChatStore();
 
   const handleConnect = async () => {
-    if (!profileInput.trim()) return;
-    await setAwsProfile(profileInput.trim());
-    await login();
+    if (!profileInput.trim() || isConnecting) return;
+    setIsConnecting(true);
+    try {
+      await setAwsProfile(profileInput.trim());
+      if (!useAiChatStore.getState().isAuthenticated) {
+        await login();
+      }
+    } finally {
+      setIsConnecting(false);
+    }
   };
 
   return (
     <div className="w-96 flex flex-col h-full border-l border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
       {/* Header */}
-      <header
-        role="banner"
-        className="flex items-center px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex-shrink-0"
-      >
+      <div className="flex items-center px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
         <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
           AI settings
         </span>
-      </header>
+      </div>
 
       {/* Content */}
       <div className="flex flex-col items-center justify-center flex-1 px-4 gap-4">
@@ -55,10 +61,10 @@ export function ConfigurationView() {
             />
             <button
               onClick={handleConnect}
-              disabled={!profileInput.trim()}
+              disabled={!profileInput.trim() || isConnecting}
               className="w-full px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Connect
+              {isConnecting ? "Connecting…" : "Connect"}
             </button>
           </>
         )}
@@ -75,9 +81,7 @@ export function ConfigurationView() {
               Re-authenticate
             </button>
             <button
-              onClick={() =>
-                useAiChatStore.setState({ awsProfile: null, authChecked: true })
-              }
+              onClick={clearAwsProfile}
               className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
             >
               Change profile
