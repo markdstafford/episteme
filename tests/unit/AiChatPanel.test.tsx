@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent, act } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 vi.mock("@tauri-apps/api/core", () => ({
@@ -52,11 +52,23 @@ describe("AiChatPanel routing", () => {
     expect(screen.getByText("AI assistant")).toBeInTheDocument();
   });
 
-  it("renders ConfigurationView when credentials expire while in history view", () => {
+  it("renders ConfigurationView when credentials expire while in history view", async () => {
     useAiChatStore.setState({ authChecked: true, isAuthenticated: true });
-    const { rerender } = render(<AiChatPanel />);
-    useAiChatStore.setState({ isAuthenticated: false });
-    rerender(<AiChatPanel />);
+    render(<AiChatPanel />);
+    // Navigate to history view
+    fireEvent.click(screen.getByLabelText("Session history"));
+    // Credentials expire
+    act(() => {
+      useAiChatStore.setState({ isAuthenticated: false });
+    });
+    // ConfigurationView should take precedence
     expect(screen.getByText("AI settings")).toBeInTheDocument();
+  });
+
+  it("renders SessionHistoryView when navigating to history", async () => {
+    useAiChatStore.setState({ authChecked: true, isAuthenticated: true });
+    render(<AiChatPanel />);
+    fireEvent.click(screen.getByLabelText("Session history"));
+    expect(screen.getByText("Conversation history")).toBeInTheDocument();
   });
 });

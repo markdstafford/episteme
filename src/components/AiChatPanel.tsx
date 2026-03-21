@@ -20,9 +20,7 @@ export function AiChatPanel() {
   } = useAiChatStore();
 
   const selectedFilePath = useFileTreeStore((s) => s.selectedFilePath);
-  const currentScope: SessionScope = selectedFilePath
-    ? { type: "document", path: selectedFilePath }
-    : { type: "workspace" };
+  // currentScope is only used in the history view branch below
 
   useEffect(() => {
     checkAuth();
@@ -35,6 +33,9 @@ export function AiChatPanel() {
   }
 
   if (view === "history") {
+    const currentScope: SessionScope = selectedFilePath
+      ? { type: "document", path: selectedFilePath }
+      : { type: "workspace" };
     return (
       <SessionHistoryView
         sessions={sessions}
