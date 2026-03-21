@@ -170,76 +170,76 @@ No significant risks. This is a pure component restructuring with no logic chang
 
 ## Task list
 
-- [ ] **Story: `ConfigurationView` component**
-  - [ ] **Task: Implement `ConfigurationView`**
+- [x] **Story: `ConfigurationView` component**
+  - [x] **Task: Implement `ConfigurationView`**
     - **Description**: Create `src/components/ConfigurationView.tsx`. Access `useAiChatStore` directly. Manage `profileInput` local state. Render header with "AI settings" title and no action buttons. Render content based on auth state: loading spinner when `!authChecked`; first-time setup form (profile text input + Connect button) when `!isAuthenticated && !awsProfile`; re-authenticate prompt (Re-authenticate button + Change profile link) when `!isAuthenticated && awsProfile`. Error message below buttons when `error` is set. Logic and markup extracted from the corresponding blocks in the current `AiChatPanel.renderBody()`.
     - **Acceptance criteria**:
-      - [ ] Header renders "AI settings" title with no action buttons in all sub-cases
-      - [ ] Loading spinner renders when `!authChecked`
-      - [ ] First-time setup form renders when `!isAuthenticated && !awsProfile`
-      - [ ] Re-authenticate prompt renders when `!isAuthenticated && awsProfile`
-      - [ ] Connect action calls `setAwsProfile` then `login`
-      - [ ] Re-authenticate action calls `login`
-      - [ ] Change profile link resets `awsProfile` to null
-      - [ ] Error message renders when `error` is set
-      - [ ] TypeScript compiles with no errors
+      - [x] Header renders "AI settings" title with no action buttons in all sub-cases
+      - [x] Loading spinner renders when `!authChecked`
+      - [x] First-time setup form renders when `!isAuthenticated && !awsProfile`
+      - [x] Re-authenticate prompt renders when `!isAuthenticated && awsProfile`
+      - [x] Connect action calls `setAwsProfile` then `login`
+      - [x] Re-authenticate action calls `login`
+      - [x] Change profile link resets `awsProfile` to null
+      - [x] Error message renders when `error` is set
+      - [x] TypeScript compiles with no errors
     - **Dependencies**: None
-  - [ ] **Task: Write unit tests for `ConfigurationView`**
+  - [x] **Task: Write unit tests for `ConfigurationView`**
     - **Description**: Create `tests/unit/components/ConfigurationView.test.tsx`. Cover all rendering sub-cases and interactions described in the testing plan.
     - **Acceptance criteria**:
-      - [ ] Renders loading spinner when `!authChecked`
-      - [ ] Renders first-time setup form when `!isAuthenticated && !awsProfile`
-      - [ ] Renders re-authenticate prompt when `!isAuthenticated && awsProfile`
-      - [ ] Header shows "AI settings" with no action buttons in all sub-cases
-      - [ ] All tests pass
+      - [x] Renders loading spinner when `!authChecked`
+      - [x] Renders first-time setup form when `!isAuthenticated && !awsProfile`
+      - [x] Renders re-authenticate prompt when `!isAuthenticated && awsProfile`
+      - [x] Header shows "AI settings" with no action buttons in all sub-cases
+      - [x] All tests pass
     - **Dependencies**: "Task: Implement `ConfigurationView`"
 
-- [ ] **Story: `ChatView` component**
-  - [ ] **Task: Implement `ChatView`**
+- [x] **Story: `ChatView` component**
+  - [x] **Task: Implement `ChatView`**
     - **Description**: Create `src/components/ChatView.tsx`. Access `useAiChatStore` and `useFileTreeStore` directly. Receive `onShowHistory: () => void` and `onNewSession: () => void` as props. Render header with session name left-aligned (fallback "AI assistant"), Clock icon button calling `onShowHistory`, and Plus icon button calling `onNewSession` — replacing the current RotateCcw. Render content using the existing `renderBody()` logic (empty state, messages, streaming) and `ChatInputCard`, extracted from `AiChatPanel`. Manage `input` local state and `messagesEndRef`/`panelRef` refs internally.
     - **Acceptance criteria**:
-      - [ ] Header shows session name when `currentSession.name` is set, "AI assistant" otherwise
-      - [ ] Clock button calls `onShowHistory`
-      - [ ] Plus button calls `onNewSession`
-      - [ ] Plus icon used (not RotateCcw)
-      - [ ] Empty state with suggested prompts renders when authenticated with no messages
-      - [ ] Message list and streaming content render correctly
-      - [ ] `ChatInputCard` renders and sends messages
-      - [ ] Messages pane auto-scrolls to bottom on new messages/tokens
-      - [ ] TypeScript compiles with no errors
+      - [x] Header shows session name when `currentSession.name` is set, "AI assistant" otherwise
+      - [x] Clock button calls `onShowHistory`
+      - [x] Plus button calls `onNewSession`
+      - [x] Plus icon used (not RotateCcw)
+      - [x] Empty state with suggested prompts renders when authenticated with no messages
+      - [x] Message list and streaming content render correctly
+      - [x] `ChatInputCard` renders and sends messages
+      - [x] Messages pane auto-scrolls to bottom on new messages/tokens
+      - [x] TypeScript compiles with no errors
     - **Dependencies**: None
-  - [ ] **Task: Write unit tests for `ChatView`**
+  - [x] **Task: Write unit tests for `ChatView`**
     - **Description**: Create `tests/unit/components/ChatView.test.tsx`. Migrate applicable existing tests from `AiChatPanel.test.tsx` and cover the new header behavior.
     - **Acceptance criteria**:
-      - [ ] Header shows "AI assistant" fallback when session name is empty
-      - [ ] Header shows session name when set
-      - [ ] Clock button calls `onShowHistory`
-      - [ ] Plus button calls `onNewSession`
-      - [ ] Empty state renders with suggested prompts
-      - [ ] Message list renders correctly
-      - [ ] All tests pass
+      - [x] Header shows "AI assistant" fallback when session name is empty
+      - [x] Header shows session name when set
+      - [x] Clock button calls `onShowHistory`
+      - [x] Plus button calls `onNewSession`
+      - [x] Empty state renders with suggested prompts
+      - [x] Message list renders correctly
+      - [x] All tests pass
     - **Dependencies**: "Task: Implement `ChatView`"
 
-- [ ] **Story: `AiChatPanel` refactor**
-  - [ ] **Task: Reduce `AiChatPanel` to thin router**
+- [x] **Story: `AiChatPanel` refactor**
+  - [x] **Task: Reduce `AiChatPanel` to thin router**
     - **Description**: Refactor `src/components/AiChatPanel.tsx` to a thin router. Remove all header and content rendering. Keep `view: "chat" | "history"` local state. Derive `isConfigurationView = !authChecked || !isAuthenticated` from the store. Route: `isConfigurationView` → `<ConfigurationView />`; `view === "history"` → `<SessionHistoryView .../>` (props unchanged); otherwise → `<ChatView onShowHistory={() => setView("history")} onNewSession={() => { newSession(); setView("chat"); }} />`. Remove all imports that are now owned by `ConfigurationView` or `ChatView`.
     - **Acceptance criteria**:
-      - [ ] `AiChatPanel` renders `ConfigurationView` when `!authChecked || !isAuthenticated`
-      - [ ] `AiChatPanel` renders `SessionHistoryView` when `view === "history"` and authenticated
-      - [ ] `AiChatPanel` renders `ChatView` when authenticated and `view === "chat"`
-      - [ ] `ConfigurationView` takes precedence when `isConfigurationView` is true regardless of `view` value
-      - [ ] No header or content rendering remains in `AiChatPanel` itself
-      - [ ] `SessionHistoryView` props unchanged
-      - [ ] TypeScript compiles with no errors
-      - [ ] App runs and all three views are reachable
+      - [x] `AiChatPanel` renders `ConfigurationView` when `!authChecked || !isAuthenticated`
+      - [x] `AiChatPanel` renders `SessionHistoryView` when `view === "history"` and authenticated
+      - [x] `AiChatPanel` renders `ChatView` when authenticated and `view === "chat"`
+      - [x] `ConfigurationView` takes precedence when `isConfigurationView` is true regardless of `view` value
+      - [x] No header or content rendering remains in `AiChatPanel` itself
+      - [x] `SessionHistoryView` props unchanged
+      - [x] TypeScript compiles with no errors
+      - [x] App runs and all three views are reachable
     - **Dependencies**: "Task: Implement `ConfigurationView`", "Task: Implement `ChatView`"
-  - [ ] **Task: Update `AiChatPanel` unit tests**
+  - [x] **Task: Update `AiChatPanel` unit tests**
     - **Description**: Update `tests/unit/components/AiChatPanel.test.tsx` to reflect the new routing structure. Remove tests now covered by `ConfigurationView.test.tsx` and `ChatView.test.tsx`. Add routing-level tests.
     - **Acceptance criteria**:
-      - [ ] Renders `ConfigurationView` when not authenticated
-      - [ ] Renders `ChatView` when authenticated and `view === "chat"`
-      - [ ] Renders `SessionHistoryView` when authenticated and `view === "history"`
-      - [ ] `ConfigurationView` takes precedence when credentials expire while `view === "history"`
-      - [ ] No duplicate tests from component-level test files
-      - [ ] All tests pass
+      - [x] Renders `ConfigurationView` when not authenticated
+      - [x] Renders `ChatView` when authenticated and `view === "chat"`
+      - [x] Renders `SessionHistoryView` when authenticated and `view === "history"`
+      - [x] `ConfigurationView` takes precedence when credentials expire while `view === "history"`
+      - [x] No duplicate tests from component-level test files
+      - [x] All tests pass
     - **Dependencies**: "Task: Reduce `AiChatPanel` to thin router"
