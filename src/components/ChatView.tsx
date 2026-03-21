@@ -16,6 +16,7 @@ export function ChatView({ onShowHistory, onNewSession }: ChatViewProps) {
   const [renameValue, setRenameValue] = useState("");
   const [isSuggesting, setIsSuggesting] = useState(false);
   const skipNextBlurRef = useRef(false);
+  const originalRenameValueRef = useRef("");
   const renameInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -114,7 +115,11 @@ export function ChatView({ onShowHistory, onNewSession }: ChatViewProps) {
           <Popover.Root
             open={isRenameOpen}
             onOpenChange={(open) => {
-              if (open) setRenameValue(currentSession?.name ?? "");
+              if (open) {
+                const name = currentSession?.name ?? "";
+                setRenameValue(name);
+                originalRenameValueRef.current = name;
+              }
               setIsRenameOpen(open);
             }}
           >
@@ -145,19 +150,20 @@ export function ChatView({ onShowHistory, onNewSession }: ChatViewProps) {
                   onChange={e => setRenameValue(e.target.value)}
                   onKeyDown={async (e) => {
                     if (e.key === "Enter" && currentSession) {
-                      await renameSession(currentSession.id, renameValue);
+                      if (renameValue !== originalRenameValueRef.current) {
+                        await renameSession(currentSession.id, renameValue);
+                      }
                       setIsRenameOpen(false);
                     } else if (e.key === "Escape") {
                       setIsRenameOpen(false);
                     }
                   }}
-                  onBlur={async () => {
+                  onBlur={() => {
+                    // Blur alone discards — only Enter explicitly saves.
+                    // Skip if focus is moving to the sparkle button.
                     if (skipNextBlurRef.current) {
                       skipNextBlurRef.current = false;
                       return;
-                    }
-                    if (currentSession && isRenameOpen) {
-                      await renameSession(currentSession.id, renameValue);
                     }
                     setIsRenameOpen(false);
                   }}
@@ -171,9 +177,14 @@ export function ChatView({ onShowHistory, onNewSession }: ChatViewProps) {
                     if (!currentSession) return;
                     setIsSuggesting(true);
                     try {
-                      const suggested = await suggestSessionName(currentSession.id);
+                      const suggested = await Promise.race([
+                        suggestSessionName(currentSession.id),
+                        new Promise<never>((_, reject) => setTimeout(() => reject(new Error("Timed out")), 5000)),
+                      ]);
                       setRenameValue(suggested);
                       renameInputRef.current?.focus();
+                    } catch {
+                      // Timed out or errored — leave the field as-is
                     } finally {
                       setIsSuggesting(false);
                     }

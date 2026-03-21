@@ -126,7 +126,7 @@ describe("ChatView", () => {
       expect(screen.getByDisplayValue("My session")).toBeInTheDocument();
     });
 
-    it("calls renameSession on Enter", async () => {
+    it("calls renameSession on Enter when name changed", async () => {
       const renameSession = vi.fn().mockResolvedValue(undefined) as unknown as (id: string, name: string) => Promise<void>;
       useAiChatStore.setState({ renameSession });
       render(<ChatView onShowHistory={onShowHistory} onNewSession={onNewSession} />);
@@ -135,6 +135,26 @@ describe("ChatView", () => {
       fireEvent.change(input, { target: { value: "Better name" } });
       fireEvent.keyDown(input, { key: "Enter" });
       expect(renameSession).toHaveBeenCalledWith("s1", "Better name");
+    });
+
+    it("does not call renameSession on Enter when name is unchanged", () => {
+      const renameSession = vi.fn().mockResolvedValue(undefined) as unknown as (id: string, name: string) => Promise<void>;
+      useAiChatStore.setState({ renameSession });
+      render(<ChatView onShowHistory={onShowHistory} onNewSession={onNewSession} />);
+      fireEvent.click(screen.getByLabelText("Rename session"));
+      fireEvent.keyDown(screen.getByDisplayValue("My session"), { key: "Enter" });
+      expect(renameSession).not.toHaveBeenCalled();
+    });
+
+    it("discards on blur without calling renameSession", () => {
+      const renameSession = vi.fn().mockResolvedValue(undefined) as unknown as (id: string, name: string) => Promise<void>;
+      useAiChatStore.setState({ renameSession });
+      render(<ChatView onShowHistory={onShowHistory} onNewSession={onNewSession} />);
+      fireEvent.click(screen.getByLabelText("Rename session"));
+      const input = screen.getByDisplayValue("My session");
+      fireEvent.change(input, { target: { value: "Changed but discarded" } });
+      fireEvent.blur(input);
+      expect(renameSession).not.toHaveBeenCalled();
     });
 
     it("does not call renameSession on Esc", () => {

@@ -308,7 +308,7 @@ describe("Inline rename", () => {
     expect(input).toBeInTheDocument();
   });
 
-  it("calls onRename with new value on Enter", async () => {
+  it("calls onRename with new value on Enter when name changed", async () => {
     const { onRename } = await renderWithRenaming();
     const input = screen.getByDisplayValue("Old name");
     fireEvent.change(input, { target: { value: "New name" } });
@@ -316,12 +316,20 @@ describe("Inline rename", () => {
     expect(onRename).toHaveBeenCalledWith("s1", "New name");
   });
 
-  it("calls onRename on blur", async () => {
+  it("does not call onRename on Enter when name is unchanged", async () => {
+    const { onRename } = await renderWithRenaming();
+    const input = screen.getByDisplayValue("Old name");
+    fireEvent.keyDown(input, { key: "Enter" });
+    expect(onRename).not.toHaveBeenCalled();
+  });
+
+  it("discards on blur without calling onRename", async () => {
     const { onRename } = await renderWithRenaming();
     const input = screen.getByDisplayValue("Old name");
     fireEvent.change(input, { target: { value: "Blurred name" } });
     fireEvent.blur(input);
-    expect(onRename).toHaveBeenCalledWith("s1", "Blurred name");
+    expect(onRename).not.toHaveBeenCalled();
+    expect(screen.queryByDisplayValue("Blurred name")).not.toBeInTheDocument();
   });
 
   it("cancels on Esc without calling onRename", async () => {
@@ -350,7 +358,7 @@ describe("Inline rename", () => {
     const { onRename, onSuggestName } = await renderWithRenaming();
     fireEvent.click(screen.getByTestId("suggest-btn-s1"));
     expect(onSuggestName).toHaveBeenCalledWith("s1");
-    // onRename should NOT be called immediately — only when user confirms with Enter/blur
+    // onRename should NOT be called immediately — only when user confirms with Enter
     expect(onRename).not.toHaveBeenCalled();
     // Wait for suggestion to populate
     await screen.findByDisplayValue("AI suggested name");

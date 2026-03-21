@@ -63,6 +63,7 @@ export function SessionHistoryView({
   const [renameValue, setRenameValue] = useState("");
   const [isSuggestingId, setIsSuggestingId] = useState<string | null>(null);
   const renameInputRef = useRef<HTMLInputElement>(null);
+  const originalRenameValueRef = useRef("");
   const renameCommittedRef = useRef(false);
   const skipNextBlurRef = useRef(false);
 
@@ -162,7 +163,9 @@ export function SessionHistoryView({
                                   onKeyDown={e => {
                                     if (e.key === "Enter") {
                                       renameCommittedRef.current = true;
-                                      onRename(session.id, renameValue);
+                                      if (renameValue !== originalRenameValueRef.current) {
+                                        onRename(session.id, renameValue);
+                                      }
                                       setRenamingId(null);
                                     } else if (e.key === "Escape") {
                                       renameCommittedRef.current = true;
@@ -178,21 +181,27 @@ export function SessionHistoryView({
                                       renameCommittedRef.current = false;
                                       return;
                                     }
-                                    onRename(session.id, renameValue);
+                                    // Natural blur (clicked outside) → discard
                                     setRenamingId(null);
                                   }}
                                 />
                                 <button
                                   data-testid={`suggest-btn-${session.id}`}
                                   disabled={session.messages_compacted.length === 0 || isSuggestingId === session.id}
+                                  onMouseDown={() => { skipNextBlurRef.current = true; }}
                                   onClick={async (e) => {
                                     e.stopPropagation();
-                                    skipNextBlurRef.current = true;  // prevent onBlur from committing before suggestion arrives
+                                    skipNextBlurRef.current = true; // also set in onClick for test environments where mouseDown doesn't fire
                                     setIsSuggestingId(session.id);
                                     try {
-                                      const suggested = await onSuggestName(session.id);
+                                      const suggested = await Promise.race([
+                                        onSuggestName(session.id),
+                                        new Promise<never>((_, reject) => setTimeout(() => reject(new Error("Timed out")), 5000)),
+                                      ]);
                                       setRenameValue(suggested);
                                       renameInputRef.current?.focus();
+                                    } catch {
+                                      // Timed out or errored — leave the field as-is
                                     } finally {
                                       setIsSuggestingId(null);
                                     }
@@ -246,7 +255,7 @@ export function SessionHistoryView({
                                 </DropdownMenu.Item>
                                 <DropdownMenu.Item
                                   className="px-3 py-1.5 text-[length:var(--font-size-ui-base)] text-(--color-text-primary) cursor-pointer hover:bg-(--color-bg-hover) outline-none rounded-(--radius-sm)"
-                                  onSelect={() => { skipNextBlurRef.current = true; setRenamingId(session.id); setRenameValue(session.name); }}
+                                  onSelect={() => { skipNextBlurRef.current = true; originalRenameValueRef.current = session.name; setRenamingId(session.id); setRenameValue(session.name); }}
                                 >
                                   Rename
                                 </DropdownMenu.Item>
@@ -273,7 +282,7 @@ export function SessionHistoryView({
                           </ContextMenu.Item>
                           <ContextMenu.Item
                             className="px-3 py-1.5 text-[length:var(--font-size-ui-base)] text-(--color-text-primary) cursor-pointer hover:bg-(--color-bg-hover) outline-none rounded-(--radius-sm)"
-                            onSelect={() => { skipNextBlurRef.current = true; setRenamingId(session.id); setRenameValue(session.name); }}
+                            onSelect={() => { skipNextBlurRef.current = true; originalRenameValueRef.current = session.name; setRenamingId(session.id); setRenameValue(session.name); }}
                           >
                             Rename
                           </ContextMenu.Item>
