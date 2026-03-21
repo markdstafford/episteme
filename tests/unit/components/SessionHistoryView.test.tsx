@@ -26,12 +26,20 @@ const defaultProps = {
   onResume: vi.fn(),
   onNewSession: vi.fn(),
   onBack: vi.fn(),
+  onPin: vi.fn() as (id: string, pinned: boolean) => void,
+  onRename: vi.fn() as (id: string) => void,
+  onDelete: vi.fn() as (id: string) => void,
+  onSuggestName: vi.fn().mockResolvedValue("name") as (id: string) => Promise<string>,
 };
 
 beforeEach(() => {
   defaultProps.onResume = vi.fn();
   defaultProps.onNewSession = vi.fn();
   defaultProps.onBack = vi.fn();
+  defaultProps.onPin = vi.fn();
+  defaultProps.onRename = vi.fn();
+  defaultProps.onDelete = vi.fn();
+  defaultProps.onSuggestName = vi.fn().mockResolvedValue("name");
 });
 
 describe("SessionHistoryView", () => {
@@ -115,9 +123,86 @@ describe("SessionHistoryView", () => {
   it("calls onResume when Enter is pressed on a session row", () => {
     const onResume = vi.fn();
     const sessions = [makeSession({ id: "abc", name: "My chat", scope: workspaceScope })];
-    render(<SessionHistoryView {...defaultProps} sessions={sessions} onResume={onResume} />);
+    render(
+      <SessionHistoryView
+        {...defaultProps}
+        sessions={sessions}
+        onResume={onResume}
+        onPin={vi.fn()}
+        onRename={vi.fn()}
+        onDelete={vi.fn()}
+        onSuggestName={vi.fn().mockResolvedValue("name")}
+      />
+    );
     const row = screen.getByTestId("session-row-abc");
-    fireEvent.keyDown(row, { key: "Enter" });
+    const contentDiv = row.querySelector('[role="button"]') as HTMLElement;
+    fireEvent.keyDown(contentDiv, { key: "Enter" });
     expect(onResume).toHaveBeenCalledWith("abc");
+  });
+});
+
+describe("Pin icon hover behavior", () => {
+  it("renders pin button for each session row", () => {
+    const sessions = [makeSession({ id: "s1", name: "Chat", scope: workspaceScope, pinned: false })];
+    render(
+      <SessionHistoryView
+        {...defaultProps}
+        sessions={sessions}
+        onPin={vi.fn()}
+        onRename={vi.fn()}
+        onDelete={vi.fn()}
+        onSuggestName={vi.fn().mockResolvedValue("name")}
+      />
+    );
+    expect(screen.getByTestId("pin-btn-s1")).toBeInTheDocument();
+  });
+
+  it("calls onPin with toggled value when pin button clicked", () => {
+    const onPin = vi.fn();
+    const sessions = [makeSession({ id: "s1", name: "Chat", scope: workspaceScope, pinned: false })];
+    render(
+      <SessionHistoryView
+        {...defaultProps}
+        sessions={sessions}
+        onPin={onPin}
+        onRename={vi.fn()}
+        onDelete={vi.fn()}
+        onSuggestName={vi.fn().mockResolvedValue("name")}
+      />
+    );
+    fireEvent.click(screen.getByTestId("pin-btn-s1"));
+    expect(onPin).toHaveBeenCalledWith("s1", true);
+  });
+
+  it("calls onPin with false when pinned session pin button clicked", () => {
+    const onPin = vi.fn();
+    const sessions = [makeSession({ id: "s1", name: "Chat", scope: workspaceScope, pinned: true })];
+    render(
+      <SessionHistoryView
+        {...defaultProps}
+        sessions={sessions}
+        onPin={onPin}
+        onRename={vi.fn()}
+        onDelete={vi.fn()}
+        onSuggestName={vi.fn().mockResolvedValue("name")}
+      />
+    );
+    fireEvent.click(screen.getByTestId("pin-btn-s1"));
+    expect(onPin).toHaveBeenCalledWith("s1", false);
+  });
+
+  it("renders ellipsis button for each session row", () => {
+    const sessions = [makeSession({ id: "s1", name: "Chat", scope: workspaceScope })];
+    render(
+      <SessionHistoryView
+        {...defaultProps}
+        sessions={sessions}
+        onPin={vi.fn()}
+        onRename={vi.fn()}
+        onDelete={vi.fn()}
+        onSuggestName={vi.fn().mockResolvedValue("name")}
+      />
+    );
+    expect(screen.getByTestId("ellipsis-btn-s1")).toBeInTheDocument();
   });
 });

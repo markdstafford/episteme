@@ -1,4 +1,4 @@
-import { ArrowLeft, Plus } from "lucide-react";
+import { ArrowLeft, Plus, Pin, PinOff, Ellipsis } from "lucide-react";
 import { type Session, type SessionScope } from "@/lib/session";
 
 interface SessionHistoryViewProps {
@@ -8,6 +8,10 @@ interface SessionHistoryViewProps {
   onResume: (id: string) => void;
   onNewSession: () => void;
   onBack: () => void;
+  onPin: (id: string, pinned: boolean) => void;
+  onRename: (id: string) => void;
+  onDelete: (id: string) => void;
+  onSuggestName: (id: string) => Promise<string>;
 }
 
 function formatRelativeTime(isoString: string): string {
@@ -45,6 +49,10 @@ export function SessionHistoryView({
   onResume,
   onNewSession,
   onBack,
+  onPin,
+  onRename,
+  onDelete,
+  onSuggestName,
 }: SessionHistoryViewProps) {
   const filtered = sessions
     .filter((s) => matchesScope(s, currentScope))
@@ -98,26 +106,32 @@ export function SessionHistoryView({
                   key={session.id}
                   data-testid={`session-row-${session.id}`}
                   data-current={isCurrent ? "true" : undefined}
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => onResume(session.id)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      e.preventDefault();
-                      onResume(session.id);
-                    }
-                  }}
-                  className="flex items-stretch cursor-pointer hover:bg-(--color-bg-hover) border-b border-(--color-border-subtle)"
+                  className="group flex items-stretch cursor-pointer hover:bg-(--color-bg-hover) border-b border-(--color-border-subtle)"
                 >
-                  {/* Accent left border for current session */}
+                  {/* Accent left border */}
+                  <div style={{ width: 3, flexShrink: 0, backgroundColor: isCurrent ? "var(--color-accent)" : "transparent" }} />
+
+                  {/* Pin icon — always reserves space; visible always for pinned, on hover for unpinned */}
+                  <button
+                    data-testid={`pin-btn-${session.id}`}
+                    onClick={(e) => { e.stopPropagation(); onPin(session.id, !session.pinned); }}
+                    aria-label={session.pinned ? "Unpin session" : "Pin session"}
+                    className={`flex items-center justify-center w-6 flex-shrink-0 self-stretch transition-opacity duration-(--duration-fast) ${session.pinned ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}
+                  >
+                    {session.pinned
+                      ? <PinOff className="w-3 h-3 text-(--color-accent)" />
+                      : <Pin className="w-3 h-3 text-(--color-text-tertiary)" />
+                    }
+                  </button>
+
+                  {/* Row content — clicking this resumes the session */}
                   <div
-                    style={{
-                      width: 3,
-                      flexShrink: 0,
-                      backgroundColor: isCurrent ? "var(--color-accent)" : "transparent",
-                    }}
-                  />
-                  <div className="flex-1 px-3 py-3 min-w-0">
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => onResume(session.id)}
+                    onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onResume(session.id); } }}
+                    className="flex-1 px-2 py-3 min-w-0"
+                  >
                     <p className="text-[length:var(--font-size-ui-base)] font-medium text-(--color-text-primary) truncate">
                       {session.name || "Untitled"}
                     </p>
@@ -130,6 +144,16 @@ export function SessionHistoryView({
                       </span>
                     </div>
                   </div>
+
+                  {/* Ellipsis button — always reserves space, visible on hover */}
+                  <button
+                    data-testid={`ellipsis-btn-${session.id}`}
+                    onClick={(e) => e.stopPropagation()}
+                    aria-label="Session options"
+                    className="flex items-center justify-center w-7 flex-shrink-0 self-stretch opacity-0 group-hover:opacity-100 transition-opacity duration-(--duration-fast)"
+                  >
+                    <Ellipsis className="w-4 h-4 text-(--color-text-tertiary)" />
+                  </button>
                 </li>
               );
             })}
