@@ -40,7 +40,7 @@ export function UpdateDialog({
           }}
         >
           {notes ? (
-            <MarkdownRenderer content={notes} className="prose dark:prose-invert max-w-none" />
+            <MarkdownRenderer content={notes} className="prose prose-tiptap dark:prose-invert max-w-none" />
           ) : (
             <p style={{ color: "var(--color-text-secondary)" }}>
               No release notes available.

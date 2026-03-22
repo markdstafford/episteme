@@ -133,7 +133,7 @@ export function DocumentViewer() {
               <MarkdownRenderer
                 content={content}
                 onLinkClick={handleLinkClick}
-                className="prose dark:prose-invert max-w-none"
+                className="prose prose-tiptap dark:prose-invert max-w-none"
               />
             </div>
           )}

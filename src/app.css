@@ -161,21 +161,6 @@
 }
 
 @layer components {
-  /* Inline code inside Tiptap prose views:
-     1. Suppress the decorative backticks that @tailwindcss/typography injects via
-        code::before / code::after (prose adds content: '"`"' to naked <code> elements).
-     2. Add a subtle background so inline code is visually distinct. */
-  .prose .tiptap code:not(pre code)::before,
-  .prose .tiptap code:not(pre code)::after {
-    content: none;
-  }
-
-  .prose .tiptap code:not(pre code) {
-    background-color: var(--color-bg-subtle);
-    padding: 0.125em 0.375em;
-    border-radius: var(--radius-sm);
-  }
-
   [data-ui-input]::placeholder {
     color: var(--color-text-tertiary);
   }
@@ -193,23 +178,40 @@
   .context-menu-item[data-highlighted][data-destructive] {
     color: var(--color-state-danger);
   }
+}
 
-  /* Compact list item spacing — prose default (~1.25em) is too large for dense lists.
-     Scoped to .prose .tiptap so the higher specificity (0,2,1) beats the plugin's
-     :where(li) selector (0,1,0), ensuring the override actually applies. */
-  .prose .tiptap li {
+/* Tiptap prose overrides — applied via prose-tiptap utility class alongside prose.
+   Using @utility places these in the utilities layer (same as the typography plugin),
+   so definition order determines the winner for equal-specificity rules. */
+@utility prose-tiptap {
+  /* Suppress decorative backtick pseudo-elements that @tailwindcss/typography
+     injects on all <code> elements via code::before/::after { content: '"`"' } */
+  & code:not(pre code)::before,
+  & code:not(pre code)::after {
+    content: none;
+  }
+
+  /* Inline code background */
+  & code:not(pre code) {
+    background-color: var(--color-bg-subtle);
+    padding: 0.125em 0.375em;
+    border-radius: var(--radius-sm);
+  }
+
+  /* Compact list item spacing — prose default is ~1.25em (too large for dense lists) */
+  & li {
     margin-top: 0.25em;
     margin-bottom: 0.25em;
   }
 
   /* Task list: remove bullets, align checkbox and text on same line.
      TaskItem renders as: <li><label><input><span></label><div><p>text</p></div></li> */
-  .prose .tiptap ul[data-type="taskList"] {
+  & ul[data-type="taskList"] {
     list-style: none;
     padding-left: 0;
   }
 
-  .prose .tiptap ul[data-type="taskList"] > li {
+  & ul[data-type="taskList"] > li {
     list-style: none;
     padding-left: 0;
     display: flex;
@@ -217,24 +219,23 @@
     gap: 0.5em;
   }
 
-  .prose .tiptap ul[data-type="taskList"] > li > label {
+  & ul[data-type="taskList"] > li::marker,
+  & ul[data-type="taskList"] > li::before {
+    content: none;
+  }
+
+  & ul[data-type="taskList"] > li > label {
     flex-shrink: 0;
     padding-top: 0.15em;
   }
 
-  .prose .tiptap ul[data-type="taskList"] > li > div {
+  & ul[data-type="taskList"] > li > div {
     flex: 1;
   }
 
-  .prose .tiptap ul[data-type="taskList"] > li > div > p {
+  & ul[data-type="taskList"] > li > div > p {
     margin-top: 0;
     margin-bottom: 0;
-  }
-
-  /* Override prose ::marker bullet for task list items */
-  .prose .tiptap ul[data-type="taskList"] > li::marker,
-  .prose .tiptap ul[data-type="taskList"] > li::before {
-    content: none;
   }
 }
 
