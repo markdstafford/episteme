@@ -72,13 +72,15 @@ describe("Markdown GFM rendering", () => {
     }
   });
 
-  it("renders inline code", () => {
-    const md = "Use `const x = 1` in your code";
-    const container = renderMarkdown(md);
+  it("renders inline code as a code element with no visible backticks", () => {
+    const container = renderMarkdown("Use `const x = 1` in your code");
     expect(container.firstChild).toBeInTheDocument();
     const tiptap = container.querySelector(".tiptap");
     if (tiptap) {
-      expect(tiptap.querySelector("code")).toBeInTheDocument();
+      const codeEl = tiptap.querySelector("code");
+      expect(codeEl).toBeInTheDocument();
+      expect(codeEl?.textContent).toBe("const x = 1");
+      expect(tiptap.textContent).not.toContain("`");
     }
   });
 
