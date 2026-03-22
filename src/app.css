@@ -202,12 +202,12 @@
 
   /* Task list: remove bullets, align checkbox and text on same line.
      TaskItem renders as: <li><label><input><span></label><div><p>text</p></div></li> */
-  .tiptap ul[data-type="taskList"] {
+  .prose .tiptap ul[data-type="taskList"] {
     list-style: none;
     padding-left: 0;
   }
 
-  .tiptap ul[data-type="taskList"] > li {
+  .prose .tiptap ul[data-type="taskList"] > li {
     list-style: none;
     padding-left: 0;
     display: flex;
@@ -215,16 +215,16 @@
     gap: 0.5em;
   }
 
-  .tiptap ul[data-type="taskList"] > li > label {
+  .prose .tiptap ul[data-type="taskList"] > li > label {
     flex-shrink: 0;
     padding-top: 0.15em;
   }
 
-  .tiptap ul[data-type="taskList"] > li > div {
+  .prose .tiptap ul[data-type="taskList"] > li > div {
     flex: 1;
   }
 
-  .tiptap ul[data-type="taskList"] > li > div > p {
+  .prose .tiptap ul[data-type="taskList"] > li > div > p {
     margin-top: 0;
     margin-bottom: 0;
   }
