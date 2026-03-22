@@ -194,8 +194,10 @@
     color: var(--color-state-danger);
   }
 
-  /* Compact list item spacing — prose default (~1.25em) is too large for dense lists */
-  .prose :where(li):not(:where([class~="not-prose"] *)) {
+  /* Compact list item spacing — prose default (~1.25em) is too large for dense lists.
+     Scoped to .prose .tiptap so the higher specificity (0,2,1) beats the plugin's
+     :where(li) selector (0,1,0), ensuring the override actually applies. */
+  .prose .tiptap li {
     margin-top: 0.25em;
     margin-bottom: 0.25em;
   }
