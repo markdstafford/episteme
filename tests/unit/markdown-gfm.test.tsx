@@ -128,17 +128,22 @@ describe("Markdown GFM rendering", () => {
     }
   });
 
-  it("renders task lists", () => {
-    const md = "- [ ] Unchecked\n- [x] Checked";
-    const container = renderMarkdown(md);
-    expect(container.firstChild).toBeInTheDocument();
-    // Task list rendering depends on TipTap task list extension
+  it("renders task lists with checkboxes and correct checked state", () => {
+    const container = renderMarkdown("- [ ] Unchecked item\n- [x] Checked item");
     const tiptap = container.querySelector(".tiptap");
+    expect(tiptap).not.toBeNull();
     if (tiptap) {
-      const inputs = tiptap.querySelectorAll("input[type='checkbox']");
-      if (inputs.length > 0) {
-        expect(inputs.length).toBeGreaterThanOrEqual(2);
-      }
+      // Both checkboxes present
+      const checkboxes = tiptap.querySelectorAll("input[type='checkbox']");
+      expect(checkboxes.length).toBeGreaterThanOrEqual(2);
+
+      // Checked item: TipTap marks the <li> with data-checked="true"
+      const checkedItems = tiptap.querySelectorAll("li[data-checked='true']");
+      expect(checkedItems.length).toBeGreaterThanOrEqual(1);
+
+      // Task list items exist with data-checked attribute (TipTap's task item marker)
+      const taskItems = tiptap.querySelectorAll("li[data-checked]");
+      expect(taskItems.length).toBeGreaterThanOrEqual(2);
     }
   });
 });
