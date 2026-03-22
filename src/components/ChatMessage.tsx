@@ -22,9 +22,10 @@ export function ChatMessage({ message }: ChatMessageProps) {
             {message.content}
           </p>
         ) : (
-          <div className="prose prose-sm dark:prose-invert max-w-none">
-            <MarkdownRenderer content={message.content} />
-          </div>
+          <MarkdownRenderer
+            content={message.content}
+            className="prose prose-sm dark:prose-invert max-w-none"
+          />
         )}
       </div>
     </div>

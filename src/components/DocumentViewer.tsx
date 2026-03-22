@@ -130,7 +130,11 @@ export function DocumentViewer() {
           {content !== null && (
             // matches --font-size-doc-base line-height per spec
             <div style={{ fontSize: "var(--font-size-doc-base)", lineHeight: "1.7" }}>
-              <MarkdownRenderer content={content} onLinkClick={handleLinkClick} />
+              <MarkdownRenderer
+                content={content}
+                onLinkClick={handleLinkClick}
+                className="prose dark:prose-invert max-w-none"
+              />
             </div>
           )}
         </div>
