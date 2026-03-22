@@ -161,6 +161,21 @@
 }
 
 @layer components {
+  /* Inline code inside Tiptap prose views:
+     1. Suppress the decorative backticks that @tailwindcss/typography injects via
+        code::before / code::after (prose adds content: '"`"' to naked <code> elements).
+     2. Add a subtle background so inline code is visually distinct. */
+  .prose .tiptap code:not(pre code)::before,
+  .prose .tiptap code:not(pre code)::after {
+    content: none;
+  }
+
+  .prose .tiptap code:not(pre code) {
+    background-color: var(--color-bg-subtle);
+    padding: 0.125em 0.375em;
+    border-radius: var(--radius-sm);
+  }
+
   [data-ui-input]::placeholder {
     color: var(--color-text-tertiary);
   }

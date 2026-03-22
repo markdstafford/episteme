@@ -74,12 +74,12 @@ describe("Markdown GFM rendering", () => {
 
   it("renders inline code as a code element with no visible backticks", () => {
     const container = renderMarkdown("Use `const x = 1` in your code");
-    expect(container.firstChild).toBeInTheDocument();
     const tiptap = container.querySelector(".tiptap");
+    expect(tiptap).not.toBeNull();
     if (tiptap) {
       const codeEl = tiptap.querySelector("code");
-      expect(codeEl).toBeInTheDocument();
-      expect(codeEl?.textContent).toBe("const x = 1");
+      expect(codeEl).not.toBeNull();
+      expect(codeEl!.textContent).toBe("const x = 1");
       expect(tiptap.textContent).not.toContain("`");
     }
   });
