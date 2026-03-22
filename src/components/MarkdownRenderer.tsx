@@ -12,10 +12,11 @@ import { useEffect } from "react";
 
 interface MarkdownRendererProps {
   content: string;
+  className?: string;
   onLinkClick?: (href: string) => void;
 }
 
-export function MarkdownRenderer({ content, onLinkClick }: MarkdownRendererProps) {
+export function MarkdownRenderer({ content, className, onLinkClick }: MarkdownRendererProps) {
   const editor = useEditor({
     editable: false,
     extensions: [
@@ -65,7 +66,7 @@ export function MarkdownRenderer({ content, onLinkClick }: MarkdownRendererProps
   }, [editor, onLinkClick]);
 
   return (
-    <div className="prose dark:prose-invert max-w-none">
+    <div className={className}>
       <EditorContent editor={editor} />
     </div>
   );
