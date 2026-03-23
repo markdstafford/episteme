@@ -198,12 +198,6 @@
     border-radius: var(--radius-sm);
   }
 
-  /* Compact list item spacing — prose default is ~1.25em (too large for dense lists) */
-  & li {
-    margin-top: 0.25em;
-    margin-bottom: 0.25em;
-  }
-
   /* Task list: remove bullets, align checkbox and text on same line.
      TaskItem renders as: <li><label><input><span></label><div><p>text</p></div></li> */
   & ul[data-type="taskList"] {
