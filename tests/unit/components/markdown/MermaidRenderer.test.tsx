@@ -47,10 +47,9 @@ describe('MermaidRenderer', () => {
     render(<MermaidRenderer definition="graph TD\nA-->B" />)
     render(<MermaidRenderer definition="graph TD\nC-->D" />)
     await waitFor(() => {
-      const calls = vi.mocked(mermaid.render).mock.calls
-      if (calls.length >= 2) {
-        expect(calls[0][0]).not.toBe(calls[1][0])
-      }
+      expect(vi.mocked(mermaid.render).mock.calls.length).toBeGreaterThanOrEqual(2)
     })
+    const calls = vi.mocked(mermaid.render).mock.calls
+    expect(calls[0][0]).not.toBe(calls[1][0])
   })
 })

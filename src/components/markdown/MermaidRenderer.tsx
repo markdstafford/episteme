@@ -1,26 +1,34 @@
-import { useState, useEffect, useId } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { AlertTriangle } from 'lucide-react'
 
 interface MermaidRendererProps {
   definition: string
 }
 
-let mermaidInitialized = false
+// Module-level counter — guarantees unique IDs even across separate React trees (e.g. in tests)
+let mermaidInstanceCounter = 0
 
-async function getMermaid() {
-  const mermaidModule = await import('mermaid')
-  const mermaid = mermaidModule.default
-  if (!mermaidInitialized) {
-    mermaid.initialize({ startOnLoad: false, theme: 'base' })
-    mermaidInitialized = true
+// Cache the mermaid singleton promise so concurrent callers share the same instance
+let mermaidSingletonPromise: Promise<typeof import('mermaid')['default']> | null = null
+
+function getMermaid() {
+  if (!mermaidSingletonPromise) {
+    mermaidSingletonPromise = import('mermaid').then(mod => {
+      const mermaid = mod.default
+      mermaid.initialize({ startOnLoad: false, theme: 'base' })
+      return mermaid
+    })
   }
-  return mermaid
+  return mermaidSingletonPromise
 }
 
 export function MermaidRenderer({ definition }: MermaidRendererProps) {
-  const rawId = useId()
-  // useId returns ':r0:' style strings — sanitize for mermaid's ID requirement
-  const id = `mermaid-${rawId.replace(/:/g, '')}`
+  // useRef so the ID is stable for the lifetime of this component instance
+  const idRef = useRef<string | null>(null)
+  if (idRef.current === null) {
+    idRef.current = `mermaid-${++mermaidInstanceCounter}`
+  }
+  const id = idRef.current
   const [svg, setSvg] = useState<string | null>(null)
   const [error, setError] = useState(false)
 
@@ -39,7 +47,8 @@ export function MermaidRenderer({ definition }: MermaidRendererProps) {
     return () => {
       cancelled = true
     }
-  }, [definition, id])
+  // id is stable for the component lifetime (from useId) — only definition drives re-renders
+  }, [definition]) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (svg !== null) {
     return (
