@@ -1,3 +1,4 @@
+import { useState, useRef } from 'react'
 import { ChevronRight, Folder, FileText } from "lucide-react";
 import type { FileNode } from "@/lib/fileTree";
 import {
@@ -16,6 +17,7 @@ interface FileTreeItemProps {
   isFocused: boolean;
   onToggle: (path: string) => void;
   onSelect: (path: string) => void;
+  workspacePath: string;
 }
 
 function displayName(name: string): string {
@@ -30,11 +32,20 @@ export function FileTreeItem({
   isFocused,
   onToggle,
   onSelect,
+  workspacePath,
 }: FileTreeItemProps) {
   // --space-3 (12px) base + --space-4 (16px) per depth level
   const paddingLeft = 12 + depth * 16;
 
+  const [previewOpen, setPreviewOpen] = useState(false)
+  const hoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const isMouseInPopoverRef = useRef(false)
+  const previewScrollRef = useRef<HTMLDivElement | null>(null)
+
+  const isPreviewable = !node.is_dir && /\.md$/i.test(node.name)
+
   const handleClick = () => {
+    setPreviewOpen(false)
     if (node.is_dir) {
       onToggle(node.path);
     } else {
@@ -53,6 +64,30 @@ export function FileTreeItem({
           className={`group flex items-center gap-2 w-full text-left h-(--height-nav-item) px-[var(--space-2)] text-[length:var(--font-size-ui-lg)] rounded-(--radius-md) cursor-pointer text-(--color-text-secondary) hover:bg-(--color-bg-subtle) hover:text-(--color-text-primary) transition-colors duration-(--duration-fast) ease-(--ease-default) focus-ring ${selectedStyles}`}
           style={{ paddingLeft }}
           onClick={handleClick}
+          onMouseEnter={() => {
+            if (!isPreviewable) return
+            hoverTimerRef.current = setTimeout(() => setPreviewOpen(true), 400)
+          }}
+          onMouseLeave={() => {
+            if (hoverTimerRef.current) {
+              clearTimeout(hoverTimerRef.current)
+              hoverTimerRef.current = null
+            }
+            if (!isMouseInPopoverRef.current) setPreviewOpen(false)
+          }}
+          onKeyDown={(e) => {
+            if (e.key === ' ' && isPreviewable) {
+              e.preventDefault()
+              setPreviewOpen(true)
+            }
+            if (e.key === 'ArrowRight' && previewOpen) {
+              e.preventDefault()
+              previewScrollRef.current?.focus()
+            }
+            if (e.key === 'Escape') {
+              setPreviewOpen(false)
+            }
+          }}
           role="treeitem"
           aria-expanded={node.is_dir ? isExpanded : undefined}
           aria-selected={isSelected}
