@@ -348,7 +348,7 @@ No API, database, or auth changes. Frontend-only.
     - **Dependencies**: "Task: Install npm dependencies"
 
 - [ ] **Story: CodeBlock node extension**
-  - [ ] **Task: Create CodeBlock.tsx**
+  - [x] **Task: Create CodeBlock.tsx**
     - **Description**: Create `src/components/markdown/CodeBlock.tsx` containing the TipTap node extension and dispatcher React component. The extension overrides the default `codeBlock` node. The component reads `language` and `code` from the ProseMirror node, routes to `MermaidRenderer` when `language === 'mermaid'`, and routes to `ShikiRenderer` for all other languages. Wrap the component in a React `ErrorBoundary` as a last-resort safety net.
     - **Acceptance criteria**:
       - [ ] File exists at `src/components/markdown/CodeBlock.tsx`
@@ -358,7 +358,7 @@ No API, database, or auth changes. Frontend-only.
       - [ ] Wrapped in a React `ErrorBoundary` that renders a plain `<pre><code>` fallback on unexpected error
     - **Dependencies**: "Task: Create ShikiRenderer.tsx", "Task: Create MermaidRenderer.tsx"
 
-  - [ ] **Task: Update MarkdownRenderer to register CodeBlock**
+  - [x] **Task: Update MarkdownRenderer to register CodeBlock**
     - **Description**: In `src/components/MarkdownRenderer.tsx`, disable StarterKit's built-in `codeBlock` extension and add the new `CodeBlock` extension.
     - **Acceptance criteria**:
       - [ ] `StarterKit` configured with `codeBlock: false`
@@ -437,7 +437,7 @@ No API, database, or auth changes. Frontend-only.
       - [ ] All tests pass
     - **Dependencies**: "Task: Create CodeBlock.tsx"
 
-  - [ ] **Task: Integration tests for MarkdownRenderer**
+  - [x] **Task: Integration tests for MarkdownRenderer**
     - **Description**: Write integration tests in `tests/unit/MarkdownRenderer.codeblocks.test.tsx` covering the full markdown → TipTap → renderer pipeline.
     - **Acceptance criteria**:
       - [ ] Test: TypeScript fenced block → shiki output present in DOM (mock `getHighlighter`)
