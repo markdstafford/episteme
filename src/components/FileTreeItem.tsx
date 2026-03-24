@@ -8,7 +8,7 @@ import {
   ContextMenuItem,
   ContextMenuSeparator,
 } from "@/components/ui/ContextMenu";
-import { PreviewPopover } from '@/components/PreviewPopover'
+import { PreviewPopover, type PreviewPopoverHandle } from '@/components/PreviewPopover'
 
 interface FileTreeItemProps {
   node: FileNode;
@@ -42,7 +42,8 @@ export function FileTreeItem({
   const hoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const isMouseInPopoverRef = useRef(false)
-  const previewScrollRef = useRef<HTMLDivElement | null>(null)
+  const popoverRef = useRef<PreviewPopoverHandle | null>(null)
+  const buttonRef = useRef<HTMLButtonElement | null>(null)
 
   // Clean up timers on unmount
   useEffect(() => {
@@ -83,6 +84,7 @@ export function FileTreeItem({
     <ContextMenu>
       <ContextMenuTrigger asChild>
         <button
+          ref={buttonRef}
           className={`group flex items-center gap-2 w-full text-left h-(--height-nav-item) px-[var(--space-2)] text-[length:var(--font-size-ui-lg)] rounded-(--radius-md) cursor-pointer text-(--color-text-secondary) hover:bg-(--color-bg-subtle) hover:text-(--color-text-primary) transition-colors duration-(--duration-fast) ease-(--ease-default) focus-ring ${selectedStyles}`}
           style={{ paddingLeft }}
           onClick={handleClick}
@@ -107,7 +109,7 @@ export function FileTreeItem({
             }
             if (e.key === 'ArrowRight' && previewOpen) {
               e.preventDefault()
-              previewScrollRef.current?.focus()
+              popoverRef.current?.focusScroll()
             }
             if (e.key === 'Escape') {
               setPreviewOpen(false)
@@ -155,6 +157,7 @@ export function FileTreeItem({
       </ContextMenuContent>
       {isPreviewable && (
         <PreviewPopover
+          ref={popoverRef}
           open={previewOpen}
           onOpenChange={setPreviewOpen}
           path={node.path}
@@ -167,7 +170,7 @@ export function FileTreeItem({
             isMouseInPopoverRef.current = false
             scheduleClose()
           }}
-          scrollRefCallback={(el) => { previewScrollRef.current = el }}
+          onEscapeClose={() => buttonRef.current?.focus()}
         />
       )}
     </ContextMenu>
