@@ -400,8 +400,8 @@ No API, database, or auth changes. Frontend-only.
       - [ ] No regressions in existing prose styles
     - **Dependencies**: "Task: Create ShikiRenderer.tsx", "Task: Create MermaidRenderer.tsx"
 
-- [ ] **Story: Tests**
-  - [ ] **Task: Unit tests for shikiSingleton**
+- [x] **Story: Tests**
+  - [x] **Task: Unit tests for shikiSingleton**
     - **Description**: Write unit tests in `tests/unit/lib/shikiSingleton.test.ts` verifying singleton behaviour.
     - **Acceptance criteria**:
       - [ ] Test: `getHighlighter()` returns a promise
@@ -409,7 +409,7 @@ No API, database, or auth changes. Frontend-only.
       - [ ] All tests pass
     - **Dependencies**: "Task: Create shikiSingleton.ts"
 
-  - [ ] **Task: Unit tests for ShikiRenderer**
+  - [x] **Task: Unit tests for ShikiRenderer**
     - **Description**: Write unit tests in `tests/unit/components/markdown/ShikiRenderer.test.tsx`. Mock `getHighlighter` to control async behaviour.
     - **Acceptance criteria**:
       - [ ] Test: renders `<pre><code>` immediately before highlighter resolves
@@ -419,7 +419,7 @@ No API, database, or auth changes. Frontend-only.
       - [ ] All tests pass
     - **Dependencies**: "Task: Create ShikiRenderer.tsx"
 
-  - [ ] **Task: Unit tests for MermaidRenderer**
+  - [x] **Task: Unit tests for MermaidRenderer**
     - **Description**: Write unit tests in `tests/unit/components/markdown/MermaidRenderer.test.tsx`. Mock `mermaid.render` to control success/failure.
     - **Acceptance criteria**:
       - [ ] Test: successful render contains an SVG element
@@ -428,7 +428,7 @@ No API, database, or auth changes. Frontend-only.
       - [ ] All tests pass
     - **Dependencies**: "Task: Create MermaidRenderer.tsx"
 
-  - [ ] **Task: Unit tests for CodeBlock dispatcher**
+  - [x] **Task: Unit tests for CodeBlock dispatcher**
     - **Description**: Write unit tests in `tests/unit/components/markdown/CodeBlock.test.tsx` verifying routing logic.
     - **Acceptance criteria**:
       - [ ] Test: `language === 'mermaid'` renders `MermaidRenderer`
