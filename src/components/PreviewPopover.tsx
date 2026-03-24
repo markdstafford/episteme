@@ -104,6 +104,7 @@ export const PreviewPopover = forwardRef<PreviewPopoverHandle, PreviewPopoverPro
             onMouseEnter={onMouseEnter}
             onMouseLeave={onMouseLeave}
             onOpenAutoFocus={(e) => e.preventDefault()}
+            onCloseAutoFocus={(e) => e.preventDefault()}
             onEscapeKeyDown={(e) => {
               // Handle Escape ourselves so we can return focus to the originating tree item
               e.preventDefault()

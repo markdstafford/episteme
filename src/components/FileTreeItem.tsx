@@ -109,7 +109,9 @@ export function FileTreeItem({
             }
             if (e.key === 'ArrowRight' && previewOpen) {
               e.preventDefault()
-              popoverRef.current?.focusScroll()
+              e.stopPropagation() // Prevent FileTree's tree-level handler from running
+              // requestAnimationFrame ensures the Radix portal has committed to the DOM
+              requestAnimationFrame(() => popoverRef.current?.focusScroll())
             }
             if (e.key === 'Escape') {
               setPreviewOpen(false)
