@@ -45,7 +45,7 @@ describe("useWorkspaceStore", () => {
       expect(mockInvoke).toHaveBeenCalledWith("open_folder");
       expect(mockInvoke).toHaveBeenCalledWith("load_preferences");
       expect(mockInvoke).toHaveBeenCalledWith("save_preferences", {
-        preferences: { last_opened_folder: "/selected/path", aws_profile: "my-profile", recently_used_skill_types: [], preview_width: "400px", preview_height: "480px" },
+        preferences: { last_opened_folder: "/selected/path", aws_profile: "my-profile", recently_used_skill_types: [], preview_width: "50%", preview_height: "75%" },
       });
     });
 

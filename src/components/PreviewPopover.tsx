@@ -4,7 +4,15 @@ import { invoke } from '@tauri-apps/api/core'
 import { Loader2 } from 'lucide-react'
 import { parseDocument } from '@/lib/markdown'
 import { MarkdownRenderer } from '@/components/MarkdownRenderer'
-import { parsePreferences, DEFAULT_PREFERENCES } from '@/lib/preferences'
+import { parsePreferences } from '@/lib/preferences'
+
+// Design token values — must stay in sync with app.css @theme
+const SIDEBAR_WIDTH_PX = 244  // --width-sidebar
+const TITLEBAR_HEIGHT_PX = 32 // --height-titlebar
+
+function percentToPx(pctStr: string, total: number): number {
+  return Math.round((parseFloat(pctStr) / 100) * total)
+}
 
 interface PreviewPopoverProps {
   open: boolean
@@ -28,8 +36,9 @@ export function PreviewPopover({
 }: PreviewPopoverProps) {
   const [content, setContent] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
-  const [previewWidth, setPreviewWidth] = useState(DEFAULT_PREFERENCES.preview_width)
-  const [previewHeight, setPreviewHeight] = useState(DEFAULT_PREFERENCES.preview_height)
+  // Pixel dimensions computed from % preferences at open time — not live-updated while visible
+  const [widthPx, setWidthPx] = useState(0)
+  const [heightPx, setHeightPx] = useState(0)
   const scrollRef = useRef<HTMLDivElement>(null)
 
   // Forward scroll ref to caller for keyboard focus (Right Arrow)
@@ -49,13 +58,16 @@ export function PreviewPopover({
     setLoading(true)
     setContent(null)
 
-    // Load preferences fresh each time the popover opens so size changes take effect
+    // Load preferences and compute pixel dimensions from % relative to the content pane.
+    // Computed once at open time — not live-updated while the popover is visible.
     invoke('load_preferences')
       .then((raw) => {
         if (cancelled) return
         const prefs = parsePreferences(raw)
-        setPreviewWidth(prefs.preview_width)
-        setPreviewHeight(prefs.preview_height)
+        const contentW = window.innerWidth - SIDEBAR_WIDTH_PX
+        const contentH = window.innerHeight - TITLEBAR_HEIGHT_PX
+        setWidthPx(percentToPx(prefs.preview_width, contentW))
+        setHeightPx(percentToPx(prefs.preview_height, contentH))
       })
       .catch(() => {})
 
@@ -86,8 +98,8 @@ export function PreviewPopover({
           onMouseLeave={onMouseLeave}
           onOpenAutoFocus={(e) => e.preventDefault()}
           style={{
-            width: `min(${previewWidth}, 50vw)`,
-            maxHeight: `min(${previewHeight}, 75vh)`,
+            width: widthPx > 0 ? `${widthPx}px` : undefined,
+            maxHeight: heightPx > 0 ? `${heightPx}px` : undefined,
             backgroundColor: 'var(--color-bg-elevated)',
             border: '1px solid var(--color-border-subtle)',
             borderRadius: 'var(--radius-lg)',
@@ -101,7 +113,7 @@ export function PreviewPopover({
             tabIndex={0}
             style={{
               overflowY: 'auto',
-              maxHeight: `min(${previewHeight}, 75vh)`,
+              maxHeight: heightPx > 0 ? `${heightPx}px` : undefined,
               padding: 'var(--space-4)',
               fontSize: 'var(--font-size-doc-sm)',
               outline: 'none',

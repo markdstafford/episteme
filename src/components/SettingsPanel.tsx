@@ -62,7 +62,7 @@ function SectionHeader({ label }: { label: string }) {
   );
 }
 
-const CSS_LENGTH_REGEX = /^\d+(\.\d+)?(px|%)$/;
+const CSS_LENGTH_REGEX = /^\d+(\.\d+)?%$/;
 
 function CssLengthSetting({ id, label }: { id: string; label: string }) {
   const [value, setValue] = useState("");
@@ -101,12 +101,12 @@ function CssLengthSetting({ id, label }: { id: string; label: string }) {
         id={id}
         value={value}
         onChange={(e) => handleChange(e.target.value)}
-        placeholder="e.g. 400px or 50%"
+        placeholder="e.g. 50%"
         aria-invalid={error}
       />
       {error && (
         <p className="text-[length:var(--font-size-ui-sm)] text-(--color-state-danger)">
-          Enter a valid CSS length (e.g. 400px or 50%)
+          Enter a percentage value (e.g. 50%)
         </p>
       )}
     </div>

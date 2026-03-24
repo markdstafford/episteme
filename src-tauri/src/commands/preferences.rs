@@ -15,8 +15,8 @@ pub struct Preferences {
     pub preview_height: String,
 }
 
-fn default_preview_width() -> String { "400px".to_string() }
-fn default_preview_height() -> String { "480px".to_string() }
+fn default_preview_width() -> String { "50%".to_string() }
+fn default_preview_height() -> String { "75%".to_string() }
 
 impl Default for Preferences {
     fn default() -> Self {

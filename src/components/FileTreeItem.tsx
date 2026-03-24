@@ -40,15 +40,29 @@ export function FileTreeItem({
 
   const [previewOpen, setPreviewOpen] = useState(false)
   const hoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const isMouseInPopoverRef = useRef(false)
   const previewScrollRef = useRef<HTMLDivElement | null>(null)
 
-  // Clean up hover timer on unmount to prevent state updates after unmount
+  // Clean up timers on unmount
   useEffect(() => {
     return () => {
       if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current)
+      if (closeTimerRef.current) clearTimeout(closeTimerRef.current)
     }
   }, [])
+
+  const scheduleClose = () => {
+    if (closeTimerRef.current) clearTimeout(closeTimerRef.current)
+    closeTimerRef.current = setTimeout(() => setPreviewOpen(false), 400)
+  }
+
+  const cancelClose = () => {
+    if (closeTimerRef.current) {
+      clearTimeout(closeTimerRef.current)
+      closeTimerRef.current = null
+    }
+  }
 
   const isPreviewable = !node.is_dir && /\.md$/i.test(node.name)
 
@@ -74,14 +88,17 @@ export function FileTreeItem({
           onClick={handleClick}
           onMouseEnter={() => {
             if (!isPreviewable) return
-            hoverTimerRef.current = setTimeout(() => setPreviewOpen(true), 400)
+            cancelClose()
+            if (!previewOpen) {
+              hoverTimerRef.current = setTimeout(() => setPreviewOpen(true), 400)
+            }
           }}
           onMouseLeave={() => {
             if (hoverTimerRef.current) {
               clearTimeout(hoverTimerRef.current)
               hoverTimerRef.current = null
             }
-            if (!isMouseInPopoverRef.current) setPreviewOpen(false)
+            scheduleClose()
           }}
           onKeyDown={(e) => {
             if (e.key === ' ' && isPreviewable) {
@@ -142,10 +159,13 @@ export function FileTreeItem({
           onOpenChange={setPreviewOpen}
           path={node.path}
           workspacePath={workspacePath}
-          onMouseEnter={() => { isMouseInPopoverRef.current = true }}
+          onMouseEnter={() => {
+            isMouseInPopoverRef.current = true
+            cancelClose()
+          }}
           onMouseLeave={() => {
             isMouseInPopoverRef.current = false
-            setPreviewOpen(false)
+            scheduleClose()
           }}
           scrollRefCallback={(el) => { previewScrollRef.current = el }}
         />
