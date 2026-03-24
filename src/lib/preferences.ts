@@ -4,8 +4,8 @@ export const PreferencesSchema = z.object({
   last_opened_folder: z.string().nullable(),
   aws_profile: z.string().nullable(),
   recently_used_skill_types: z.array(z.string()).default([]),
-  preview_width: z.string().default('400px'),
-  preview_height: z.string().default('480px'),
+  preview_width: z.string().regex(/^\d+(\.\d+)?(px|%)$/).default('400px').catch('400px'),
+  preview_height: z.string().regex(/^\d+(\.\d+)?(px|%)$/).default('480px').catch('480px'),
 });
 
 export type Preferences = z.infer<typeof PreferencesSchema>;

@@ -4,8 +4,7 @@ import { invoke } from '@tauri-apps/api/core'
 import { Loader2 } from 'lucide-react'
 import { parseDocument } from '@/lib/markdown'
 import { MarkdownRenderer } from '@/components/MarkdownRenderer'
-import type { Preferences } from '@/lib/preferences'
-import { DEFAULT_PREFERENCES } from '@/lib/preferences'
+import { parsePreferences, DEFAULT_PREFERENCES } from '@/lib/preferences'
 
 interface PreviewPopoverProps {
   open: boolean
@@ -35,10 +34,11 @@ export function PreviewPopover({
 
   // Load preview size preferences on mount
   useEffect(() => {
-    invoke<Preferences>('load_preferences')
-      .then((prefs) => {
-        if (prefs.preview_width) setPreviewWidth(prefs.preview_width)
-        if (prefs.preview_height) setPreviewHeight(prefs.preview_height)
+    invoke('load_preferences')
+      .then((raw) => {
+        const prefs = parsePreferences(raw)
+        setPreviewWidth(prefs.preview_width)
+        setPreviewHeight(prefs.preview_height)
       })
       .catch(() => {})
   }, [])
@@ -46,7 +46,8 @@ export function PreviewPopover({
   // Forward scroll ref to caller for keyboard focus (Right Arrow)
   useEffect(() => {
     scrollRefCallback?.(scrollRef.current)
-  })
+    return () => scrollRefCallback?.(null)
+  }, [scrollRefCallback])
 
   // Load file content when opened
   useEffect(() => {
