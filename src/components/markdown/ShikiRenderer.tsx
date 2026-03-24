@@ -10,6 +10,7 @@ export function ShikiRenderer({ code, language }: ShikiRendererProps) {
   const [html, setHtml] = useState<string | null>(null)
 
   useEffect(() => {
+    setHtml(null) // Clear stale output immediately when props change
     let cancelled = false
 
     getHighlighter()

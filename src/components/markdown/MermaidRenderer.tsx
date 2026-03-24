@@ -33,6 +33,8 @@ export function MermaidRenderer({ definition }: MermaidRendererProps) {
   const [error, setError] = useState(false)
 
   useEffect(() => {
+    setSvg(null)    // Clear stale state immediately when definition changes
+    setError(false)
     let cancelled = false
 
     getMermaid()
