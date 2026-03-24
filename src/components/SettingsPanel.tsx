@@ -62,12 +62,69 @@ function SectionHeader({ label }: { label: string }) {
   );
 }
 
+const CSS_LENGTH_REGEX = /^\d+(\.\d+)?(px|%)$/;
+
+function CssLengthSetting({ id, label }: { id: string; label: string }) {
+  const [value, setValue] = useState("");
+  const [fullPrefs, setFullPrefs] = useState<Preferences>(parsePreferences({}));
+  const [prefsLoaded, setPrefsLoaded] = useState(false);
+  const [error, setError] = useState(false);
+
+  useEffect(() => {
+    invoke<Preferences>("load_preferences")
+      .then((prefs) => {
+        setFullPrefs(prefs);
+        setValue((prefs as Record<string, string>)[id] ?? "");
+        setPrefsLoaded(true);
+      })
+      .catch(() => {});
+  }, [id]);
+
+  const handleChange = (raw: string) => {
+    setValue(raw);
+    const valid = CSS_LENGTH_REGEX.test(raw);
+    setError(!valid);
+    if (!prefsLoaded || !valid) return;
+    const merged = { ...fullPrefs, [id]: raw };
+    invoke("save_preferences", { preferences: merged }).catch(() => {});
+  };
+
+  return (
+    <div className="flex flex-col gap-[var(--space-2)]">
+      <label
+        htmlFor={id}
+        className="text-[length:var(--font-size-ui-base)] text-(--color-text-secondary)"
+      >
+        {label}
+      </label>
+      <Input
+        id={id}
+        value={value}
+        onChange={(e) => handleChange(e.target.value)}
+        placeholder="e.g. 400px or 50%"
+        aria-invalid={error}
+      />
+      {error && (
+        <p className="text-[length:var(--font-size-ui-sm)] text-(--color-state-danger)">
+          Enter a valid CSS length (e.g. 400px or 50%)
+        </p>
+      )}
+    </div>
+  );
+}
+
+const CSS_LENGTH_IDS = new Set(["preview_width", "preview_height"]);
+
 function SettingControl({ settingId }: { settingId: string }) {
+  const setting = settingsConfig
+    .flatMap((c) => c.sections.flatMap((s) => s.settings))
+    .find((s) => s.id === settingId);
+
   if (settingId === "aws_profile") {
-    const setting = settingsConfig
-      .flatMap((c) => c.sections.flatMap((s) => s.settings))
-      .find((s) => s.id === settingId);
     return <AwsProfileSetting id={settingId} label={setting?.label ?? settingId} />;
+  }
+  if (CSS_LENGTH_IDS.has(settingId)) {
+    return <CssLengthSetting id={settingId} label={setting?.label ?? settingId} />;
   }
   if (import.meta.env.DEV) console.warn(`No control for setting: ${settingId}`);
   return null;

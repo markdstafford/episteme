@@ -32,24 +32,14 @@ export function PreviewPopover({
   const [previewHeight, setPreviewHeight] = useState(DEFAULT_PREFERENCES.preview_height)
   const scrollRef = useRef<HTMLDivElement>(null)
 
-  // Load preview size preferences on mount
-  useEffect(() => {
-    invoke('load_preferences')
-      .then((raw) => {
-        const prefs = parsePreferences(raw)
-        setPreviewWidth(prefs.preview_width)
-        setPreviewHeight(prefs.preview_height)
-      })
-      .catch(() => {})
-  }, [])
-
   // Forward scroll ref to caller for keyboard focus (Right Arrow)
   useEffect(() => {
     scrollRefCallback?.(scrollRef.current)
     return () => scrollRefCallback?.(null)
   }, [scrollRefCallback])
 
-  // Load file content when opened
+  // Load preferences and file content when first opened — deferred to avoid
+  // firing invoke("load_preferences") for every .md row in the tree on mount
   useEffect(() => {
     if (!open) {
       setContent(null)
@@ -58,6 +48,17 @@ export function PreviewPopover({
     let cancelled = false
     setLoading(true)
     setContent(null)
+
+    // Load preferences fresh each time the popover opens so size changes take effect
+    invoke('load_preferences')
+      .then((raw) => {
+        if (cancelled) return
+        const prefs = parsePreferences(raw)
+        setPreviewWidth(prefs.preview_width)
+        setPreviewHeight(prefs.preview_height)
+      })
+      .catch(() => {})
+
     invoke<string>('read_file', { filePath: path, workspacePath })
       .then((raw) => {
         if (cancelled) return

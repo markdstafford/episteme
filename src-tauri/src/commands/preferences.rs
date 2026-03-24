@@ -9,7 +9,14 @@ pub struct Preferences {
     pub aws_profile: Option<String>,
     #[serde(default)]
     pub recently_used_skill_types: Vec<String>,
+    #[serde(default = "default_preview_width")]
+    pub preview_width: String,
+    #[serde(default = "default_preview_height")]
+    pub preview_height: String,
 }
+
+fn default_preview_width() -> String { "400px".to_string() }
+fn default_preview_height() -> String { "480px".to_string() }
 
 impl Default for Preferences {
     fn default() -> Self {
@@ -17,6 +24,8 @@ impl Default for Preferences {
             last_opened_folder: None,
             aws_profile: None,
             recently_used_skill_types: Vec::new(),
+            preview_width: default_preview_width(),
+            preview_height: default_preview_height(),
         }
     }
 }
