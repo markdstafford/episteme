@@ -1,4 +1,4 @@
-import { render } from "@testing-library/react";
+import { render, waitFor } from "@testing-library/react";
 import { describe, it, expect } from "vitest";
 import { MarkdownRenderer } from "@/components/MarkdownRenderer";
 
@@ -61,15 +61,18 @@ describe("Markdown GFM rendering", () => {
     }
   });
 
-  it("renders fenced code blocks", () => {
+  it("renders fenced code blocks", async () => {
     const md = "```js\nconst x = 1;\n```";
     const container = renderMarkdown(md);
     expect(container.firstChild).toBeInTheDocument();
-    const tiptap = container.querySelector(".tiptap");
-    if (tiptap) {
-      expect(tiptap.querySelector("pre")).toBeInTheDocument();
-      expect(tiptap.querySelector("code")).toBeInTheDocument();
-    }
+    // CodeBlock uses a React node view that mounts asynchronously — wait for it
+    await waitFor(() => {
+      const tiptap = container.querySelector(".tiptap");
+      if (tiptap) {
+        expect(tiptap.querySelector("pre")).toBeInTheDocument();
+        expect(tiptap.querySelector("code")).toBeInTheDocument();
+      }
+    }, { timeout: 3000 });
   });
 
   it("renders inline code as a code element with no visible backticks", () => {

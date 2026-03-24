@@ -9,6 +9,7 @@ import { TaskItem } from "@tiptap/extension-task-item";
 import { Link } from "@tiptap/extension-link";
 import { Markdown } from "tiptap-markdown";
 import { useEffect } from "react";
+import { CodeBlock } from '@/components/markdown/CodeBlock'
 
 interface MarkdownRendererProps {
   content: string;
@@ -20,7 +21,8 @@ export function MarkdownRenderer({ content, className, onLinkClick }: MarkdownRe
   const editor = useEditor({
     editable: false,
     extensions: [
-      StarterKit,
+      StarterKit.configure({ codeBlock: false }),
+      CodeBlock,
       Table.configure({ resizable: false }),
       TableRow,
       TableCell,

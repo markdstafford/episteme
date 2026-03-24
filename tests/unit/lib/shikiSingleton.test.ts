@@ -1,5 +1,8 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 
+// Opt out of the global setup.ts mock so we can test the real singleton behaviour
+vi.unmock('@/lib/shikiSingleton')
+
 // Must mock shiki before importing singleton — shiki loads WASM which jsdom can't handle
 vi.mock('shiki', () => ({
   createHighlighter: vi.fn().mockResolvedValue({
