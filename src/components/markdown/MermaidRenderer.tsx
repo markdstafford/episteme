@@ -8,18 +8,20 @@ interface MermaidRendererProps {
 // Module-level counter — guarantees unique IDs even across separate React trees (e.g. in tests)
 let mermaidInstanceCounter = 0
 
-// Cache the mermaid singleton promise so concurrent callers share the same instance
+// Cache the mermaid module load (expensive) — theme is set per-render via initialize()
 let mermaidSingletonPromise: Promise<typeof import('mermaid')['default']> | null = null
 
 function getMermaid() {
   if (!mermaidSingletonPromise) {
-    mermaidSingletonPromise = import('mermaid').then(mod => {
-      const mermaid = mod.default
-      mermaid.initialize({ startOnLoad: false, theme: 'base' })
-      return mermaid
-    })
+    mermaidSingletonPromise = import('mermaid').then(mod => mod.default)
   }
   return mermaidSingletonPromise
+}
+
+function getIsDark() {
+  return typeof window !== 'undefined' && !!window.matchMedia
+    ? window.matchMedia('(prefers-color-scheme: dark)').matches
+    : false
 }
 
 export function MermaidRenderer({ definition }: MermaidRendererProps) {
@@ -31,14 +33,28 @@ export function MermaidRenderer({ definition }: MermaidRendererProps) {
   const id = idRef.current
   const [svg, setSvg] = useState<string | null>(null)
   const [error, setError] = useState(false)
+  const [isDark, setIsDark] = useState(getIsDark)
+
+  // Re-render when the system color scheme changes
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.matchMedia) return
+    const mq = window.matchMedia('(prefers-color-scheme: dark)')
+    const handler = (e: MediaQueryListEvent) => setIsDark(e.matches)
+    mq.addEventListener('change', handler)
+    return () => mq.removeEventListener('change', handler)
+  }, [])
 
   useEffect(() => {
-    setSvg(null)    // Clear stale state immediately when definition changes
+    setSvg(null)    // Clear stale state immediately when definition or theme changes
     setError(false)
     let cancelled = false
 
     getMermaid()
-      .then(m => m.render(id, definition))
+      .then(m => {
+        // Re-initialize with correct theme before each render so color scheme changes take effect
+        m.initialize({ startOnLoad: false, theme: isDark ? 'dark' : 'default' })
+        return m.render(id, definition)
+      })
       .then(({ svg: renderedSvg }) => {
         if (!cancelled) setSvg(renderedSvg)
       })
@@ -49,8 +65,8 @@ export function MermaidRenderer({ definition }: MermaidRendererProps) {
     return () => {
       cancelled = true
     }
-  // id is stable for the component lifetime (from useId) — only definition drives re-renders
-  }, [definition]) // eslint-disable-line react-hooks/exhaustive-deps
+  // id is stable for the component lifetime — excluded from deps intentionally
+  }, [definition, isDark]) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (svg !== null) {
     return (
