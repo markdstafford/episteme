@@ -332,6 +332,8 @@ describe("useAiChatStore", () => {
           last_opened_folder: "/workspace",
           aws_profile: "new-profile",
           recently_used_skill_types: [],
+          preview_width: "400px",
+          preview_height: "480px",
         },
       });
     });
