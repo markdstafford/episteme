@@ -7,7 +7,7 @@ import { useShortcutsStore } from "@/stores/shortcuts";
 import type { FileNode } from "@/lib/fileTree";
 
 vi.mock("@tauri-apps/api/core", () => ({
-  invoke: vi.fn(),
+  invoke: vi.fn().mockResolvedValue(undefined),
 }));
 
 const mockTree: FileNode[] = [

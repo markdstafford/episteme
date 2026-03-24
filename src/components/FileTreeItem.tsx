@@ -8,6 +8,7 @@ import {
   ContextMenuItem,
   ContextMenuSeparator,
 } from "@/components/ui/ContextMenu";
+import { PreviewPopover } from '@/components/PreviewPopover'
 
 interface FileTreeItemProps {
   node: FileNode;
@@ -135,6 +136,20 @@ export function FileTreeItem({
         <ContextMenuSeparator />
         <ContextMenuItem disabled>Rename</ContextMenuItem>
       </ContextMenuContent>
+      {isPreviewable && (
+        <PreviewPopover
+          open={previewOpen}
+          onOpenChange={setPreviewOpen}
+          path={node.path}
+          workspacePath={workspacePath}
+          onMouseEnter={() => { isMouseInPopoverRef.current = true }}
+          onMouseLeave={() => {
+            isMouseInPopoverRef.current = false
+            setPreviewOpen(false)
+          }}
+          scrollRefCallback={(el) => { previewScrollRef.current = el }}
+        />
+      )}
     </ContextMenu>
   );
 }
