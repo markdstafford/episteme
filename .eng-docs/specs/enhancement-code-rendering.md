@@ -328,7 +328,7 @@ No API, database, or auth changes. Frontend-only.
 
 ## Task list
 
-- [ ] **Story: Dependencies and shiki singleton**
+- [x] **Story: Dependencies and shiki singleton**
   - [x] **Task: Install npm dependencies**
     - **Description**: Add `shiki`, `@catppuccin/vscode`, and `mermaid` to the project.
     - **Acceptance criteria**:
@@ -347,7 +347,7 @@ No API, database, or auth changes. Frontend-only.
       - [ ] Loads the curated language list: `typescript`, `javascript`, `tsx`, `jsx`, `python`, `rust`, `go`, `bash`, `sh`, `json`, `yaml`, `toml`, `markdown`, `sql`, `html`, `css`, `dockerfile`
     - **Dependencies**: "Task: Install npm dependencies"
 
-- [ ] **Story: CodeBlock node extension**
+- [x] **Story: CodeBlock node extension**
   - [x] **Task: Create CodeBlock.tsx**
     - **Description**: Create `src/components/markdown/CodeBlock.tsx` containing the TipTap node extension and dispatcher React component. The extension overrides the default `codeBlock` node. The component reads `language` and `code` from the ProseMirror node, routes to `MermaidRenderer` when `language === 'mermaid'`, and routes to `ShikiRenderer` for all other languages. Wrap the component in a React `ErrorBoundary` as a last-resort safety net.
     - **Acceptance criteria**:
@@ -366,7 +366,7 @@ No API, database, or auth changes. Frontend-only.
       - [ ] All existing `npm run test:unit` tests continue to pass
     - **Dependencies**: "Task: Create CodeBlock.tsx"
 
-- [ ] **Story: ShikiRenderer**
+- [x] **Story: ShikiRenderer**
   - [x] **Task: Create ShikiRenderer.tsx**
     - **Description**: Create `src/components/markdown/ShikiRenderer.tsx`. On mount, call `getHighlighter()` then `codeToHtml(code, { lang, themes: { light: 'catppuccin-latte', dark: 'catppuccin-mocha' } })`. Render plain `<pre><code>` while loading. If language is unrecognised by shiki, pass `'text'` as the language (plain monospace, no error). On any failure, silently fall back to plain `<pre><code>`. Render highlighted HTML via `dangerouslySetInnerHTML`.
     - **Acceptance criteria**:
@@ -378,7 +378,7 @@ No API, database, or auth changes. Frontend-only.
       - [ ] Uses `dangerouslySetInnerHTML` for highlighted output
     - **Dependencies**: "Task: Create shikiSingleton.ts"
 
-- [ ] **Story: MermaidRenderer**
+- [x] **Story: MermaidRenderer**
   - [x] **Task: Create MermaidRenderer.tsx**
     - **Description**: Create `src/components/markdown/MermaidRenderer.tsx`. Dynamically import `mermaid` on first use (reduces bundle load). Initialise mermaid once (`startOnLoad: false`, `theme: 'base'`). On mount, call `mermaid.render(uniqueId, definition)` in a `useEffect`. On success, render the SVG string via `dangerouslySetInnerHTML` (safe — SVG is from mermaid, not user HTML) scaled to `max-width: 100%`. On error, render the error state: a bordered box (`--color-border-default`) with a warning icon (Lucide `AlertTriangle`, 16px), the message "Diagram could not be rendered", and the raw definition in a dimmed `<pre><code>` block below.
     - **Acceptance criteria**:
@@ -390,8 +390,8 @@ No API, database, or auth changes. Frontend-only.
       - [ ] Unique render ID generated per component instance (avoids Mermaid ID conflicts when multiple diagrams appear in one document)
     - **Dependencies**: "Task: Install npm dependencies"
 
-- [ ] **Story: Dark mode CSS**
-  - [ ] **Task: Add shiki and Mermaid dark mode CSS to app.css**
+- [x] **Story: Dark mode CSS**
+  - [x] **Task: Add shiki and Mermaid dark mode CSS to app.css**
     - **Description**: Add CSS to `src/app.css` to handle dark mode for both renderers. For shiki: add a `@media (prefers-color-scheme: dark)` rule inside `@utility prose-tiptap` that applies `--shiki-dark` and `--shiki-dark-bg` CSS variables to `.shiki` and `.shiki span`. For Mermaid: add appropriate `themeVariables` or a CSS override that adjusts Mermaid's `base` theme for dark mode.
     - **Acceptance criteria**:
       - [ ] Shiki code blocks use Catppuccin Latte token colors in light mode
