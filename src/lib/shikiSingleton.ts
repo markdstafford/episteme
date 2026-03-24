@@ -25,7 +25,3 @@ export function getHighlighter(): Promise<Highlighter> {
   return highlighterPromise
 }
 
-/** Reset the singleton — for testing only */
-export function _resetHighlighter(): void {
-  highlighterPromise = null
-}
