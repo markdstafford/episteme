@@ -332,117 +332,117 @@ No API, database, or auth changes. Frontend-only.
   - [x] **Task: Install npm dependencies**
     - **Description**: Add `shiki`, `@catppuccin/vscode`, and `mermaid` to the project.
     - **Acceptance criteria**:
-      - [ ] `npm install shiki @catppuccin/vscode mermaid` runs without errors
-      - [ ] All three packages appear in `package.json` dependencies
-      - [ ] `npm run test:unit` still passes with no regressions
+      - [x] `npm install shiki @catppuccin/vscode mermaid` runs without errors
+      - [x] All three packages appear in `package.json` dependencies
+      - [x] `npm run test:unit` still passes with no regressions
     - **Dependencies**: None
 
   - [x] **Task: Create shikiSingleton.ts**
     - **Description**: Create `src/lib/shikiSingleton.ts` — a module-level singleton that initialises a shiki highlighter once (Catppuccin Latte + Mocha themes, curated language list) and returns the same promise on all subsequent calls.
     - **Acceptance criteria**:
-      - [ ] File exists at `src/lib/shikiSingleton.ts`
-      - [ ] `getHighlighter()` returns a `Promise<Highlighter>`
-      - [ ] Calling `getHighlighter()` twice returns the same promise (no double-init)
-      - [ ] Loads Catppuccin Latte (light) and Mocha (dark) from `@catppuccin/vscode`
-      - [ ] Loads the curated language list: `typescript`, `javascript`, `tsx`, `jsx`, `python`, `rust`, `go`, `bash`, `sh`, `json`, `yaml`, `toml`, `markdown`, `sql`, `html`, `css`, `dockerfile`
+      - [x] File exists at `src/lib/shikiSingleton.ts`
+      - [x] `getHighlighter()` returns a `Promise<Highlighter>`
+      - [x] Calling `getHighlighter()` twice returns the same promise (no double-init)
+      - [x] Loads Catppuccin Latte (light) and Mocha (dark) from `@catppuccin/vscode`
+      - [x] Loads the curated language list: `typescript`, `javascript`, `tsx`, `jsx`, `python`, `rust`, `go`, `bash`, `sh`, `json`, `yaml`, `toml`, `markdown`, `sql`, `html`, `css`, `dockerfile`
     - **Dependencies**: "Task: Install npm dependencies"
 
 - [x] **Story: CodeBlock node extension**
   - [x] **Task: Create CodeBlock.tsx**
     - **Description**: Create `src/components/markdown/CodeBlock.tsx` containing the TipTap node extension and dispatcher React component. The extension overrides the default `codeBlock` node. The component reads `language` and `code` from the ProseMirror node, routes to `MermaidRenderer` when `language === 'mermaid'`, and routes to `ShikiRenderer` for all other languages. Wrap the component in a React `ErrorBoundary` as a last-resort safety net.
     - **Acceptance criteria**:
-      - [ ] File exists at `src/components/markdown/CodeBlock.tsx`
-      - [ ] TipTap node extension named `'codeBlock'` registered with `ReactNodeViewRenderer`
-      - [ ] Renders `MermaidRenderer` when `language === 'mermaid'`
-      - [ ] Renders `ShikiRenderer` for all other language values (including empty/null)
-      - [ ] Wrapped in a React `ErrorBoundary` that renders a plain `<pre><code>` fallback on unexpected error
+      - [x] File exists at `src/components/markdown/CodeBlock.tsx`
+      - [x] TipTap node extension named `'codeBlock'` registered with `ReactNodeViewRenderer`
+      - [x] Renders `MermaidRenderer` when `language === 'mermaid'`
+      - [x] Renders `ShikiRenderer` for all other language values (including empty/null)
+      - [x] Wrapped in a React `ErrorBoundary` that renders a plain `<pre><code>` fallback on unexpected error
     - **Dependencies**: "Task: Create ShikiRenderer.tsx", "Task: Create MermaidRenderer.tsx"
 
   - [x] **Task: Update MarkdownRenderer to register CodeBlock**
     - **Description**: In `src/components/MarkdownRenderer.tsx`, disable StarterKit's built-in `codeBlock` extension and add the new `CodeBlock` extension.
     - **Acceptance criteria**:
-      - [ ] `StarterKit` configured with `codeBlock: false`
-      - [ ] `CodeBlock` extension imported and added to the extensions array
-      - [ ] All existing `npm run test:unit` tests continue to pass
+      - [x] `StarterKit` configured with `codeBlock: false`
+      - [x] `CodeBlock` extension imported and added to the extensions array
+      - [x] All existing `npm run test:unit` tests continue to pass
     - **Dependencies**: "Task: Create CodeBlock.tsx"
 
 - [x] **Story: ShikiRenderer**
   - [x] **Task: Create ShikiRenderer.tsx**
     - **Description**: Create `src/components/markdown/ShikiRenderer.tsx`. On mount, call `getHighlighter()` then `codeToHtml(code, { lang, themes: { light: 'catppuccin-latte', dark: 'catppuccin-mocha' } })`. Render plain `<pre><code>` while loading. If language is unrecognised by shiki, pass `'text'` as the language (plain monospace, no error). On any failure, silently fall back to plain `<pre><code>`. Render highlighted HTML via `dangerouslySetInnerHTML`.
     - **Acceptance criteria**:
-      - [ ] File exists at `src/components/markdown/ShikiRenderer.tsx`
-      - [ ] Renders plain `<pre><code>` immediately on mount (loading state)
-      - [ ] Replaces plain code with shiki-highlighted HTML once the highlighter resolves
-      - [ ] Unknown language renders as plain code with no error UI
-      - [ ] Any exception during highlighting falls back to plain `<pre><code>` silently
-      - [ ] Uses `dangerouslySetInnerHTML` for highlighted output
+      - [x] File exists at `src/components/markdown/ShikiRenderer.tsx`
+      - [x] Renders plain `<pre><code>` immediately on mount (loading state)
+      - [x] Replaces plain code with shiki-highlighted HTML once the highlighter resolves
+      - [x] Unknown language renders as plain code with no error UI
+      - [x] Any exception during highlighting falls back to plain `<pre><code>` silently
+      - [x] Uses `dangerouslySetInnerHTML` for highlighted output
     - **Dependencies**: "Task: Create shikiSingleton.ts"
 
 - [x] **Story: MermaidRenderer**
   - [x] **Task: Create MermaidRenderer.tsx**
     - **Description**: Create `src/components/markdown/MermaidRenderer.tsx`. Dynamically import `mermaid` on first use (reduces bundle load). Initialise mermaid once (`startOnLoad: false`, `theme: 'base'`). On mount, call `mermaid.render(uniqueId, definition)` in a `useEffect`. On success, render the SVG string via `dangerouslySetInnerHTML` (safe — SVG is from mermaid, not user HTML) scaled to `max-width: 100%`. On error, render the error state: a bordered box (`--color-border-default`) with a warning icon (Lucide `AlertTriangle`, 16px), the message "Diagram could not be rendered", and the raw definition in a dimmed `<pre><code>` block below.
     - **Acceptance criteria**:
-      - [ ] File exists at `src/components/markdown/MermaidRenderer.tsx`
-      - [ ] `mermaid` is dynamically imported (not a top-level static import)
-      - [ ] Successful render displays the SVG at `max-width: 100%`
-      - [ ] Failed render shows: bordered box, warning icon, error message, raw definition
-      - [ ] SVG rendered via `dangerouslySetInnerHTML`
-      - [ ] Unique render ID generated per component instance (avoids Mermaid ID conflicts when multiple diagrams appear in one document)
+      - [x] File exists at `src/components/markdown/MermaidRenderer.tsx`
+      - [x] `mermaid` is dynamically imported (not a top-level static import)
+      - [x] Successful render displays the SVG at `max-width: 100%`
+      - [x] Failed render shows: bordered box, warning icon, error message, raw definition
+      - [x] SVG rendered via `dangerouslySetInnerHTML`
+      - [x] Unique render ID generated per component instance (avoids Mermaid ID conflicts when multiple diagrams appear in one document)
     - **Dependencies**: "Task: Install npm dependencies"
 
 - [x] **Story: Dark mode CSS**
   - [x] **Task: Add shiki and Mermaid dark mode CSS to app.css**
     - **Description**: Add CSS to `src/app.css` to handle dark mode for both renderers. For shiki: add a `@media (prefers-color-scheme: dark)` rule inside `@utility prose-tiptap` that applies `--shiki-dark` and `--shiki-dark-bg` CSS variables to `.shiki` and `.shiki span`. For Mermaid: add appropriate `themeVariables` or a CSS override that adjusts Mermaid's `base` theme for dark mode.
     - **Acceptance criteria**:
-      - [ ] Shiki code blocks use Catppuccin Latte token colors in light mode
-      - [ ] Shiki code blocks use Catppuccin Mocha token colors in dark mode
-      - [ ] Mermaid diagrams are legible in both light and dark mode
-      - [ ] No regressions in existing prose styles
+      - [x] Shiki code blocks use Catppuccin Latte token colors in light mode
+      - [x] Shiki code blocks use Catppuccin Mocha token colors in dark mode
+      - [x] Mermaid diagrams are legible in both light and dark mode
+      - [x] No regressions in existing prose styles
     - **Dependencies**: "Task: Create ShikiRenderer.tsx", "Task: Create MermaidRenderer.tsx"
 
 - [x] **Story: Tests**
   - [x] **Task: Unit tests for shikiSingleton**
     - **Description**: Write unit tests in `tests/unit/lib/shikiSingleton.test.ts` verifying singleton behaviour.
     - **Acceptance criteria**:
-      - [ ] Test: `getHighlighter()` returns a promise
-      - [ ] Test: calling `getHighlighter()` twice returns the same promise reference
-      - [ ] All tests pass
+      - [x] Test: `getHighlighter()` returns a promise
+      - [x] Test: calling `getHighlighter()` twice returns the same promise reference
+      - [x] All tests pass
     - **Dependencies**: "Task: Create shikiSingleton.ts"
 
   - [x] **Task: Unit tests for ShikiRenderer**
     - **Description**: Write unit tests in `tests/unit/components/markdown/ShikiRenderer.test.tsx`. Mock `getHighlighter` to control async behaviour.
     - **Acceptance criteria**:
-      - [ ] Test: renders `<pre><code>` immediately before highlighter resolves
-      - [ ] Test: renders highlighted HTML after highlighter resolves
-      - [ ] Test: unknown language renders plain code with no error element
-      - [ ] Test: highlighter rejection renders plain `<pre><code>` fallback
-      - [ ] All tests pass
+      - [x] Test: renders `<pre><code>` immediately before highlighter resolves
+      - [x] Test: renders highlighted HTML after highlighter resolves
+      - [x] Test: unknown language renders plain code with no error element
+      - [x] Test: highlighter rejection renders plain `<pre><code>` fallback
+      - [x] All tests pass
     - **Dependencies**: "Task: Create ShikiRenderer.tsx"
 
   - [x] **Task: Unit tests for MermaidRenderer**
     - **Description**: Write unit tests in `tests/unit/components/markdown/MermaidRenderer.test.tsx`. Mock `mermaid.render` to control success/failure.
     - **Acceptance criteria**:
-      - [ ] Test: successful render contains an SVG element
-      - [ ] Test: failed render shows error message and raw definition
-      - [ ] Test: each instance generates a unique render ID
-      - [ ] All tests pass
+      - [x] Test: successful render contains an SVG element
+      - [x] Test: failed render shows error message and raw definition
+      - [x] Test: each instance generates a unique render ID
+      - [x] All tests pass
     - **Dependencies**: "Task: Create MermaidRenderer.tsx"
 
   - [x] **Task: Unit tests for CodeBlock dispatcher**
     - **Description**: Write unit tests in `tests/unit/components/markdown/CodeBlock.test.tsx` verifying routing logic.
     - **Acceptance criteria**:
-      - [ ] Test: `language === 'mermaid'` renders `MermaidRenderer`
-      - [ ] Test: `language === 'typescript'` renders `ShikiRenderer`
-      - [ ] Test: `language === null` renders `ShikiRenderer`
-      - [ ] All tests pass
+      - [x] Test: `language === 'mermaid'` renders `MermaidRenderer`
+      - [x] Test: `language === 'typescript'` renders `ShikiRenderer`
+      - [x] Test: `language === null` renders `ShikiRenderer`
+      - [x] All tests pass
     - **Dependencies**: "Task: Create CodeBlock.tsx"
 
   - [x] **Task: Integration tests for MarkdownRenderer**
     - **Description**: Write integration tests in `tests/unit/MarkdownRenderer.codeblocks.test.tsx` covering the full markdown → TipTap → renderer pipeline.
     - **Acceptance criteria**:
-      - [ ] Test: TypeScript fenced block → shiki output present in DOM (mock `getHighlighter`)
-      - [ ] Test: mermaid fenced block → `MermaidRenderer` mounted (mock `mermaid.render`)
-      - [ ] Test: fenced block with no language tag → plain code, no error
-      - [ ] Test: fenced block with unknown language → plain code, no error
-      - [ ] All tests pass
+      - [x] Test: TypeScript fenced block → shiki output present in DOM (mock `getHighlighter`)
+      - [x] Test: mermaid fenced block → `MermaidRenderer` mounted (mock `mermaid.render`)
+      - [x] Test: fenced block with no language tag → plain code, no error
+      - [x] Test: fenced block with unknown language → plain code, no error
+      - [x] All tests pass
     - **Dependencies**: "Task: Update MarkdownRenderer to register CodeBlock"
