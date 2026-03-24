@@ -54,7 +54,10 @@ describe('ShikiRenderer', () => {
     const { container } = render(
       <ShikiRenderer code="const x = 1" language="typescript" />
     )
-    // Should still show plain code (no error UI)
-    expect(container.querySelector('pre')).toBeInTheDocument()
+    await waitFor(() => {
+      // After rejection settles, plain pre/code is still present and no error UI shown
+      expect(container.querySelector('pre')).toBeInTheDocument()
+      expect(container.querySelector('[role="alert"]')).not.toBeInTheDocument()
+    })
   })
 })
