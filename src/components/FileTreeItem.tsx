@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { ChevronRight, Folder, FileText } from "lucide-react";
 import type { FileNode } from "@/lib/fileTree";
 import {
@@ -41,6 +41,13 @@ export function FileTreeItem({
   const hoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const isMouseInPopoverRef = useRef(false)
   const previewScrollRef = useRef<HTMLDivElement | null>(null)
+
+  // Clean up hover timer on unmount to prevent state updates after unmount
+  useEffect(() => {
+    return () => {
+      if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current)
+    }
+  }, [])
 
   const isPreviewable = !node.is_dir && /\.md$/i.test(node.name)
 
