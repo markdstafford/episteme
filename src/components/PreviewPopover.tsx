@@ -126,6 +126,13 @@ export const PreviewPopover = forwardRef<PreviewPopoverHandle, PreviewPopoverPro
               ref={scrollRef}
               tabIndex={0}
               className="focus-ring"
+              onKeyDown={(e) => {
+                // Prevent navigation keys from bubbling through the React tree
+                // to FileTree's onKeyDown, which would steal focus back to the tree
+                if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(e.key)) {
+                  e.stopPropagation()
+                }
+              }}
               style={{
                 overflowY: 'auto',
                 maxHeight: heightPx > 0 ? `${heightPx}px` : undefined,
