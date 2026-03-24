@@ -14,8 +14,17 @@ class CodeBlockErrorBoundary extends Component<
     this.state = { hasError: false }
   }
 
+  // Note: this boundary does not reset on prop changes. Since MarkdownRenderer is read-only
+  // (per spec non-goals), the only way to remount is navigating to a different document,
+  // which unmounts/remounts the entire TipTap editor and resets all node views.
   static getDerivedStateFromError() {
     return { hasError: true }
+  }
+
+  componentDidCatch(error: Error) {
+    if (process.env.NODE_ENV !== 'production') {
+      console.error('[CodeBlockErrorBoundary] Unexpected renderer failure:', error)
+    }
   }
 
   render() {

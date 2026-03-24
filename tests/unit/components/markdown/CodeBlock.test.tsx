@@ -13,9 +13,11 @@ vi.mock('@/components/markdown/MermaidRenderer', () => ({
   ),
 }))
 
+import type { ReactNode } from 'react'
+
 vi.mock('@tiptap/react', () => ({
   ReactNodeViewRenderer: vi.fn(),
-  NodeViewWrapper: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  NodeViewWrapper: ({ children }: { children: ReactNode }) => <div>{children}</div>,
 }))
 
 import { CodeBlockDispatcher } from '@/components/markdown/CodeBlock'
