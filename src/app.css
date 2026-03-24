@@ -231,6 +231,17 @@
     margin-top: 0;
     margin-bottom: 0;
   }
+
+  /* Shiki dual-theme: apply dark CSS variables when system is in dark mode.
+     Shiki outputs light theme colors as inline styles and dark theme colors
+     as --shiki-dark / --shiki-dark-bg CSS variables. */
+  @media (prefers-color-scheme: dark) {
+    & .shiki,
+    & .shiki span {
+      color: var(--shiki-dark) !important;
+      background-color: var(--shiki-dark-bg) !important;
+    }
+  }
 }
 
 @layer utilities {
