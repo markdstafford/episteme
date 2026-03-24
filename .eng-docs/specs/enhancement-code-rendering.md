@@ -337,7 +337,7 @@ No API, database, or auth changes. Frontend-only.
       - [ ] `npm run test:unit` still passes with no regressions
     - **Dependencies**: None
 
-  - [ ] **Task: Create shikiSingleton.ts**
+  - [x] **Task: Create shikiSingleton.ts**
     - **Description**: Create `src/lib/shikiSingleton.ts` — a module-level singleton that initialises a shiki highlighter once (Catppuccin Latte + Mocha themes, curated language list) and returns the same promise on all subsequent calls.
     - **Acceptance criteria**:
       - [ ] File exists at `src/lib/shikiSingleton.ts`
@@ -367,7 +367,7 @@ No API, database, or auth changes. Frontend-only.
     - **Dependencies**: "Task: Create CodeBlock.tsx"
 
 - [ ] **Story: ShikiRenderer**
-  - [ ] **Task: Create ShikiRenderer.tsx**
+  - [x] **Task: Create ShikiRenderer.tsx**
     - **Description**: Create `src/components/markdown/ShikiRenderer.tsx`. On mount, call `getHighlighter()` then `codeToHtml(code, { lang, themes: { light: 'catppuccin-latte', dark: 'catppuccin-mocha' } })`. Render plain `<pre><code>` while loading. If language is unrecognised by shiki, pass `'text'` as the language (plain monospace, no error). On any failure, silently fall back to plain `<pre><code>`. Render highlighted HTML via `dangerouslySetInnerHTML`.
     - **Acceptance criteria**:
       - [ ] File exists at `src/components/markdown/ShikiRenderer.tsx`
@@ -379,7 +379,7 @@ No API, database, or auth changes. Frontend-only.
     - **Dependencies**: "Task: Create shikiSingleton.ts"
 
 - [ ] **Story: MermaidRenderer**
-  - [ ] **Task: Create MermaidRenderer.tsx**
+  - [x] **Task: Create MermaidRenderer.tsx**
     - **Description**: Create `src/components/markdown/MermaidRenderer.tsx`. Dynamically import `mermaid` on first use (reduces bundle load). Initialise mermaid once (`startOnLoad: false`, `theme: 'base'`). On mount, call `mermaid.render(uniqueId, definition)` in a `useEffect`. On success, render the SVG string via `dangerouslySetInnerHTML` (safe — SVG is from mermaid, not user HTML) scaled to `max-width: 100%`. On error, render the error state: a bordered box (`--color-border-default`) with a warning icon (Lucide `AlertTriangle`, 16px), the message "Diagram could not be rendered", and the raw definition in a dimmed `<pre><code>` block below.
     - **Acceptance criteria**:
       - [ ] File exists at `src/components/markdown/MermaidRenderer.tsx`
