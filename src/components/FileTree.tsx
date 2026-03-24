@@ -1,6 +1,7 @@
 import { useCallback, useRef, KeyboardEvent } from "react";
 import { useFileTreeStore } from "@/stores/fileTree";
 import { useShortcutsStore, normalizeCombo } from "@/stores/shortcuts";
+import { useWorkspaceStore } from "@/stores/workspace";
 import { FileTreeItem } from "@/components/FileTreeItem";
 import type { FileNode } from "@/lib/fileTree";
 
@@ -55,6 +56,7 @@ export function FileTree() {
   const selectedFilePath = useFileTreeStore((s) => s.selectedFilePath);
   const toggleExpanded = useFileTreeStore((s) => s.toggleExpanded);
   const selectFile = useFileTreeStore((s) => s.selectFile);
+  const folderPath = useWorkspaceStore((s) => s.folderPath);
   const focusedPathRef = useRef<string | null>(null);
   const treeRef = useRef<HTMLDivElement>(null);
 
@@ -156,6 +158,7 @@ export function FileTree() {
           isFocused={focusedPathRef.current === node.path}
           onToggle={toggleExpanded}
           onSelect={selectFile}
+          workspacePath={folderPath ?? ''}
         />
         {node.is_dir &&
           expandedPaths.has(node.path) &&

@@ -1,4 +1,4 @@
-import { render } from "@testing-library/react";
+import { render, waitFor } from "@testing-library/react";
 import { describe, it, expect } from "vitest";
 import { MarkdownRenderer } from "@/components/MarkdownRenderer";
 
@@ -10,14 +10,16 @@ import { MarkdownRenderer } from "@/components/MarkdownRenderer";
  */
 describe("Markdown GFM rendering", () => {
   function renderMarkdown(md: string) {
-    const { container } = render(<MarkdownRenderer content={md} />);
+    const { container } = render(
+      <MarkdownRenderer content={md} className="prose max-w-none" />
+    );
     return container;
   }
 
   it("renders headings H1-H6", () => {
     const md = "# H1\n## H2\n### H3\n#### H4\n##### H5\n###### H6";
     const container = renderMarkdown(md);
-    expect(container.querySelector(".prose")).toBeInTheDocument();
+    expect(container.firstChild).toBeInTheDocument();
     // TipTap should create heading elements
     const tiptap = container.querySelector(".tiptap");
     if (tiptap) {
@@ -30,7 +32,7 @@ describe("Markdown GFM rendering", () => {
   it("renders bold and italic", () => {
     const md = "**bold** and *italic* and ***both***";
     const container = renderMarkdown(md);
-    expect(container.querySelector(".prose")).toBeInTheDocument();
+    expect(container.firstChild).toBeInTheDocument();
     const tiptap = container.querySelector(".tiptap");
     if (tiptap) {
       expect(tiptap.querySelector("strong")).toBeInTheDocument();
@@ -41,7 +43,7 @@ describe("Markdown GFM rendering", () => {
   it("renders unordered lists", () => {
     const md = "- Item 1\n- Item 2\n- Item 3";
     const container = renderMarkdown(md);
-    expect(container.querySelector(".prose")).toBeInTheDocument();
+    expect(container.firstChild).toBeInTheDocument();
     const tiptap = container.querySelector(".tiptap");
     if (tiptap) {
       expect(tiptap.querySelector("ul")).toBeInTheDocument();
@@ -52,38 +54,43 @@ describe("Markdown GFM rendering", () => {
   it("renders ordered lists", () => {
     const md = "1. First\n2. Second\n3. Third";
     const container = renderMarkdown(md);
-    expect(container.querySelector(".prose")).toBeInTheDocument();
+    expect(container.firstChild).toBeInTheDocument();
     const tiptap = container.querySelector(".tiptap");
     if (tiptap) {
       expect(tiptap.querySelector("ol")).toBeInTheDocument();
     }
   });
 
-  it("renders fenced code blocks", () => {
+  it("renders fenced code blocks", async () => {
     const md = "```js\nconst x = 1;\n```";
     const container = renderMarkdown(md);
-    expect(container.querySelector(".prose")).toBeInTheDocument();
-    const tiptap = container.querySelector(".tiptap");
-    if (tiptap) {
-      expect(tiptap.querySelector("pre")).toBeInTheDocument();
-      expect(tiptap.querySelector("code")).toBeInTheDocument();
-    }
+    expect(container.firstChild).toBeInTheDocument();
+    // CodeBlock uses a React node view that mounts asynchronously — wait for it
+    await waitFor(() => {
+      const tiptap = container.querySelector(".tiptap");
+      if (tiptap) {
+        expect(tiptap.querySelector("pre")).toBeInTheDocument();
+        expect(tiptap.querySelector("code")).toBeInTheDocument();
+      }
+    }, { timeout: 3000 });
   });
 
-  it("renders inline code", () => {
-    const md = "Use `const x = 1` in your code";
-    const container = renderMarkdown(md);
-    expect(container.querySelector(".prose")).toBeInTheDocument();
+  it("renders inline code as a code element with no visible backticks", () => {
+    const container = renderMarkdown("Use `const x = 1` in your code");
     const tiptap = container.querySelector(".tiptap");
+    expect(tiptap).not.toBeNull();
     if (tiptap) {
-      expect(tiptap.querySelector("code")).toBeInTheDocument();
+      const codeEl = tiptap.querySelector("code");
+      expect(codeEl).not.toBeNull();
+      expect(codeEl!.textContent).toBe("const x = 1");
+      expect(tiptap.textContent).not.toContain("`");
     }
   });
 
   it("renders blockquotes", () => {
     const md = "> This is a quote\n> Second line";
     const container = renderMarkdown(md);
-    expect(container.querySelector(".prose")).toBeInTheDocument();
+    expect(container.firstChild).toBeInTheDocument();
     const tiptap = container.querySelector(".tiptap");
     if (tiptap) {
       expect(tiptap.querySelector("blockquote")).toBeInTheDocument();
@@ -93,7 +100,7 @@ describe("Markdown GFM rendering", () => {
   it("renders horizontal rules", () => {
     const md = "Above\n\n---\n\nBelow";
     const container = renderMarkdown(md);
-    expect(container.querySelector(".prose")).toBeInTheDocument();
+    expect(container.firstChild).toBeInTheDocument();
     const tiptap = container.querySelector(".tiptap");
     if (tiptap) {
       expect(tiptap.querySelector("hr")).toBeInTheDocument();
@@ -103,7 +110,7 @@ describe("Markdown GFM rendering", () => {
   it("renders links", () => {
     const md = "[Click here](https://example.com)";
     const container = renderMarkdown(md);
-    expect(container.querySelector(".prose")).toBeInTheDocument();
+    expect(container.firstChild).toBeInTheDocument();
     const tiptap = container.querySelector(".tiptap");
     if (tiptap) {
       const link = tiptap.querySelector("a");
@@ -117,24 +124,29 @@ describe("Markdown GFM rendering", () => {
     const md =
       "| Header 1 | Header 2 |\n| --- | --- |\n| Cell 1 | Cell 2 |";
     const container = renderMarkdown(md);
-    expect(container.querySelector(".prose")).toBeInTheDocument();
+    expect(container.firstChild).toBeInTheDocument();
     const tiptap = container.querySelector(".tiptap");
     if (tiptap) {
       expect(tiptap.querySelector("table")).toBeInTheDocument();
     }
   });
 
-  it("renders task lists", () => {
-    const md = "- [ ] Unchecked\n- [x] Checked";
-    const container = renderMarkdown(md);
-    expect(container.querySelector(".prose")).toBeInTheDocument();
-    // Task list rendering depends on TipTap task list extension
+  it("renders task lists with checkboxes and correct checked state", () => {
+    const container = renderMarkdown("- [ ] Unchecked item\n- [x] Checked item");
     const tiptap = container.querySelector(".tiptap");
+    expect(tiptap).not.toBeNull();
     if (tiptap) {
-      const inputs = tiptap.querySelectorAll("input[type='checkbox']");
-      if (inputs.length > 0) {
-        expect(inputs.length).toBeGreaterThanOrEqual(2);
-      }
+      // Both checkboxes present
+      const checkboxes = tiptap.querySelectorAll("input[type='checkbox']");
+      expect(checkboxes.length).toBeGreaterThanOrEqual(2);
+
+      // Checked item: TipTap marks the <li> with data-checked="true"
+      const checkedItems = tiptap.querySelectorAll("li[data-checked='true']");
+      expect(checkedItems.length).toBeGreaterThanOrEqual(1);
+
+      // Task list items exist with data-checked attribute (TipTap's task item marker)
+      const taskItems = tiptap.querySelectorAll("li[data-checked]");
+      expect(taskItems.length).toBeGreaterThanOrEqual(2);
     }
   });
 });

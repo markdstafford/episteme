@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
+@custom-variant dark (@media (prefers-color-scheme: dark));
 
 @theme {
   /* Typography */
@@ -176,6 +177,70 @@
 
   .context-menu-item[data-highlighted][data-destructive] {
     color: var(--color-state-danger);
+  }
+}
+
+/* Tiptap prose overrides — applied via prose-tiptap utility class alongside prose.
+   Using @utility places these in the utilities layer (same as the typography plugin),
+   so definition order determines the winner for equal-specificity rules. */
+@utility prose-tiptap {
+  /* Suppress decorative backtick pseudo-elements that @tailwindcss/typography
+     injects on all <code> elements via code::before/::after { content: '"`"' } */
+  & code:not(pre code)::before,
+  & code:not(pre code)::after {
+    content: none;
+  }
+
+  /* Inline code background */
+  & code:not(pre code) {
+    background-color: var(--color-bg-subtle);
+    padding: 0.125em 0.375em;
+    border-radius: var(--radius-sm);
+  }
+
+  /* Task list: remove bullets, align checkbox and text on same line.
+     TaskItem renders as: <li><label><input><span></label><div><p>text</p></div></li> */
+  & ul[data-type="taskList"] {
+    list-style: none;
+    padding-left: 0;
+  }
+
+  & ul[data-type="taskList"] > li {
+    list-style: none;
+    padding-left: 0;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5em;
+  }
+
+  & ul[data-type="taskList"] > li::marker,
+  & ul[data-type="taskList"] > li::before {
+    content: none;
+  }
+
+  & ul[data-type="taskList"] > li > label {
+    flex-shrink: 0;
+    padding-top: 0.15em;
+  }
+
+  & ul[data-type="taskList"] > li > div {
+    flex: 1;
+  }
+
+  & ul[data-type="taskList"] > li > div > p {
+    margin-top: 0;
+    margin-bottom: 0;
+  }
+
+  /* Shiki dual-theme: apply dark CSS variables when system is in dark mode.
+     Shiki outputs light theme colors as inline styles and dark theme colors
+     as --shiki-dark / --shiki-dark-bg CSS variables. */
+  @media (prefers-color-scheme: dark) {
+    & .shiki,
+    & .shiki span {
+      color: var(--shiki-dark) !important;
+      background-color: var(--shiki-dark-bg) !important;
+    }
   }
 }
 

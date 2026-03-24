@@ -9,17 +9,20 @@ import { TaskItem } from "@tiptap/extension-task-item";
 import { Link } from "@tiptap/extension-link";
 import { Markdown } from "tiptap-markdown";
 import { useEffect } from "react";
+import { CodeBlock } from '@/components/markdown/CodeBlock'
 
 interface MarkdownRendererProps {
   content: string;
+  className?: string;
   onLinkClick?: (href: string) => void;
 }
 
-export function MarkdownRenderer({ content, onLinkClick }: MarkdownRendererProps) {
+export function MarkdownRenderer({ content, className, onLinkClick }: MarkdownRendererProps) {
   const editor = useEditor({
     editable: false,
     extensions: [
-      StarterKit,
+      StarterKit.configure({ codeBlock: false }),
+      CodeBlock,
       Table.configure({ resizable: false }),
       TableRow,
       TableCell,
@@ -65,7 +68,7 @@ export function MarkdownRenderer({ content, onLinkClick }: MarkdownRendererProps
   }, [editor, onLinkClick]);
 
   return (
-    <div className="prose dark:prose-invert max-w-none">
+    <div className={className}>
       <EditorContent editor={editor} />
     </div>
   );

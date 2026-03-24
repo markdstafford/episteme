@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, it, expect, vi } from "vitest";
 import { FileTreeItem } from "@/components/FileTreeItem";
@@ -27,6 +27,7 @@ describe("FileTreeItem", () => {
         isFocused={false}
         onToggle={vi.fn()}
         onSelect={vi.fn()}
+        workspacePath="/docs"
       />
     );
     expect(screen.getByText("specs")).toBeInTheDocument();
@@ -42,6 +43,7 @@ describe("FileTreeItem", () => {
         isFocused={false}
         onToggle={vi.fn()}
         onSelect={vi.fn()}
+        workspacePath="/docs"
       />
     );
     expect(screen.getByText("README")).toBeInTheDocument();
@@ -58,6 +60,7 @@ describe("FileTreeItem", () => {
         isFocused={false}
         onToggle={onToggle}
         onSelect={vi.fn()}
+        workspacePath="/docs"
       />
     );
     await userEvent.click(screen.getByRole("treeitem"));
@@ -75,6 +78,7 @@ describe("FileTreeItem", () => {
         isFocused={false}
         onToggle={vi.fn()}
         onSelect={onSelect}
+        workspacePath="/docs"
       />
     );
     await userEvent.click(screen.getByRole("treeitem"));
@@ -91,6 +95,7 @@ describe("FileTreeItem", () => {
         isFocused={false}
         onToggle={vi.fn()}
         onSelect={vi.fn()}
+        workspacePath="/docs"
       />
     );
     expect(screen.getByRole("treeitem")).toHaveAttribute(
@@ -109,6 +114,7 @@ describe("FileTreeItem", () => {
         isFocused={false}
         onToggle={vi.fn()}
         onSelect={vi.fn()}
+        workspacePath="/docs"
       />
     );
     expect(screen.getByRole("treeitem")).toHaveAttribute(
@@ -128,6 +134,7 @@ describe("FileTreeItem", () => {
           isFocused={false}
           onToggle={vi.fn()}
           onSelect={vi.fn()}
+          workspacePath="/docs"
         />
       );
       await userEvent.pointer({
@@ -149,6 +156,7 @@ describe("FileTreeItem", () => {
           isFocused={false}
           onToggle={vi.fn()}
           onSelect={onSelect}
+          workspacePath="/docs"
         />
       );
       await userEvent.pointer({
@@ -169,6 +177,7 @@ describe("FileTreeItem", () => {
           isFocused={false}
           onToggle={vi.fn()}
           onSelect={vi.fn()}
+          workspacePath="/docs"
         />
       );
       await userEvent.pointer({
@@ -189,6 +198,7 @@ describe("FileTreeItem", () => {
           isFocused={false}
           onToggle={vi.fn()}
           onSelect={vi.fn()}
+          workspacePath="/docs"
         />
       );
       await userEvent.pointer({
@@ -210,6 +220,7 @@ describe("FileTreeItem", () => {
           isFocused={false}
           onToggle={onToggle}
           onSelect={vi.fn()}
+          workspacePath="/docs"
         />
       );
       await userEvent.pointer({
@@ -230,6 +241,7 @@ describe("FileTreeItem", () => {
           isFocused={false}
           onToggle={vi.fn()}
           onSelect={vi.fn()}
+          workspacePath="/docs"
         />
       );
       await userEvent.pointer({
@@ -251,6 +263,7 @@ describe("FileTreeItem", () => {
           isFocused={false}
           onToggle={vi.fn()}
           onSelect={onSelect}
+          workspacePath="/docs"
         />
       );
       await userEvent.click(screen.getByRole("treeitem"));
@@ -258,3 +271,41 @@ describe("FileTreeItem", () => {
     });
   });
 });
+
+describe('FileTreeItem — preview popover triggers', () => {
+  it('Space keydown on a markdown file sets open state intent (no error)', async () => {
+    const { container } = render(
+      <FileTreeItem
+        node={{ name: 'doc.md', path: '/docs/doc.md', is_dir: false }}
+        depth={0}
+        isExpanded={false}
+        isSelected={false}
+        isFocused={true}
+        onToggle={vi.fn()}
+        onSelect={vi.fn()}
+        workspacePath="/docs"
+      />
+    )
+    const button = container.querySelector('button[role="treeitem"]')!
+    fireEvent.keyDown(button, { key: ' ' })
+    expect(button).toBeInTheDocument()
+  })
+
+  it('Space keydown on a directory does not error', async () => {
+    const { container } = render(
+      <FileTreeItem
+        node={{ name: 'docs', path: '/docs', is_dir: true }}
+        depth={0}
+        isExpanded={false}
+        isSelected={false}
+        isFocused={true}
+        onToggle={vi.fn()}
+        onSelect={vi.fn()}
+        workspacePath="/docs"
+      />
+    )
+    const button = container.querySelector('button[role="treeitem"]')!
+    fireEvent.keyDown(button, { key: ' ' })
+    expect(button).toBeInTheDocument()
+  })
+})

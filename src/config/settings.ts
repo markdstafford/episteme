@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import { Sparkles } from "lucide-react";
+import { FileText, Sparkles } from "lucide-react";
 
 export interface SettingItem {
   id: string;
@@ -43,6 +43,35 @@ export const settingsConfig: SettingsCategory[] = [
             type: "text",
             order: 1,
             defaultValue: "",
+          },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'editor',
+    label: 'Editor',
+    icon: FileText,
+    order: 2,
+    sections: [
+      {
+        id: 'preview',
+        label: 'Hover preview',
+        order: 1,
+        settings: [
+          {
+            id: 'preview_width',
+            label: 'Preview width',
+            type: 'text' as const,
+            order: 1,
+            defaultValue: '400px',
+          },
+          {
+            id: 'preview_height',
+            label: 'Preview height',
+            type: 'text' as const,
+            order: 2,
+            defaultValue: '480px',
           },
         ],
       },

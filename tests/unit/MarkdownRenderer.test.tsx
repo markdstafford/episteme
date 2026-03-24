@@ -5,20 +5,26 @@ import { MarkdownRenderer } from "@/components/MarkdownRenderer";
 describe("MarkdownRenderer", () => {
   it("renders without crashing", () => {
     const { container } = render(<MarkdownRenderer content="# Hello" />);
-    expect(container.querySelector(".prose")).toBeInTheDocument();
+    expect(container.firstChild).toBeInTheDocument();
   });
 
-  it("applies prose and dark mode classes", () => {
+  it("applies className prop to wrapper div", () => {
+    const { container } = render(
+      <MarkdownRenderer content="test" className="prose max-w-none" />
+    );
+    const wrapper = container.firstChild as HTMLElement;
+    expect(wrapper?.classList.contains("prose")).toBe(true);
+    expect(wrapper?.classList.contains("max-w-none")).toBe(true);
+  });
+
+  it("renders wrapper with no prose class when className is omitted", () => {
     const { container } = render(<MarkdownRenderer content="test" />);
-    const prose = container.querySelector(".prose");
-    expect(prose).toBeInTheDocument();
-    expect(prose?.classList.contains("dark:prose-invert")).toBe(true);
-    expect(prose?.classList.contains("max-w-none")).toBe(true);
+    const wrapper = container.firstChild as HTMLElement;
+    expect(wrapper?.classList.contains("prose")).toBe(false);
   });
 
   it("initializes editor in read-only mode", () => {
     const { container } = render(<MarkdownRenderer content="# Title" />);
-    // TipTap sets contenteditable="false" for read-only editors
     const editorEl = container.querySelector("[contenteditable]");
     if (editorEl) {
       expect(editorEl.getAttribute("contenteditable")).toBe("false");
@@ -27,15 +33,11 @@ describe("MarkdownRenderer", () => {
 
   it("renders EditorContent component", () => {
     const { container } = render(<MarkdownRenderer content="Some text" />);
-    // EditorContent renders a .tiptap container
-    const tiptap = container.querySelector(".tiptap");
-    // In jsdom TipTap may not fully initialize, so just verify prose wrapper exists
-    expect(container.querySelector(".prose")).toBeInTheDocument();
+    expect(container.firstChild).toBeInTheDocument();
   });
 
-  it("does not leave stale content when content becomes empty", () => {
+  it("does not throw when content becomes empty", () => {
     const { rerender } = render(<MarkdownRenderer content="# Hello" />);
-    // Rerendering with empty string should not throw and should call setContent("")
     expect(() => rerender(<MarkdownRenderer content="" />)).not.toThrow();
   });
 
@@ -44,6 +46,6 @@ describe("MarkdownRenderer", () => {
     const { container } = render(
       <MarkdownRenderer content="[link](./test.md)" onLinkClick={handleClick} />
     );
-    expect(container.querySelector(".prose")).toBeInTheDocument();
+    expect(container.firstChild).toBeInTheDocument();
   });
 });
