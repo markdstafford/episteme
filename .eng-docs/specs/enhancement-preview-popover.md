@@ -219,75 +219,75 @@ Input values validated against `/^\d+(\.\d+)?(px|%)$/` before saving. Invalid va
   - [x] **Task: Add preview_width and preview_height to PreferencesSchema**
     - **Description**: Add `preview_width` and `preview_height` as optional string fields to the Zod schema in `src/lib/preferences.ts`, with defaults of `"400px"` and `"480px"`. Validate that any stored value matches `/^\d+(\.\d+)?(px|%)$/` before accepting it; fall back to the default if invalid.
     - **Acceptance criteria**:
-      - [ ] `PreferencesSchema` includes `preview_width: z.string().default('400px')` and `preview_height: z.string().default('480px')`
-      - [ ] `DEFAULT_PREFERENCES` reflects the new fields
-      - [ ] `parsePreferences` returns defaults for missing or invalid length values
-      - [ ] Unit tests cover: valid px, valid %, invalid string, missing field
+      - [x] `PreferencesSchema` includes `preview_width: z.string().default('400px')` and `preview_height: z.string().default('480px')`
+      - [x] `DEFAULT_PREFERENCES` reflects the new fields
+      - [x] `parsePreferences` returns defaults for missing or invalid length values
+      - [x] Unit tests cover: valid px, valid %, invalid string, missing field
     - **Dependencies**: None
 
   - [x] **Task: Add Editor category with preview settings to settings config**
     - **Description**: Add a new `"editor"` category to `settingsConfig` in `src/config/settings.ts` with a `"preview"` section containing two `"text"` settings: `preview_width` (label "Preview width", default `"400px"`) and `preview_height` (label "Preview height", default `"480px"`).
     - **Acceptance criteria**:
-      - [ ] `settingsConfig` contains an `"editor"` category
-      - [ ] Category contains a `"preview"` section with `preview_width` and `preview_height` settings
-      - [ ] Both settings have `type: "text"` and correct defaults
-      - [ ] Settings panel renders the new fields without error
+      - [x] `settingsConfig` contains an `"editor"` category
+      - [x] Category contains a `"preview"` section with `preview_width` and `preview_height` settings
+      - [x] Both settings have `type: "text"` and correct defaults
+      - [x] Settings panel renders the new fields without error
     - **Dependencies**: "Task: Add preview_width and preview_height to PreferencesSchema"
 
 - [x] **Story: PreviewPopover component**
   - [x] **Task: Create PreviewPopover.tsx**
     - **Description**: Create `src/components/PreviewPopover.tsx`. The component accepts `path`, `workspacePath`, `open`, `onOpenChange`, `onMouseEnter`, and `onMouseLeave` props. When `open` becomes true, it reads the file via `invoke('read_file', ...)`, parses content with `parseDocument()`, then renders `Popover.Content` (Radix) containing a scrollable `MarkdownRenderer`. Shows a centered `Loader2` while loading. Reads `preview_width` and `preview_height` from preferences to compute `min(width, 50vw)` and `min(height, 75vh)` sizing. The scroll container has `tabIndex={0}` so it can receive keyboard focus.
     - **Acceptance criteria**:
-      - [ ] File exists at `src/components/PreviewPopover.tsx`
-      - [ ] Renders `Loader2` while file is loading
-      - [ ] Renders `MarkdownRenderer` with parsed content after load
-      - [ ] Renders nothing visible when `open=false`
-      - [ ] Width and max-height computed from preferences with `min()` viewport caps
-      - [ ] Scroll container is focusable (`tabIndex={0}`)
-      - [ ] `onMouseEnter`/`onMouseLeave` forwarded to `Popover.Content`
-      - [ ] Uses `side="right"`, `align="start"`, `sideOffset={8}`
+      - [x] File exists at `src/components/PreviewPopover.tsx`
+      - [x] Renders `Loader2` while file is loading
+      - [x] Renders `MarkdownRenderer` with parsed content after load
+      - [x] Renders nothing visible when `open=false`
+      - [x] Width and max-height computed from preferences with `min()` viewport caps
+      - [x] Scroll container is focusable (`tabIndex={0}`)
+      - [x] `onMouseEnter`/`onMouseLeave` forwarded to `Popover.Content`
+      - [x] Uses `side="right"`, `align="start"`, `sideOffset={8}`
     - **Dependencies**: "Task: Add preview_width and preview_height to PreferencesSchema"
 
 - [x] **Story: Wire PreviewPopover into FileTreeItem**
   - [x] **Task: Update FileTreeItem to manage open state and hover/keyboard triggers**
     - **Description**: Add open state management, hover delay logic, and keyboard handlers to `FileTreeItem.tsx` for non-directory `.md` files. Use a `useRef` for the 400ms hover timer. `onMouseEnter` starts the timer; `onMouseLeave` cancels it and closes the popover if the mouse is not inside the popover. `onKeyDown`: Space opens immediately, Right Arrow focuses the popover scroll container when open, Escape closes. `onSelect` closes the popover when a document is opened.
     - **Acceptance criteria**:
-      - [ ] `open` state initialises to `false`
-      - [ ] Hover on a `.md` file starts a 400ms timer; popover opens after the delay
-      - [ ] Moving mouse off the trigger before 400ms cancels the timer (no flash)
-      - [ ] Space opens immediately on a focused `.md` file item
-      - [ ] Escape closes the popover
-      - [ ] Selecting a document closes the popover
-      - [ ] Directories never open a popover
-      - [ ] Non-`.md` files never open a popover
+      - [x] `open` state initialises to `false`
+      - [x] Hover on a `.md` file starts a 400ms timer; popover opens after the delay
+      - [x] Moving mouse off the trigger before 400ms cancels the timer (no flash)
+      - [x] Space opens immediately on a focused `.md` file item
+      - [x] Escape closes the popover
+      - [x] Selecting a document closes the popover
+      - [x] Directories never open a popover
+      - [x] Non-`.md` files never open a popover
     - **Dependencies**: None
 
   - [x] **Task: Connect PreviewPopover to FileTreeItem**
     - **Description**: Render `PreviewPopover` inside `FileTreeItem` for non-directory `.md` files, passing `open`, `onOpenChange`, `path`, `workspacePath`, and mouse enter/leave handlers. Pass a `scrollRef` callback so `FileTreeItem` can focus the scroll container on Right Arrow.
     - **Acceptance criteria**:
-      - [ ] `PreviewPopover` renders adjacent to the file button for `.md` files
-      - [ ] `PreviewPopover` is not rendered for directories or non-`.md` files
-      - [ ] Right Arrow from the trigger moves focus to the popover scroll container
-      - [ ] Mouse can move freely between trigger and popover without closing
-      - [ ] Popover stays open while mouse is inside `PreviewPopover`
+      - [x] `PreviewPopover` renders adjacent to the file button for `.md` files
+      - [x] `PreviewPopover` is not rendered for directories or non-`.md` files
+      - [x] Right Arrow from the trigger moves focus to the popover scroll container
+      - [x] Mouse can move freely between trigger and popover without closing
+      - [x] Popover stays open while mouse is inside `PreviewPopover`
     - **Dependencies**: "Task: Create PreviewPopover.tsx", "Task: Update FileTreeItem to manage open state and hover/keyboard triggers"
 
 - [x] **Story: Tests**
   - [x] **Task: Unit tests for PreviewPopover**
     - **Description**: Write tests in `tests/unit/components/PreviewPopover.test.tsx`. Mock `invoke` and `getHighlighter`. Test: renders loader while loading, renders content after load, renders nothing when closed.
     - **Acceptance criteria**:
-      - [ ] Test: `open=false` — `Popover.Content` not visible
-      - [ ] Test: `open=true` — `Loader2` shown while `read_file` resolves
-      - [ ] Test: `open=true` — `MarkdownRenderer` shown after `read_file` resolves
-      - [ ] All tests pass
+      - [x] Test: `open=false` — `Popover.Content` not visible
+      - [x] Test: `open=true` — `Loader2` shown while `read_file` resolves
+      - [x] Test: `open=true` — `MarkdownRenderer` shown after `read_file` resolves
+      - [x] All tests pass
     - **Dependencies**: "Task: Connect PreviewPopover to FileTreeItem"
 
   - [x] **Task: Unit tests for FileTreeItem popover behaviour**
     - **Description**: Extend `tests/unit/FileTreeItem.test.tsx` to cover the new popover trigger logic. Test: Space opens for `.md` file, Space does not open for directory, Escape closes, `onSelect` closes.
     - **Acceptance criteria**:
-      - [ ] Test: Space on a `.md` file item sets open state to true
-      - [ ] Test: Space on a directory does not open a popover
-      - [ ] Test: Escape closes the popover
-      - [ ] Test: `onSelect` closes the popover
-      - [ ] All tests pass
+      - [x] Test: Space on a `.md` file item sets open state to true
+      - [x] Test: Space on a directory does not open a popover
+      - [x] Test: Escape closes the popover
+      - [x] Test: `onSelect` closes the popover
+      - [x] All tests pass
     - **Dependencies**: "Task: Connect PreviewPopover to FileTreeItem"
