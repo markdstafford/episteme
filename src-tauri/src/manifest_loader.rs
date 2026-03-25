@@ -158,6 +158,8 @@ fn load_doc_types(episteme: &std::path::Path) -> Vec<DocTypeManifest> {
                         }),
                         Err(e) => log::warn!("Skipping doc-type {}: {}", path.display(), e),
                     }
+                } else {
+                    log::warn!("Doc type {} has no frontmatter, skipping", path.display());
                 }
             }
         }
