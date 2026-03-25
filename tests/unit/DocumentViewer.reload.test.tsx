@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, waitFor } from "@testing-library/react";
+import { render, waitFor, act } from "@testing-library/react";
 import { DocumentViewer } from "@/components/DocumentViewer";
-import { useAiChatStore } from "@/stores/aiChat";
 import { useFileTreeStore } from "@/stores/fileTree";
 import { useWorkspaceStore } from "@/stores/workspace";
 
@@ -14,7 +13,7 @@ vi.mock("@tauri-apps/plugin-shell", () => ({ open: vi.fn() }));
 import { invoke } from "@tauri-apps/api/core";
 const mockInvoke = vi.mocked(invoke);
 
-describe("DocumentViewer reload on documentReloadCounter", () => {
+describe("DocumentViewer reload on selectedFilePath change", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockInvoke.mockResolvedValue("# Content");
@@ -23,29 +22,36 @@ describe("DocumentViewer reload on documentReloadCounter", () => {
       selectFile: vi.fn(),
     } as any);
     useWorkspaceStore.setState({ folderPath: "/workspace" } as any);
-    useAiChatStore.setState({ documentReloadCounter: 0 } as any);
   });
 
-  it("reloads file when documentReloadCounter increments with same path", async () => {
+  it("reloads file when selectedFilePath changes (simulates DocumentUpdated)", async () => {
     render(<DocumentViewer />);
 
     // Wait for initial load
     await waitFor(() => expect(mockInvoke).toHaveBeenCalledTimes(1));
     expect(mockInvoke).toHaveBeenCalledWith("read_file", expect.any(Object));
 
-    // Simulate DocumentUpdated (same path, content changed)
-    useAiChatStore.setState({ documentReloadCounter: 1 } as any);
+    // Simulate DocumentUpdated: selectFile changes selectedFilePath
+    act(() => {
+      useFileTreeStore.setState({ selectedFilePath: "/workspace/new-doc.md" } as any);
+    });
 
-    // Should reload
+    // Should reload with the new path
     await waitFor(() => expect(mockInvoke).toHaveBeenCalledTimes(2));
+    expect(mockInvoke).toHaveBeenLastCalledWith("read_file", {
+      filePath: "/workspace/new-doc.md",
+      workspacePath: "/workspace",
+    });
   });
 
-  it("does not reload when documentReloadCounter is unchanged", async () => {
+  it("does not reload when selectedFilePath is unchanged", async () => {
     render(<DocumentViewer />);
     await waitFor(() => expect(mockInvoke).toHaveBeenCalledTimes(1));
 
-    // No counter change
-    useAiChatStore.setState({ documentReloadCounter: 0 } as any);
+    // Same path — no change
+    act(() => {
+      useFileTreeStore.setState({ selectedFilePath: "/workspace/doc.md" } as any);
+    });
 
     // Should NOT reload (give time for any spurious effects)
     await new Promise((r) => setTimeout(r, 100));

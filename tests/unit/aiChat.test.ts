@@ -190,11 +190,10 @@ describe("useAiChatStore", () => {
 
       expect(mockInvoke).toHaveBeenCalledWith("ai_chat", {
         messages: [{ role: "user", content: [{ type: "text", text: "Hello" }] }],
+        activeMode: expect.any(String),
         activeFilePath: "/workspace/doc.md",
         workspacePath: "/workspace",
         awsProfile: "my-profile",
-        authoringMode: false,
-        activeSkill: null,
         onEvent: expect.any(Object),
       });
     });

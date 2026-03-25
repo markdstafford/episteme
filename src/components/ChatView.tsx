@@ -3,6 +3,10 @@ import * as Popover from "@radix-ui/react-popover";
 import { useAiChatStore } from "@/stores/aiChat";
 import { ChatMessage } from "@/components/ChatMessage";
 import { ChatInputCard } from "@/components/ChatInputCard";
+import { ModeButton } from "@/components/ui/ModeButton";
+import { ModePopover } from "@/components/ModePopover";
+import { useFileTreeStore } from "@/stores/fileTree";
+import { useManifestStore } from "@/stores/manifests";
 import { MessageSquare, Clock, Plus, Pencil, Sparkles, Loader2 } from "lucide-react";
 
 interface ChatViewProps {
@@ -12,6 +16,7 @@ interface ChatViewProps {
 
 export function ChatView({ onShowHistory, onNewSession }: ChatViewProps) {
   const [input, setInput] = useState("");
+  const [modePopoverOpen, setModePopoverOpen] = useState(false);
   const [isRenameOpen, setIsRenameOpen] = useState(false);
   const [renameValue, setRenameValue] = useState("");
   const [isSuggesting, setIsSuggesting] = useState(false);
@@ -36,6 +41,21 @@ export function ChatView({ onShowHistory, onNewSession }: ChatViewProps) {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, streamingContent]);
+
+  // Recompute active mode when selected file changes (P1 fix)
+  const selectedFilePath = useFileTreeStore(s => s.selectedFilePath);
+  const { activeMode, modes, resolveDefaultMode, setActiveMode } = useManifestStore();
+  useEffect(() => {
+    const docType = selectedFilePath ? "document" : null;
+    const currentModeManifest = modes.find(m => m.id === activeMode);
+    const scopeMismatch = !currentModeManifest ||
+      (docType === null && currentModeManifest.scope === "document") ||
+      (docType !== null && currentModeManifest.scope === "workspace");
+    if (scopeMismatch) {
+      const newMode = resolveDefaultMode(docType, null);
+      if (newMode) setActiveMode(newMode);
+    }
+  }, [selectedFilePath]);
 
   // Focus the rename input after AI suggestion completes (input was disabled during loading)
   useEffect(() => {
@@ -242,6 +262,16 @@ export function ChatView({ onShowHistory, onNewSession }: ChatViewProps) {
             onSend={handleSend}
             isStreaming={isStreaming || !currentSession}
             panelRef={panelRef}
+            modeButton={
+              <>
+                <ModeButton onClick={() => setModePopoverOpen(true)} />
+                <ModePopover
+                  open={modePopoverOpen}
+                  onOpenChange={setModePopoverOpen}
+                  docType={useFileTreeStore.getState().selectedFilePath ? "document" : null}
+                />
+              </>
+            }
           />
         </div>
       </div>

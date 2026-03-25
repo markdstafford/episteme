@@ -1,11 +1,16 @@
 mod commands;
 mod context;
+mod manifest_loader;
 mod session;
-mod skill_loader;
+mod tool_catalog;
 
+use manifest_loader::LoadedManifests;
 use tauri::menu::{Menu, MenuItem, Submenu};
 use tauri::Emitter;
 use tauri::Manager;
+
+pub struct ManifestState(pub std::sync::Mutex<Option<LoadedManifests>>);
+pub struct WatcherState(pub std::sync::Mutex<Option<notify::RecommendedWatcher>>);
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -13,6 +18,7 @@ pub fn run() {
     .plugin(tauri_plugin_dialog::init())
     .plugin(tauri_plugin_shell::init())
     .plugin(tauri_plugin_updater::Builder::new().build())
+    .plugin(tauri_plugin_fs::init())
     .invoke_handler(tauri::generate_handler![
       commands::folder::open_folder,
       commands::preferences::save_preferences,
@@ -23,8 +29,8 @@ pub fn run() {
       commands::ai::ai_check_auth,
       commands::ai::ai_chat,
       commands::ai::ai_suggest_session_name,
-      commands::skills::list_skills,
       commands::skills::count_documents_by_type,
+      commands::manifests::load_manifests,
       commands::updater::check_for_update,
       commands::updater::install_update,
       commands::sessions::load_sessions,
@@ -58,6 +64,8 @@ pub fn run() {
 
       app.manage(commands::updater::PendingUpdate(std::sync::Mutex::new(None)));
       app.manage(commands::sessions::SessionsLock(std::sync::Mutex::new(())));
+      app.manage(ManifestState(std::sync::Mutex::new(None)));
+      app.manage(WatcherState(std::sync::Mutex::new(None)));
 
       Ok(())
     })

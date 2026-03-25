@@ -3,6 +3,7 @@ import { normalizeCombo } from "@/stores/shortcuts";
 import { invoke } from "@tauri-apps/api/core";
 import { FileText, Wrench, HelpCircle } from "lucide-react";
 import { parsePreferences } from "@/lib/preferences";
+import { useManifestStore } from "@/stores/manifests";
 import {
   Dialog,
   DialogContent,
@@ -12,12 +13,6 @@ import {
   DialogBody,
 } from "@/components/ui/Dialog";
 import { KbdShortcut } from "@/components/ui/Kbd";
-
-interface SkillInfo {
-  id: string;
-  name: string;
-  description: string;
-}
 
 interface Option {
   label: string;
@@ -31,17 +26,17 @@ interface CreateNewDialogProps {
 }
 
 function buildOptionList(
-  skills: SkillInfo[],
+  docTypes: { id: string; name: string }[],
   counts: Record<string, number>,
   mru: string[]
 ): Option[] {
-  const skillIds = new Set(skills.map((s) => s.id));
-  const validMru = mru.filter((id) => skillIds.has(id));
+  const docTypeIds = new Set(docTypes.map((s) => s.id));
+  const validMru = mru.filter((id) => docTypeIds.has(id));
 
   const slots: string[] = validMru.slice(0, 3);
   const slotsSet = new Set(slots);
 
-  const remaining = skills
+  const remaining = docTypes
     .filter((s) => !slotsSet.has(s.id))
     .sort((a, b) => {
       const diff = (counts[b.id] ?? 0) - (counts[a.id] ?? 0);
@@ -52,10 +47,10 @@ function buildOptionList(
     slots.push(remaining.shift()!.id);
   }
 
-  const idToSkill = new Map(skills.map((s) => [s.id, s]));
+  const idToDocType = new Map(docTypes.map((s) => [s.id, s]));
   const options: Option[] = slots.map((id) => {
-    const skill = idToSkill.get(id)!;
-    return { label: skill.name, skillName: skill.id };
+    const docType = idToDocType.get(id)!;
+    return { label: docType.name, skillName: docType.id };
   });
   options.push({ label: "Other", skillName: null });
   return options;
@@ -83,13 +78,13 @@ export function CreateNewDialog({
   onClose,
 }: CreateNewDialogProps) {
   const [options, setOptions] = useState<Option[] | null>(null);
+  const docTypes = useManifestStore((s) => s.docTypes);
 
   useEffect(() => {
     let cancelled = false;
     async function load() {
       try {
-        const [skills, counts, prefsRaw] = await Promise.all([
-          invoke<SkillInfo[]>("list_skills", { workspacePath }),
+        const [counts, prefsRaw] = await Promise.all([
           invoke<Record<string, number>>("count_documents_by_type", {
             workspacePath,
           }),
@@ -97,7 +92,7 @@ export function CreateNewDialog({
         ]);
         if (cancelled) return;
         const prefs = parsePreferences(prefsRaw);
-        setOptions(buildOptionList(skills, counts, prefs.recently_used_skill_types));
+        setOptions(buildOptionList(docTypes, counts, prefs.recently_used_skill_types));
       } catch {
         if (!cancelled) setOptions(buildOptionList([], {}, []));
       }
@@ -106,7 +101,7 @@ export function CreateNewDialog({
     return () => {
       cancelled = true;
     };
-  }, [workspacePath]);
+  }, [workspacePath, docTypes]);
 
   const handleSelect = useCallback(
     (opt: Option) => {

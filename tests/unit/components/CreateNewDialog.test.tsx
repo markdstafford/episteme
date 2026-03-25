@@ -7,22 +7,34 @@ vi.mock("@tauri-apps/api/core", () => ({
   invoke: vi.fn(),
 }));
 
+vi.mock("@/stores/manifests", () => ({
+  useManifestStore: vi.fn(),
+}));
+
+import { useManifestStore } from "@/stores/manifests";
+const mockUseManifestStore = vi.mocked(useManifestStore);
+
 const mockInvoke = vi.mocked(invoke);
 
-function makeSkills(names: string[]) {
-  return names.map((n) => ({ id: n, name: n, description: "" }));
+function makeDocTypes(names: string[]) {
+  return names.map((n) => ({ id: n, name: n, description: "", template: "" }));
+}
+
+function setupInvoke(opts: { counts?: Record<string, number>; mru?: string[] } = {}) {
+  mockInvoke.mockImplementation((cmd) => {
+    if (cmd === "count_documents_by_type") return Promise.resolve(opts.counts ?? {});
+    if (cmd === "load_preferences") return Promise.resolve({ last_opened_folder: null, aws_profile: null, recently_used_skill_types: opts.mru ?? [] });
+    if (cmd === "save_preferences") return Promise.resolve(undefined);
+    return Promise.resolve(null);
+  });
 }
 
 describe("CreateNewDialog option list computation", () => {
   beforeEach(() => vi.clearAllMocks());
 
   it("shows skills in alphabetical order when no MRU and no document counts", async () => {
-    mockInvoke.mockImplementation((cmd) => {
-      if (cmd === "list_skills") return Promise.resolve(makeSkills(["tech-design", "product-description"]));
-      if (cmd === "count_documents_by_type") return Promise.resolve({});
-      if (cmd === "load_preferences") return Promise.resolve({ last_opened_folder: null, aws_profile: null, recently_used_skill_types: [] });
-      return Promise.resolve(null);
-    });
+    mockUseManifestStore.mockReturnValue(makeDocTypes(["tech-design", "product-description"]));
+    setupInvoke();
 
     render(<CreateNewDialog onSelect={vi.fn()} onClose={vi.fn()} workspacePath="/ws" />);
     await waitFor(() => expect(screen.getByText("product-description")).toBeTruthy());
@@ -33,12 +45,8 @@ describe("CreateNewDialog option list computation", () => {
   });
 
   it("shows MRU types first", async () => {
-    mockInvoke.mockImplementation((cmd) => {
-      if (cmd === "list_skills") return Promise.resolve(makeSkills(["product-description", "tech-design"]));
-      if (cmd === "count_documents_by_type") return Promise.resolve({});
-      if (cmd === "load_preferences") return Promise.resolve({ last_opened_folder: null, aws_profile: null, recently_used_skill_types: ["tech-design"] });
-      return Promise.resolve(null);
-    });
+    mockUseManifestStore.mockReturnValue(makeDocTypes(["product-description", "tech-design"]));
+    setupInvoke({ mru: ["tech-design"] });
 
     render(<CreateNewDialog onSelect={vi.fn()} onClose={vi.fn()} workspacePath="/ws" />);
     await waitFor(() => expect(screen.getByText("tech-design")).toBeTruthy());
@@ -48,12 +56,8 @@ describe("CreateNewDialog option list computation", () => {
   });
 
   it("caps skill options at 3 and always shows Other", async () => {
-    mockInvoke.mockImplementation((cmd) => {
-      if (cmd === "list_skills") return Promise.resolve(makeSkills(["a", "b", "c", "d"]));
-      if (cmd === "count_documents_by_type") return Promise.resolve({});
-      if (cmd === "load_preferences") return Promise.resolve({ last_opened_folder: null, aws_profile: null, recently_used_skill_types: [] });
-      return Promise.resolve(null);
-    });
+    mockUseManifestStore.mockReturnValue(makeDocTypes(["a", "b", "c", "d"]));
+    setupInvoke();
 
     render(<CreateNewDialog onSelect={vi.fn()} onClose={vi.fn()} workspacePath="/ws" />);
     await waitFor(() => expect(screen.getByText("Other")).toBeTruthy());
@@ -64,12 +68,8 @@ describe("CreateNewDialog option list computation", () => {
   });
 
   it("shows fewer than 3 options when workspace has fewer skills", async () => {
-    mockInvoke.mockImplementation((cmd) => {
-      if (cmd === "list_skills") return Promise.resolve(makeSkills(["only-skill"]));
-      if (cmd === "count_documents_by_type") return Promise.resolve({});
-      if (cmd === "load_preferences") return Promise.resolve({ last_opened_folder: null, aws_profile: null, recently_used_skill_types: [] });
-      return Promise.resolve(null);
-    });
+    mockUseManifestStore.mockReturnValue(makeDocTypes(["only-skill"]));
+    setupInvoke();
 
     render(<CreateNewDialog onSelect={vi.fn()} onClose={vi.fn()} workspacePath="/ws" />);
     await waitFor(() => expect(screen.getByText("only-skill")).toBeTruthy());
@@ -83,13 +83,8 @@ describe("CreateNewDialog option list computation", () => {
 describe("CreateNewDialog keyboard shortcuts", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockInvoke.mockImplementation((cmd) => {
-      if (cmd === "list_skills") return Promise.resolve(makeSkills(["product-description", "tech-design"]));
-      if (cmd === "count_documents_by_type") return Promise.resolve({});
-      if (cmd === "load_preferences") return Promise.resolve({ last_opened_folder: null, aws_profile: null, recently_used_skill_types: [] });
-      if (cmd === "save_preferences") return Promise.resolve(undefined);
-      return Promise.resolve(null);
-    });
+    mockUseManifestStore.mockReturnValue(makeDocTypes(["product-description", "tech-design"]));
+    setupInvoke();
   });
 
   it("pressing '1' selects the first skill", async () => {
@@ -126,13 +121,8 @@ describe("CreateNewDialog keyboard shortcuts", () => {
 describe("CreateNewDialog MRU update", () => {
   it("updates recently_used_skill_types and saves preferences on selection", async () => {
     vi.clearAllMocks();
-    mockInvoke.mockImplementation((cmd) => {
-      if (cmd === "list_skills") return Promise.resolve(makeSkills(["product-description"]));
-      if (cmd === "count_documents_by_type") return Promise.resolve({});
-      if (cmd === "load_preferences") return Promise.resolve({ last_opened_folder: null, aws_profile: null, recently_used_skill_types: [] });
-      if (cmd === "save_preferences") return Promise.resolve(undefined);
-      return Promise.resolve(null);
-    });
+    mockUseManifestStore.mockReturnValue(makeDocTypes(["product-description"]));
+    setupInvoke();
 
     const onSelect = vi.fn();
     render(<CreateNewDialog onSelect={onSelect} onClose={vi.fn()} workspacePath="/ws" />);
@@ -152,12 +142,8 @@ describe("CreateNewDialog MRU update", () => {
 describe("CreateNewDialog shortcut indicators", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockInvoke.mockImplementation((cmd) => {
-      if (cmd === "list_skills") return Promise.resolve(makeSkills(["product-description", "tech-design"]));
-      if (cmd === "count_documents_by_type") return Promise.resolve({});
-      if (cmd === "load_preferences") return Promise.resolve({ last_opened_folder: null, aws_profile: null, recently_used_skill_types: [] });
-      return Promise.resolve(null);
-    });
+    mockUseManifestStore.mockReturnValue(makeDocTypes(["product-description", "tech-design"]));
+    setupInvoke();
   });
 
   it("renders shortcut indicators as kbd elements", async () => {
@@ -174,12 +160,8 @@ describe("CreateNewDialog shortcut indicators", () => {
 describe("CreateNewDialog empty workspace", () => {
   it("shows only Other when no skills exist", async () => {
     vi.clearAllMocks();
-    mockInvoke.mockImplementation((cmd) => {
-      if (cmd === "list_skills") return Promise.resolve([]);
-      if (cmd === "count_documents_by_type") return Promise.resolve({});
-      if (cmd === "load_preferences") return Promise.resolve({ last_opened_folder: null, aws_profile: null, recently_used_skill_types: [] });
-      return Promise.resolve(null);
-    });
+    mockUseManifestStore.mockReturnValue([]);
+    setupInvoke();
 
     render(<CreateNewDialog onSelect={vi.fn()} onClose={vi.fn()} workspacePath="/ws" />);
     await waitFor(() => expect(screen.getByText("Other")).toBeTruthy());

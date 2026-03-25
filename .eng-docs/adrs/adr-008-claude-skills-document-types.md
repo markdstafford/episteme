@@ -3,14 +3,14 @@ created: 2026-03-04
 last_updated: 2026-03-04
 status: accepted
 decided_by: markdstafford
-superseded_by: null
+superseded_by: adr-012-modes-doc-types-processes
 ---
 
 # ADR 008: Claude skills pattern for document types
 
 ## Status
 
-Accepted
+Superseded by ADR-012
 
 ## Context
 

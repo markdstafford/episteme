@@ -1,20 +1,43 @@
 import { create } from "zustand";
 import { invoke } from "@tauri-apps/api/core";
+import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import { parsePreferences } from "@/lib/preferences";
 import { useFileTreeStore } from "@/stores/fileTree";
+import { useManifestStore, type LoadedManifests } from "@/stores/manifests";
 
 interface WorkspaceStore {
   folderPath: string | null;
   isLoading: boolean;
   error: string | null;
+  unlistenManifests: UnlistenFn | null;
   openFolder: () => Promise<void>;
   loadSavedFolder: () => Promise<void>;
 }
 
-export const useWorkspaceStore = create<WorkspaceStore>((set) => ({
+async function setupWorkspaceManifests(
+  path: string,
+  set: (partial: Partial<WorkspaceStore>) => void,
+  get: () => WorkspaceStore,
+) {
+  // Clean up previous listener
+  const prev = get().unlistenManifests;
+  if (prev) prev();
+
+  // Load manifests (this also sets default activeMode internally)
+  await useManifestStore.getState().loadManifests(path);
+
+  // Subscribe to hot-reload events from backend
+  const unlisten = await listen<LoadedManifests>("manifests-reloaded", (event) => {
+    useManifestStore.getState().setManifests(event.payload);
+  });
+  set({ unlistenManifests: unlisten });
+}
+
+export const useWorkspaceStore = create<WorkspaceStore>((set, get) => ({
   folderPath: null,
   isLoading: false,
   error: null,
+  unlistenManifests: null,
 
   openFolder: async () => {
     set({ isLoading: true, error: null });
@@ -28,6 +51,7 @@ export const useWorkspaceStore = create<WorkspaceStore>((set) => ({
           preferences: { ...existingPrefs, last_opened_folder: path },
         });
         useFileTreeStore.getState().loadTree(path);
+        await setupWorkspaceManifests(path, set, get);
       } else {
         set({ isLoading: false });
       }
@@ -47,6 +71,7 @@ export const useWorkspaceStore = create<WorkspaceStore>((set) => ({
       set({ folderPath: prefs.last_opened_folder, isLoading: false });
       if (prefs.last_opened_folder) {
         useFileTreeStore.getState().loadTree(prefs.last_opened_folder);
+        await setupWorkspaceManifests(prefs.last_opened_folder, set, get);
       }
     } catch (e) {
       set({
