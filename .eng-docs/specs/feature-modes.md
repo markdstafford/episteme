@@ -713,70 +713,70 @@ interface ManifestStore {
       - [ ] Integration test: write a manifest file to `.episteme/`, verify event emitted
     - **Dependencies**: "Task: Add `tauri-plugin-fs` dependency", "Task: Implement `load_manifests` command"
 
-- [ ] **Story: Tool catalog**
-  - [ ] **Task: Implement `tool_catalog.rs` with `build_tool_config`**
+- [x] **Story: Tool catalog**
+  - [x] **Task: Implement `tool_catalog.rs` with `build_tool_config`**
     - **Description**: Create `src-tauri/src/tool_catalog.rs`. Define the catalog as a map of tool name → provider tool schema. Implement `build_tool_config(tools: &[String]) -> Result<ToolConfiguration, String>` which resolves each name in the slice against the catalog and builds the provider tool configuration. Return an error (not a panic) if any tool name is not in the catalog.
     - **Acceptance criteria**:
-      - [ ] Catalog contains entries for `read_file`, `write_file`, `list_files`, `search_workspace`
-      - [ ] `build_tool_config` returns correct provider config for any subset of valid tool names
-      - [ ] `build_tool_config` returns `Err` for unknown tool names
-      - [ ] Unit tests: all four tools individually; mixed valid set; unknown tool name; empty slice
+      - [x] Catalog contains entries for `read_file`, `write_file`, `list_files`, `search_workspace`
+      - [x] `build_tool_config` returns correct provider config for any subset of valid tool names
+      - [x] `build_tool_config` returns `Err` for unknown tool names
+      - [x] Unit tests: all four tools individually; mixed valid set; unknown tool name; empty slice
     - **Dependencies**: None
-  - [ ] **Task: Implement `read_file` AI tool**
+  - [x] **Task: Implement `read_file` AI tool**
     - **Description**: Add `read_file` to the tool catalog and implement its execution handler in `tool_catalog.rs`. Input: `file_path` (relative). Reuse the path validation logic from `commands/files.rs` `read_file`. Return file contents as a string tool result.
     - **Acceptance criteria**:
-      - [ ] Tool schema defined: `file_path` (string, required)
-      - [ ] Validates path is within workspace (reuses canonicalization pattern)
-      - [ ] Returns file content on success
-      - [ ] Returns descriptive error on path traversal attempt, missing file, or read failure
-      - [ ] Unit tests: valid read, path traversal rejection, missing file
+      - [x] Tool schema defined: `file_path` (string, required)
+      - [x] Validates path is within workspace (reuses canonicalization pattern)
+      - [x] Returns file content on success
+      - [x] Returns descriptive error on path traversal attempt, missing file, or read failure
+      - [x] Unit tests: valid read, path traversal rejection, missing file
     - **Dependencies**: "Task: Implement `tool_catalog.rs` with `build_tool_config`"
-  - [ ] **Task: Implement `list_files` AI tool**
+  - [x] **Task: Implement `list_files` AI tool**
     - **Description**: Add `list_files` to the tool catalog. No input parameters. Reuse `context.rs` `collect_markdown_entries` to return all markdown files in the workspace as a formatted list of `path: "title"` pairs.
     - **Acceptance criteria**:
-      - [ ] Tool schema defined: no required inputs
-      - [ ] Returns formatted list of all workspace markdown files with titles
-      - [ ] Excludes hidden directories and `node_modules`
-      - [ ] Unit tests: workspace with files, empty workspace
+      - [x] Tool schema defined: no required inputs
+      - [x] Returns formatted list of all workspace markdown files with titles
+      - [x] Excludes hidden directories and `node_modules`
+      - [x] Unit tests: workspace with files, empty workspace
     - **Dependencies**: "Task: Implement `tool_catalog.rs` with `build_tool_config`"
-  - [ ] **Task: Implement `search_workspace` AI tool**
+  - [x] **Task: Implement `search_workspace` AI tool**
     - **Description**: Add `search_workspace` to the tool catalog. Input: `query` (string). V1 implementation: walk workspace markdown files and return paths + titles of files whose content contains the query string (case-insensitive). Returns up to 20 matches.
     - **Acceptance criteria**:
-      - [ ] Tool schema defined: `query` (string, required)
-      - [ ] Returns paths and titles of matching files
-      - [ ] Case-insensitive match
-      - [ ] Capped at 20 results
-      - [ ] Returns empty list (not error) when no matches found
-      - [ ] Unit tests: matching files found, no matches, query across multiple files
+      - [x] Tool schema defined: `query` (string, required)
+      - [x] Returns paths and titles of matching files
+      - [x] Case-insensitive match
+      - [x] Capped at 20 results
+      - [x] Returns empty list (not error) when no matches found
+      - [x] Unit tests: matching files found, no matches, query across multiple files
     - **Dependencies**: "Task: Implement `tool_catalog.rs` with `build_tool_config`"
 
-- [ ] **Story: Mode-driven context assembly (Rust)**
-  - [ ] **Task: Refactor `context.rs` `build_system_prompt`**
+- [x] **Story: Mode-driven context assembly (Rust)**
+  - [x] **Task: Refactor `context.rs` `build_system_prompt`**
     - **Description**: Replace the existing `build_system_prompt(active_file_path, open_file_paths, workspace_path, authoring_mode, skill_content)` signature with `build_system_prompt(mode: &ModeManifest, doc_type: Option<&DocTypeManifest>, process: Option<&ProcessManifest>, active_file_path: Option<&str>, workspace_path: &str) -> Result<String, String>`. Assemble the prompt per the spec: mode system prompt, then doc type template section (if present), then process guidance section (if present), then active document section (omitted for workspace/any-scoped modes or if no file open), then workspace listing.
     - **Acceptance criteria**:
-      - [ ] New signature matches spec exactly
-      - [ ] Mode system prompt always present as first section
-      - [ ] Doc type section included only when `doc_type` is `Some`
-      - [ ] Process section included only when `process` is `Some`
-      - [ ] Active document section omitted for `workspace` and `any` scoped modes
-      - [ ] Active document section omitted when `active_file_path` is `None`
-      - [ ] Workspace listing always present
-      - [ ] Old signature and `authoring_mode` branch removed
-      - [ ] Unit tests: document-scoped with all sections; workspace-scoped; no doc type; no process; no file open
+      - [x] New signature matches spec exactly
+      - [x] Mode system prompt always present as first section
+      - [x] Doc type section included only when `doc_type` is `Some`
+      - [x] Process section included only when `process` is `Some`
+      - [x] Active document section omitted for `workspace` and `any` scoped modes
+      - [x] Active document section omitted when `active_file_path` is `None`
+      - [x] Workspace listing always present
+      - [x] Old signature and `authoring_mode` branch removed
+      - [x] Unit tests: document-scoped with all sections; workspace-scoped; no doc type; no process; no file open
     - **Dependencies**: "Task: Implement `manifest_loader.rs`"
-  - [ ] **Task: Refactor `ai_chat` command**
+  - [x] **Task: Refactor `ai_chat` command**
     - **Description**: Update `ai_chat` command signature: remove `authoring_mode: bool` and `active_skill: Option<String>`, add `active_mode: String`. Replace the binary authoring mode branch with: (1) look up `ModeManifest` from `ManifestState` by `active_mode` ID, error if not found; (2) call `tool_catalog::build_tool_config` from mode's `tools` array; (3) read active file frontmatter to extract `type` field; (4) look up `DocTypeManifest` from `ManifestState`; (5) find matching `ProcessManifest` (first match on mode + doc_type, warn if multiple); (6) call updated `build_system_prompt`. Update tool execution dispatch to handle all catalog tools, not just `write_file`.
     - **Acceptance criteria**:
-      - [ ] `authoring_mode` and `active_skill` params removed
-      - [ ] `active_mode` param added
-      - [ ] Mode manifest looked up from `ManifestState`; returns error if not found
-      - [ ] Tool config built from mode's `tools` array via `tool_catalog`
-      - [ ] Doc type resolved from active file frontmatter
-      - [ ] Process resolved by matching mode + doc_type (first match, warning logged if multiple)
-      - [ ] `build_system_prompt` called with resolved inputs
-      - [ ] Tool execution handles all V1 catalog tools (`read_file`, `write_file`, `list_files`, `search_workspace`)
-      - [ ] Registered in `lib.rs` (replaces existing `ai_chat` registration)
-      - [ ] Existing tests updated to use new signature
+      - [x] `authoring_mode` and `active_skill` params removed
+      - [x] `active_mode` param added
+      - [x] Mode manifest looked up from `ManifestState`; returns error if not found
+      - [x] Tool config built from mode's `tools` array via `tool_catalog`
+      - [x] Doc type resolved from active file frontmatter
+      - [x] Process resolved by matching mode + doc_type (first match, warning logged if multiple)
+      - [x] `build_system_prompt` called with resolved inputs
+      - [x] Tool execution handles all V1 catalog tools (`read_file`, `write_file`, `list_files`, `search_workspace`)
+      - [x] Registered in `lib.rs` (replaces existing `ai_chat` registration)
+      - [x] Existing tests updated to use new signature
     - **Dependencies**: "Task: Refactor `context.rs` `build_system_prompt`", "Task: Implement `tool_catalog.rs` with `build_tool_config`", "Task: Implement `load_manifests` command"
 
 - [ ] **Story: Frontend manifest store**
