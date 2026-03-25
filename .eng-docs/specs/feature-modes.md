@@ -702,13 +702,13 @@ interface ManifestStore {
       - [x] Registered in `lib.rs` invoke handler
       - [x] Unit tests: built-in modes present when `.episteme/` absent; workspace mode overrides built-in; all three manifest types returned
     - **Dependencies**: "Task: Implement `manifest_loader.rs`", "Task: Add `ManifestState` to AppState"
-  - [ ] **Task: Implement file watcher on `.episteme/`**
+  - [x] **Task: Implement file watcher on `.episteme/`**
     - **Description**: After loading manifests in `load_manifests`, register a `tauri-plugin-fs` watcher on the `.episteme/` directory. On any file change event: reload manifests from disk, update `ManifestState`, and emit a `manifests-reloaded` Tauri event to the frontend window with the updated `LoadedManifests` payload. If `.episteme/` does not exist, skip watcher registration without error.
     - **Acceptance criteria**:
-      - [ ] Watcher registered on `.episteme/` after successful `load_manifests` call
-      - [ ] File change in `.episteme/` triggers manifest reload and `ManifestState` update
-      - [ ] `manifests-reloaded` event emitted to frontend with updated `LoadedManifests`
-      - [ ] Missing `.episteme/` skips watcher registration silently
+      - [x] Watcher registered on `.episteme/` after successful `load_manifests` call
+      - [x] File change in `.episteme/` triggers manifest reload and `ManifestState` update
+      - [x] `manifests-reloaded` event emitted to frontend with updated `LoadedManifests`
+      - [x] Missing `.episteme/` skips watcher registration silently
       - [ ] Previous watcher cleaned up if workspace changes
       - [ ] Integration test: write a manifest file to `.episteme/`, verify event emitted
     - **Dependencies**: "Task: Add `tauri-plugin-fs` dependency", "Task: Implement `load_manifests` command"

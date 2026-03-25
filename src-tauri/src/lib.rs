@@ -10,6 +10,7 @@ use tauri::Emitter;
 use tauri::Manager;
 
 pub struct ManifestState(pub std::sync::Mutex<Option<LoadedManifests>>);
+pub struct WatcherState(pub std::sync::Mutex<Option<notify::RecommendedWatcher>>);
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -65,6 +66,7 @@ pub fn run() {
       app.manage(commands::updater::PendingUpdate(std::sync::Mutex::new(None)));
       app.manage(commands::sessions::SessionsLock(std::sync::Mutex::new(())));
       app.manage(ManifestState(std::sync::Mutex::new(None)));
+      app.manage(WatcherState(std::sync::Mutex::new(None)));
 
       Ok(())
     })
