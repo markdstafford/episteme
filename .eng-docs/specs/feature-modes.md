@@ -665,7 +665,7 @@ interface ManifestStore {
 ## Task list
 
 - [ ] **Story: Rust manifest infrastructure**
-  - [ ] **Task: Add `tauri-plugin-fs` dependency**
+  - [x] **Task: Add `tauri-plugin-fs` dependency**
     - **Description**: Add `tauri-plugin-fs` to `src-tauri/Cargo.toml` and register it in `lib.rs`. This plugin provides file watching capabilities needed for `.episteme/` hot reload.
     - **Acceptance criteria**:
       - [ ] `tauri-plugin-fs` added to `Cargo.toml` dependencies
