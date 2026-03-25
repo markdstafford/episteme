@@ -1,13 +1,7 @@
-use crate::skill_loader::{self, SkillInfo};
 use std::collections::HashMap;
 use std::fs;
 use std::io::{BufRead, BufReader};
 use std::path::Path;
-
-#[tauri::command]
-pub async fn list_skills(workspace_path: String) -> Vec<SkillInfo> {
-    skill_loader::list_skills(&workspace_path)
-}
 
 fn count_documents_by_type_impl(workspace_path: &str) -> HashMap<String, u32> {
     let mut counts: HashMap<String, u32> = HashMap::new();

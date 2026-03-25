@@ -2,7 +2,6 @@ mod commands;
 mod context;
 mod manifest_loader;
 mod session;
-mod skill_loader;
 mod tool_catalog;
 
 use manifest_loader::LoadedManifests;
@@ -30,7 +29,6 @@ pub fn run() {
       commands::ai::ai_check_auth,
       commands::ai::ai_chat,
       commands::ai::ai_suggest_session_name,
-      commands::skills::list_skills,
       commands::skills::count_documents_by_type,
       commands::manifests::load_manifests,
       commands::updater::check_for_update,
