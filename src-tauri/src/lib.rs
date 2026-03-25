@@ -3,6 +3,7 @@ mod context;
 mod manifest_loader;
 mod session;
 mod skill_loader;
+mod tool_catalog;
 
 use manifest_loader::LoadedManifests;
 use tauri::menu::{Menu, MenuItem, Submenu};

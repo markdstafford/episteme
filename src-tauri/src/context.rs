@@ -126,6 +126,14 @@ fn collect_markdown_entries(dir: &Path, workspace_root: &Path) -> Vec<FileEntry>
     result
 }
 
+/// Public version of collect_markdown_entries for use by tool_catalog.
+pub fn collect_markdown_entries_pub(dir: &std::path::Path, root: &std::path::Path) -> Vec<(String, String)> {
+    collect_markdown_entries(dir, root)
+        .into_iter()
+        .map(|e| (e.relative_path, e.title))
+        .collect()
+}
+
 pub fn build_system_prompt(
     active_file_path: Option<&str>,
     _open_file_paths: &[String],
