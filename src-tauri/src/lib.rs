@@ -1,5 +1,6 @@
 mod commands;
 mod context;
+mod manifest_loader;
 mod session;
 mod skill_loader;
 
