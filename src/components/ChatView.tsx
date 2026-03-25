@@ -3,6 +3,9 @@ import * as Popover from "@radix-ui/react-popover";
 import { useAiChatStore } from "@/stores/aiChat";
 import { ChatMessage } from "@/components/ChatMessage";
 import { ChatInputCard } from "@/components/ChatInputCard";
+import { ModeButton } from "@/components/ui/ModeButton";
+import { ModePopover } from "@/components/ModePopover";
+import { useFileTreeStore } from "@/stores/fileTree";
 import { MessageSquare, Clock, Plus, Pencil, Sparkles, Loader2 } from "lucide-react";
 
 interface ChatViewProps {
@@ -12,6 +15,7 @@ interface ChatViewProps {
 
 export function ChatView({ onShowHistory, onNewSession }: ChatViewProps) {
   const [input, setInput] = useState("");
+  const [modePopoverOpen, setModePopoverOpen] = useState(false);
   const [isRenameOpen, setIsRenameOpen] = useState(false);
   const [renameValue, setRenameValue] = useState("");
   const [isSuggesting, setIsSuggesting] = useState(false);
@@ -242,6 +246,16 @@ export function ChatView({ onShowHistory, onNewSession }: ChatViewProps) {
             onSend={handleSend}
             isStreaming={isStreaming || !currentSession}
             panelRef={panelRef}
+            modeButton={
+              <>
+                <ModeButton onClick={() => setModePopoverOpen(true)} />
+                <ModePopover
+                  open={modePopoverOpen}
+                  onOpenChange={setModePopoverOpen}
+                  docType={useFileTreeStore.getState().selectedFilePath ? "document" : null}
+                />
+              </>
+            }
           />
         </div>
       </div>
