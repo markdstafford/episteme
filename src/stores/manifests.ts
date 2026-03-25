@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { invoke } from "@tauri-apps/api/core";
+import { useFileTreeStore } from "@/stores/fileTree";
 
 export interface ModeManifest {
   id: string;
@@ -69,6 +70,13 @@ export const useManifestStore = create<ManifestStore>((set, get) => ({
       docTypes: manifests.doc_types,
       processes: manifests.processes,
     });
+    // Validate active mode is still present after reload; re-resolve if not
+    const { activeMode, resolveDefaultMode, setActiveMode } = get();
+    if (activeMode && !get().modes.find(m => m.id === activeMode)) {
+      const docType = useFileTreeStore.getState().selectedFilePath ? "document" : null;
+      const newMode = resolveDefaultMode(docType, null);
+      if (newMode) setActiveMode(newMode);
+    }
   },
 
   setActiveMode: (id: string) => {
