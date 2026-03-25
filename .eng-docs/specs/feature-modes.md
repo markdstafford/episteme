@@ -903,13 +903,13 @@ interface ManifestStore {
       - [ ] All tests pass with `npm run test:e2e`
     - **Dependencies**: "Task: Wire `ModeButton` into `ChatInputCard` and `ChatView`"
 
-- [ ] **Story: Cleanup**
-  - [ ] **Task: Remove `skill_loader.rs` and update callers**
+- [x] **Story: Cleanup**
+  - [x] **Task: Remove `skill_loader.rs` and update callers**
     - **Description**: Delete `src-tauri/src/skill_loader.rs`. Update `commands/skills.rs` to remove the `list_skills` command and its `skill_loader` import. Remove `list_skills` from the `lib.rs` invoke handler. Remove the `mod skill_loader` declaration from `lib.rs`. Verify `count_documents_by_type` is unaffected (it does not use `skill_loader`).
     - **Acceptance criteria**:
-      - [ ] `skill_loader.rs` deleted
-      - [ ] `list_skills` command removed from `commands/skills.rs` and `lib.rs`
-      - [ ] `count_documents_by_type` still compiles and passes its tests
-      - [ ] No remaining references to `skill_loader` in the codebase
-      - [ ] Project compiles with `cargo build`
+      - [x] `skill_loader.rs` deleted
+      - [x] `list_skills` command removed from `commands/skills.rs` and `lib.rs`
+      - [x] `count_documents_by_type` still compiles and passes its tests
+      - [x] No remaining references to `skill_loader` in the codebase
+      - [x] Project compiles with `cargo build`
     - **Dependencies**: "Task: Implement `load_manifests` command", "Task: Migrate `useAiChatStore` to mode-driven sessions"
