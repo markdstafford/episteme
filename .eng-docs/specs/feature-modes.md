@@ -779,7 +779,7 @@ interface ManifestStore {
       - [x] Existing tests updated to use new signature
     - **Dependencies**: "Task: Refactor `context.rs` `build_system_prompt`", "Task: Implement `tool_catalog.rs` with `build_tool_config`", "Task: Implement `load_manifests` command"
 
-- [ ] **Story: Frontend manifest store**
+- [x] **Story: Frontend manifest store**
   - [x] **Task: Implement `useManifestStore`**
     - **Description**: Create `src/stores/manifests.ts`. Define `ModeManifest`, `DocTypeManifest`, `ProcessManifest`, `LoadedManifests` TypeScript interfaces per spec. Implement Zustand store with state (`modes`, `docTypes`, `processes`, `activeMode`) and actions: `loadManifests(workspacePath)` (invokes `load_manifests` command), `setManifests(manifests)`, `setActiveMode(id)`, `applicableModes(docType)` (filters by scope), `resolveDefaultMode(docType, status)` (stub per issue #113: returns `"ask"` when no doc type, `"draft"` otherwise, fallback to first alphabetical).
     - **Acceptance criteria**:
@@ -791,14 +791,14 @@ interface ManifestStore {
       - [x] `resolveDefaultMode` stub returns correct defaults per spec
       - [x] Unit tests: `applicableModes` filtering, `resolveDefaultMode` stub cases, `setActiveMode`
     - **Dependencies**: None
-  - [ ] **Task: Wire workspace open to `load_manifests` and handle `manifests-reloaded`**
+  - [x] **Task: Wire workspace open to `load_manifests` and handle `manifests-reloaded`**
     - **Description**: In `useWorkspaceStore` (or wherever workspace folder open is handled), call `useManifestStore.loadManifests(folderPath)` after a folder is successfully opened. Subscribe to the `manifests-reloaded` Tauri event (using `listen` from `@tauri-apps/api/event`) and call `useManifestStore.setManifests(payload)` when received. After manifests load, call `resolveDefaultMode` for the current file and set active mode.
     - **Acceptance criteria**:
-      - [ ] `loadManifests` called when workspace folder is opened
-      - [ ] `manifests-reloaded` event listener registered on workspace open
-      - [ ] Store updated when `manifests-reloaded` event received
-      - [ ] Active mode set to resolved default after manifests load
-      - [ ] Event listener cleaned up when workspace closes or component unmounts
+      - [x] `loadManifests` called when workspace folder is opened
+      - [x] `manifests-reloaded` event listener registered on workspace open
+      - [x] Store updated when `manifests-reloaded` event received
+      - [x] Active mode set to resolved default after manifests load
+      - [x] Event listener cleaned up when workspace closes or component unmounts
       - [ ] Unit tests: manifests loaded on workspace open, store updated on reload event
     - **Dependencies**: "Task: Implement `useManifestStore`", "Task: Implement file watcher on `.episteme/`"
 
