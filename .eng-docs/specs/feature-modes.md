@@ -685,12 +685,12 @@ interface ManifestStore {
       - [x] Unknown frontmatter fields ignored (forward-compatible)
       - [x] Unit tests: valid mode, valid doc type, valid process (file and directory forms), missing `.episteme/`, malformed frontmatter
     - **Dependencies**: None
-  - [ ] **Task: Add `ManifestState` to AppState**
+  - [x] **Task: Add `ManifestState` to AppState**
     - **Description**: Define `pub struct ManifestState(pub std::sync::Mutex<Option<LoadedManifests>>)` in `lib.rs` (or a dedicated `state.rs`). Register it in `run()` via `app.manage(ManifestState(std::sync::Mutex::new(None)))`. Import `LoadedManifests` from `manifest_loader`.
     - **Acceptance criteria**:
-      - [ ] `ManifestState` struct defined and exported
-      - [ ] Registered in `run()` alongside existing `PendingUpdate` state
-      - [ ] Project compiles
+      - [x] `ManifestState` struct defined and exported
+      - [x] Registered in `run()` alongside existing `PendingUpdate` state
+      - [x] Project compiles
     - **Dependencies**: "Task: Implement `manifest_loader.rs`"
   - [ ] **Task: Implement `load_manifests` command**
     - **Description**: Create a new Tauri command `load_manifests(workspace_path: String, manifest_state: State<ManifestState>) -> Result<LoadedManifests, String>`. Call `manifest_loader::load_manifests()`, define the three built-in modes (Draft, Review, Ask) as hardcoded `ModeManifest` structs in the app, merge them with workspace-loaded modes (workspace modes take precedence on ID collision), store result in `ManifestState`, and return `LoadedManifests`. Register the command in `lib.rs`.
