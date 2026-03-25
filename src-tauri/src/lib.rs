@@ -30,6 +30,7 @@ pub fn run() {
       commands::ai::ai_suggest_session_name,
       commands::skills::list_skills,
       commands::skills::count_documents_by_type,
+      commands::manifests::load_manifests,
       commands::updater::check_for_update,
       commands::updater::install_update,
       commands::sessions::load_sessions,
