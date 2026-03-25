@@ -780,16 +780,16 @@ interface ManifestStore {
     - **Dependencies**: "Task: Refactor `context.rs` `build_system_prompt`", "Task: Implement `tool_catalog.rs` with `build_tool_config`", "Task: Implement `load_manifests` command"
 
 - [ ] **Story: Frontend manifest store**
-  - [ ] **Task: Implement `useManifestStore`**
+  - [x] **Task: Implement `useManifestStore`**
     - **Description**: Create `src/stores/manifests.ts`. Define `ModeManifest`, `DocTypeManifest`, `ProcessManifest`, `LoadedManifests` TypeScript interfaces per spec. Implement Zustand store with state (`modes`, `docTypes`, `processes`, `activeMode`) and actions: `loadManifests(workspacePath)` (invokes `load_manifests` command), `setManifests(manifests)`, `setActiveMode(id)`, `applicableModes(docType)` (filters by scope), `resolveDefaultMode(docType, status)` (stub per issue #113: returns `"ask"` when no doc type, `"draft"` otherwise, fallback to first alphabetical).
     - **Acceptance criteria**:
-      - [ ] All interfaces defined matching Rust types
-      - [ ] `loadManifests` invokes `load_manifests` Tauri command and updates store state
-      - [ ] `setManifests` replaces all manifest state
-      - [ ] `setActiveMode` updates `activeMode`
-      - [ ] `applicableModes`: excludes `document`-scoped modes when `docType` is null; excludes `workspace`-scoped modes when `docType` is present; `any`-scoped always included
-      - [ ] `resolveDefaultMode` stub returns correct defaults per spec
-      - [ ] Unit tests: `applicableModes` filtering, `resolveDefaultMode` stub cases, `setActiveMode`
+      - [x] All interfaces defined matching Rust types
+      - [x] `loadManifests` invokes `load_manifests` Tauri command and updates store state
+      - [x] `setManifests` replaces all manifest state
+      - [x] `setActiveMode` updates `activeMode`
+      - [x] `applicableModes`: excludes `document`-scoped modes when `docType` is null; excludes `workspace`-scoped modes when `docType` is present; `any`-scoped always included
+      - [x] `resolveDefaultMode` stub returns correct defaults per spec
+      - [x] Unit tests: `applicableModes` filtering, `resolveDefaultMode` stub cases, `setActiveMode`
     - **Dependencies**: None
   - [ ] **Task: Wire workspace open to `load_manifests` and handle `manifests-reloaded`**
     - **Description**: In `useWorkspaceStore` (or wherever workspace folder open is handled), call `useManifestStore.loadManifests(folderPath)` after a folder is successfully opened. Subscribe to the `manifests-reloaded` Tauri event (using `listen` from `@tauri-apps/api/event`) and call `useManifestStore.setManifests(payload)` when received. After manifests load, call `resolveDefaultMode` for the current file and set active mode.
