@@ -221,6 +221,66 @@ but would need them to open it for full context.",
     Ok(prompt)
 }
 
+pub fn build_system_prompt_v2(
+    mode: &crate::manifest_loader::ModeManifest,
+    doc_type: Option<&crate::manifest_loader::DocTypeManifest>,
+    process: Option<&crate::manifest_loader::ProcessManifest>,
+    active_file_path: Option<&str>,
+    workspace_path: &str,
+) -> Result<String, String> {
+    use crate::manifest_loader::ModeScope;
+
+    let workspace = std::path::Path::new(workspace_path);
+    let canonical_ws = std::fs::canonicalize(workspace)
+        .map_err(|e| format!("Invalid workspace path: {}", e))?;
+
+    let mut prompt = mode.system_prompt.clone();
+
+    if let Some(dt) = doc_type {
+        prompt.push_str("\n\n## Document type\n\n");
+        prompt.push_str(&dt.template);
+    }
+
+    if let Some(proc) = process {
+        prompt.push_str("\n\n## Process guidance\n\n");
+        prompt.push_str(&proc.instructions);
+    }
+
+    // Active document: only for document-scoped modes AND when a file is provided
+    let include_active_doc = matches!(mode.scope, ModeScope::Document)
+        && active_file_path.is_some();
+
+    if include_active_doc {
+        let file_path = active_file_path.unwrap();
+        let path = std::path::Path::new(file_path);
+        if path.exists() {
+            let canonical_file = std::fs::canonicalize(path)
+                .map_err(|e| format!("Invalid file path: {}", e))?;
+            if canonical_file.starts_with(&canonical_ws) {
+                let content = std::fs::read_to_string(path)
+                    .map_err(|e| format!("Failed to read active file: {}", e))?;
+                prompt.push_str("\n\n## Active document\n\n");
+                prompt.push_str(&content);
+            }
+        }
+    }
+
+    // Workspace listing — always present
+    let entries = collect_markdown_entries(&canonical_ws, &canonical_ws);
+    let tree = if entries.is_empty() {
+        "No markdown files found.".to_string()
+    } else {
+        entries.iter()
+            .map(|e| format!("- {}: \"{}\"", e.relative_path, e.title))
+            .collect::<Vec<_>>()
+            .join("\n")
+    };
+    prompt.push_str("\n\n## Workspace\n\n");
+    prompt.push_str(&tree);
+
+    Ok(prompt)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -311,5 +371,135 @@ mod tests {
 
         assert!(prompt.contains("Episteme"));
         assert!(!prompt.contains("Authoring instructions"));
+    }
+}
+
+#[cfg(test)]
+mod tests_v2 {
+    use super::*;
+    use crate::manifest_loader::{ModeManifest, ModeScope};
+
+    fn doc_mode() -> ModeManifest {
+        ModeManifest {
+            id: "draft".to_string(), name: "Draft".to_string(),
+            description: None, scope: ModeScope::Document,
+            tools: vec![], system_prompt: "You are drafting.".to_string(),
+        }
+    }
+
+    fn workspace_mode() -> ModeManifest {
+        ModeManifest {
+            id: "ask".to_string(), name: "Ask".to_string(),
+            description: None, scope: ModeScope::Workspace,
+            tools: vec![], system_prompt: "You are answering.".to_string(),
+        }
+    }
+
+    fn any_mode() -> ModeManifest {
+        ModeManifest {
+            id: "brainstorm".to_string(), name: "Brainstorm".to_string(),
+            description: None, scope: ModeScope::Any,
+            tools: vec![], system_prompt: "Brainstorm freely.".to_string(),
+        }
+    }
+
+    fn setup_workspace() -> tempfile::TempDir {
+        let dir = tempfile::tempdir().unwrap();
+        std::fs::write(dir.path().join("readme.md"), "# Readme\nSome content").unwrap();
+        dir
+    }
+
+    #[test]
+    fn test_mode_prompt_always_first() {
+        let dir = setup_workspace();
+        let prompt = build_system_prompt_v2(
+            &doc_mode(), None, None, None, dir.path().to_str().unwrap()
+        ).unwrap();
+        assert!(prompt.starts_with("You are drafting."), "got: {}", &prompt[..100.min(prompt.len())]);
+    }
+
+    #[test]
+    fn test_doc_type_section_included_when_present() {
+        use crate::manifest_loader::DocTypeManifest;
+        let dir = setup_workspace();
+        let dt = DocTypeManifest {
+            id: "pd".to_string(), name: "PD".to_string(),
+            description: None, template: "## Template\n### What".to_string(),
+        };
+        let prompt = build_system_prompt_v2(
+            &doc_mode(), Some(&dt), None, None, dir.path().to_str().unwrap()
+        ).unwrap();
+        assert!(prompt.contains("## Document type"), "got: {}", prompt);
+        assert!(prompt.contains("## Template"), "got: {}", prompt);
+    }
+
+    #[test]
+    fn test_doc_type_section_omitted_when_none() {
+        let dir = setup_workspace();
+        let prompt = build_system_prompt_v2(
+            &doc_mode(), None, None, None, dir.path().to_str().unwrap()
+        ).unwrap();
+        assert!(!prompt.contains("## Document type"), "got: {}", prompt);
+    }
+
+    #[test]
+    fn test_process_section_included_when_present() {
+        use crate::manifest_loader::ProcessManifest;
+        let dir = setup_workspace();
+        let proc = ProcessManifest {
+            id: "p".to_string(), modes: vec![], doc_types: vec![],
+            stages: vec![], instructions: "Step 1: do this.".to_string(),
+        };
+        let prompt = build_system_prompt_v2(
+            &doc_mode(), None, Some(&proc), None, dir.path().to_str().unwrap()
+        ).unwrap();
+        assert!(prompt.contains("## Process guidance"), "got: {}", prompt);
+        assert!(prompt.contains("Step 1: do this."), "got: {}", prompt);
+    }
+
+    #[test]
+    fn test_active_document_omitted_for_workspace_scope() {
+        let dir = setup_workspace();
+        let doc_path = dir.path().join("readme.md").to_string_lossy().to_string();
+        let prompt = build_system_prompt_v2(
+            &workspace_mode(), None, None,
+            Some(&doc_path), dir.path().to_str().unwrap()
+        ).unwrap();
+        assert!(!prompt.contains("## Active document"),
+            "workspace mode should omit active doc, got: {}", prompt);
+    }
+
+    #[test]
+    fn test_active_document_omitted_for_any_scope() {
+        let dir = setup_workspace();
+        let doc_path = dir.path().join("readme.md").to_string_lossy().to_string();
+        let prompt = build_system_prompt_v2(
+            &any_mode(), None, None,
+            Some(&doc_path), dir.path().to_str().unwrap()
+        ).unwrap();
+        assert!(!prompt.contains("## Active document"),
+            "any-scoped mode should omit active doc, got: {}", prompt);
+    }
+
+    #[test]
+    fn test_active_document_included_for_document_scope() {
+        let dir = setup_workspace();
+        let doc_path = dir.path().join("readme.md").to_string_lossy().to_string();
+        let prompt = build_system_prompt_v2(
+            &doc_mode(), None, None,
+            Some(&doc_path), dir.path().to_str().unwrap()
+        ).unwrap();
+        assert!(prompt.contains("## Active document"), "got: {}", prompt);
+        assert!(prompt.contains("# Readme"), "got: {}", prompt);
+    }
+
+    #[test]
+    fn test_workspace_listing_always_present() {
+        let dir = setup_workspace();
+        let prompt = build_system_prompt_v2(
+            &doc_mode(), None, None, None, dir.path().to_str().unwrap()
+        ).unwrap();
+        assert!(prompt.contains("## Workspace"), "got: {}", prompt);
+        assert!(prompt.contains("readme.md"), "got: {}", prompt);
     }
 }
