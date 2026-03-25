@@ -32,100 +32,6 @@ fn validate_aws_profile(aws_profile: &str) -> Result<(), String> {
     Ok(())
 }
 
-pub fn execute_write_file(
-    workspace_path: &str,
-    file_path: &str,
-    content: &str,
-) -> Result<String, String> {
-    let file_path_obj = std::path::Path::new(file_path);
-
-    if file_path_obj.is_absolute() {
-        return Err("file_path must be a relative path".to_string());
-    }
-
-    for component in file_path_obj.components() {
-        if component == std::path::Component::ParentDir {
-            return Err("file_path must not contain '..' (path traversal not allowed)".to_string());
-        }
-    }
-
-    let canonical_workspace = std::fs::canonicalize(workspace_path)
-        .map_err(|e| format!("Invalid workspace path: {}", e))?;
-    let full_path = canonical_workspace.join(file_path);
-
-    if let Some(parent) = full_path.parent() {
-        std::fs::create_dir_all(parent)
-            .map_err(|e| format!("Failed to create directories: {}", e))?;
-    }
-
-    // Verify the resolved parent is still within the workspace (guards against symlink escapes)
-    if let Some(parent) = full_path.parent() {
-        let canonical_parent = std::fs::canonicalize(parent)
-            .map_err(|e| format!("Failed to resolve path: {}", e))?;
-        if !canonical_parent.starts_with(&canonical_workspace) {
-            return Err("Access denied: resolved path is outside workspace".to_string());
-        }
-    }
-
-    std::fs::write(&full_path, content)
-        .map_err(|e| format!("Failed to write file: {}", e))?;
-
-    Ok(full_path.to_string_lossy().to_string())
-}
-
-fn build_write_file_tool_config(
-) -> Result<aws_sdk_bedrockruntime::types::ToolConfiguration, String> {
-    use aws_sdk_bedrockruntime::types::{Tool, ToolConfiguration, ToolInputSchema, ToolSpecification};
-    use std::collections::HashMap;
-
-    let mut file_path_prop: HashMap<String, Document> = HashMap::new();
-    file_path_prop.insert("type".to_string(), Document::String("string".to_string()));
-    file_path_prop.insert(
-        "description".to_string(),
-        Document::String(
-            "Relative path within the workspace (e.g., 'specs/notification-system.md')"
-                .to_string(),
-        ),
-    );
-
-    let mut content_prop: HashMap<String, Document> = HashMap::new();
-    content_prop.insert("type".to_string(), Document::String("string".to_string()));
-    content_prop.insert(
-        "description".to_string(),
-        Document::String("The complete file content to write".to_string()),
-    );
-
-    let mut properties: HashMap<String, Document> = HashMap::new();
-    properties.insert("file_path".to_string(), Document::Object(file_path_prop));
-    properties.insert("content".to_string(), Document::Object(content_prop));
-
-    let mut schema_map: HashMap<String, Document> = HashMap::new();
-    schema_map.insert("type".to_string(), Document::String("object".to_string()));
-    schema_map.insert("properties".to_string(), Document::Object(properties));
-    schema_map.insert(
-        "required".to_string(),
-        Document::Array(vec![
-            Document::String("file_path".to_string()),
-            Document::String("content".to_string()),
-        ]),
-    );
-
-    let tool_spec = ToolSpecification::builder()
-        .name("write_file")
-        .description(
-            "Write content to a file in the workspace. Creates the file if it doesn't exist, \
-             or overwrites it if it does. Use this to create and update the document being authored. \
-             Always write the complete file content.",
-        )
-        .input_schema(ToolInputSchema::Json(Document::Object(schema_map)))
-        .build()
-        .map_err(|e| format!("Failed to build tool spec: {}", e))?;
-
-    ToolConfiguration::builder()
-        .tools(Tool::ToolSpec(tool_spec))
-        .build()
-        .map_err(|e| format!("Failed to build tool config: {}", e))
-}
 
 fn resolve_file_refs(
     messages: Vec<CanonicalMessage>,
@@ -238,40 +144,65 @@ pub async fn ai_check_auth(aws_profile: String) -> Result<bool, String> {
 #[tauri::command]
 pub async fn ai_chat(
     messages: Vec<CanonicalMessage>,
+    active_mode: String,
     active_file_path: Option<String>,
     workspace_path: String,
     aws_profile: String,
-    authoring_mode: bool,
-    active_skill: Option<String>,
+    manifest_state: tauri::State<'_, crate::ManifestState>,
     on_event: Channel<StreamEvent>,
 ) -> Result<(), String> {
     // 1. Validate profile
     validate_aws_profile(&aws_profile)?;
 
-    // 2. Build system prompt
-    // Load skill content if in authoring mode with an active skill
-    let skill_content = if authoring_mode {
-        if let Some(ref skill_name) = active_skill {
-            match crate::skill_loader::load_skill(&workspace_path, skill_name) {
-                Ok(content) => Some(content),
-                Err(e) => {
-                    log::warn!("Failed to load skill '{}': {}", skill_name, e);
-                    None
-                }
-            }
-        } else {
-            None
-        }
-    } else {
+    // 2. Resolve mode manifest from AppState
+    let manifests = manifest_state.0.lock().unwrap().clone()
+        .ok_or_else(|| "Manifests not loaded — call load_manifests first".to_string())?;
+
+    let mode = manifests.modes.iter()
+        .find(|m| m.id == active_mode)
+        .ok_or_else(|| {
+            log::warn!("Mode '{}' not found in loaded manifests", active_mode);
+            format!("Mode '{}' not found", active_mode)
+        })?
+        .clone();
+
+    // Build tool config from mode's tools array
+    let tool_config = if mode.tools.is_empty() {
         None
+    } else {
+        Some(crate::tool_catalog::build_tool_config(&mode.tools)?)
     };
 
+    // Resolve doc type from active file frontmatter
+    let doc_type_id = active_file_path.as_deref()
+        .and_then(|p| crate::commands::skills::extract_type_from_file_pub(p));
+
+    let doc_type = doc_type_id.as_deref()
+        .and_then(|id| manifests.doc_types.iter().find(|d| d.id == id))
+        .cloned();
+
+    // Resolve process for (mode, doc_type)
+    let process = doc_type_id.as_deref().and_then(|dt_id| {
+        let matched: Vec<_> = manifests.processes.iter()
+            .filter(|p| p.modes.contains(&active_mode) && p.doc_types.contains(&dt_id.to_string()))
+            .collect();
+        if matched.len() > 1 {
+            log::warn!("Multiple processes matched ({}, {}) — using first match", active_mode, dt_id);
+        }
+        matched.into_iter().next().cloned()
+    });
+
+    log::info!("ai_chat: mode={}, doc_type={:?}, process={:?}",
+        active_mode,
+        doc_type.as_ref().map(|d| &d.id),
+        process.as_ref().map(|p| &p.id));
+
     let system_prompt = crate::context::build_system_prompt(
+        &mode,
+        doc_type.as_ref(),
+        process.as_ref(),
         active_file_path.as_deref(),
-        &[],
         &workspace_path,
-        authoring_mode,
-        skill_content.as_deref(),
     )?;
 
     // 3. Load AWS config using profile name
@@ -316,14 +247,7 @@ pub async fn ai_chat(
         );
     }
 
-    // 6. Build tool config for authoring mode
-    let tool_config = if authoring_mode {
-        Some(build_write_file_tool_config()?)
-    } else {
-        None
-    };
-
-    // 7. Tool use loop — may run multiple ConverseStream calls when tools are invoked
+    // 6. Tool use loop — may run multiple ConverseStream calls when tools are invoked
     let mut loop_messages = bedrock_messages;
     let mut full_response = String::new();
 
@@ -426,45 +350,16 @@ pub async fn ai_chat(
                                 assistant_blocks
                                     .push(ContentBlock::ToolUse(tool_use_block));
 
-                                let tool_result_text = if call.name == "write_file" {
-                                    let file_path =
-                                        extract_str_field(&call.input_json, "file_path");
-                                    let content =
-                                        extract_str_field(&call.input_json, "content");
-                                    match (file_path, content) {
-                                        (Some(fp), Some(ct)) => {
-                                            match execute_write_file(
-                                                &workspace_path,
-                                                &fp,
-                                                &ct,
-                                            ) {
-                                                Ok(abs_path) => {
-                                                    log::info!(
-                                                        "write_file: wrote {}",
-                                                        abs_path
-                                                    );
-                                                    let _ = on_event.send(
-                                                        StreamEvent::DocumentUpdated(
-                                                            abs_path.clone(),
-                                                        ),
-                                                    );
-                                                    format!("success: wrote {}", abs_path)
-                                                }
-                                                Err(e) => {
-                                                    log::error!(
-                                                        "write_file error: {}",
-                                                        e
-                                                    );
-                                                    format!("error: {}", e)
-                                                }
-                                            }
-                                        }
-                                        _ => "error: missing file_path or content"
-                                            .to_string(),
+                                let tool_result_text = crate::tool_catalog::execute_tool(
+                                    &call.name, &call.input_json, &workspace_path
+                                );
+
+                                // DocumentUpdated event: only emit for write_file
+                                if call.name == "write_file" && tool_result_text.starts_with("success: wrote ") {
+                                    if let Some(abs_path) = tool_result_text.strip_prefix("success: wrote ") {
+                                        let _ = on_event.send(StreamEvent::DocumentUpdated(abs_path.to_string()));
                                     }
-                                } else {
-                                    format!("error: unknown tool '{}'", call.name)
-                                };
+                                }
 
                                 let result_block = ToolResultBlock::builder()
                                     .tool_use_id(&call.tool_use_id)
@@ -534,10 +429,6 @@ pub async fn ai_suggest_session_name(
 
     let client = BedrockClient::new(&config);
 
-    // Serialize the conversation as a transcript so the model acts as an
-    // outside observer rather than a participant. Passing messages as the
-    // conversation history causes the model to continue the thread instead
-    // of naming it.
     let mut transcript = String::from("Transcript:\n");
     for msg in &messages {
         let label = match msg.role.as_str() {
@@ -591,11 +482,6 @@ pub async fn ai_suggest_session_name(
     Ok(name)
 }
 
-fn extract_str_field(json: &str, field: &str) -> Option<String> {
-    serde_json::from_str::<serde_json::Value>(json)
-        .ok()
-        .and_then(|v| v.get(field).and_then(|f| f.as_str()).map(|s| s.to_string()))
-}
 
 fn json_value_to_document(value: serde_json::Value) -> Document {
     match value {
@@ -655,76 +541,11 @@ mod tests {
     use tempfile::tempdir;
 
     #[test]
-    fn test_execute_write_file_creates_file() {
-        let dir = tempdir().unwrap();
-        let result = execute_write_file(
-            dir.path().to_str().unwrap(),
-            "new-doc.md",
-            "# Hello\n",
-        );
-        assert!(result.is_ok());
-        let abs_path = result.unwrap();
-        assert!(std::path::Path::new(&abs_path).exists());
-        assert_eq!(std::fs::read_to_string(&abs_path).unwrap(), "# Hello\n");
-    }
-
-    #[test]
-    fn test_execute_write_file_overwrites() {
-        let dir = tempdir().unwrap();
-        execute_write_file(dir.path().to_str().unwrap(), "doc.md", "v1").unwrap();
-        execute_write_file(dir.path().to_str().unwrap(), "doc.md", "v2").unwrap();
-        let path = dir.path().join("doc.md");
-        assert_eq!(std::fs::read_to_string(path).unwrap(), "v2");
-    }
-
-    #[test]
-    fn test_execute_write_file_creates_parent_dirs() {
-        let dir = tempdir().unwrap();
-        let result = execute_write_file(
-            dir.path().to_str().unwrap(),
-            "specs/nested/doc.md",
-            "content",
-        );
-        assert!(result.is_ok());
-        assert!(dir.path().join("specs/nested/doc.md").exists());
-    }
-
-    #[test]
-    fn test_execute_write_file_rejects_absolute_path() {
-        let dir = tempdir().unwrap();
-        let result = execute_write_file(
-            dir.path().to_str().unwrap(),
-            "/etc/passwd",
-            "bad",
-        );
-        assert!(result.is_err());
-        assert!(result.unwrap_err().contains("relative"));
-    }
-
-    #[test]
-    fn test_execute_write_file_rejects_path_traversal() {
-        let dir = tempdir().unwrap();
-        let result = execute_write_file(
-            dir.path().to_str().unwrap(),
-            "../outside.md",
-            "bad",
-        );
-        assert!(result.is_err());
-        assert!(result.unwrap_err().contains("traversal"));
-    }
-
-    #[test]
     fn test_document_updated_serializes_correctly() {
         let event = StreamEvent::DocumentUpdated("/workspace/doc.md".to_string());
         let json = serde_json::to_string(&event).unwrap();
         assert!(json.contains("\"type\":\"DocumentUpdated\""));
         assert!(json.contains("/workspace/doc.md"));
-    }
-
-    #[test]
-    fn test_build_write_file_tool_compiles() {
-        let config = build_write_file_tool_config();
-        assert!(config.is_ok());
     }
 
     #[test]
@@ -799,23 +620,4 @@ mod tests {
         }
     }
 
-    #[test]
-    fn test_execute_write_file_rejects_symlink_escape() {
-        use std::os::unix::fs::symlink;
-        let dir = tempdir().unwrap();
-        let outside = tempdir().unwrap();
-
-        // Create a symlink inside the workspace that points outside
-        let link_path = dir.path().join("escape-link");
-        symlink(outside.path(), &link_path).unwrap();
-
-        // Attempting to write through the symlink should fail
-        let result = execute_write_file(
-            dir.path().to_str().unwrap(),
-            "escape-link/secret.md",
-            "bad content",
-        );
-        assert!(result.is_err());
-        assert!(result.unwrap_err().contains("outside workspace"));
-    }
 }

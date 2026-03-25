@@ -52,6 +52,10 @@ fn count_in_dir(dir: &Path, counts: &mut HashMap<String, u32>) {
     }
 }
 
+pub fn extract_type_from_file_pub(path: &str) -> Option<String> {
+    extract_type_from_file(std::path::Path::new(path))
+}
+
 fn extract_type_from_file(path: &Path) -> Option<String> {
     let file = fs::File::open(path).ok()?;
     let reader = BufReader::new(file);

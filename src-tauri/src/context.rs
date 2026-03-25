@@ -135,93 +135,6 @@ pub fn collect_markdown_entries_pub(dir: &std::path::Path, root: &std::path::Pat
 }
 
 pub fn build_system_prompt(
-    active_file_path: Option<&str>,
-    _open_file_paths: &[String],
-    workspace_path: &str,
-    authoring_mode: bool,
-    skill_content: Option<&str>,
-) -> Result<String, String> {
-    let workspace = Path::new(workspace_path);
-    let canonical_workspace = fs::canonicalize(workspace)
-        .map_err(|e| format!("Invalid workspace path: {}", e))?;
-
-    let active_document_section = if let Some(file_path) = active_file_path {
-        let path = Path::new(file_path);
-        if !path.exists() {
-            return Err(format!("File does not exist: {}", file_path));
-        }
-        let canonical_file = fs::canonicalize(path)
-            .map_err(|e| format!("Invalid file path: {}", e))?;
-        if !canonical_file.starts_with(&canonical_workspace) {
-            return Err("Access denied: file is outside workspace".to_string());
-        }
-        fs::read_to_string(path)
-            .map_err(|e| format!("Failed to read active file: {}", e))?
-    } else {
-        "No document is currently open.".to_string()
-    };
-
-    let entries = collect_markdown_entries(&canonical_workspace, &canonical_workspace);
-    let tree_listing: String = entries
-        .iter()
-        .map(|e| format!("- {}: \"{}\"", e.relative_path, e.title))
-        .collect::<Vec<_>>()
-        .join("\n");
-    let tree_section = if tree_listing.is_empty() {
-        "No markdown files found.".to_string()
-    } else {
-        tree_listing
-    };
-
-    let prompt = if authoring_mode {
-        let skill_section = match skill_content {
-            Some(content) => format!("\n## Skill\n\n{}\n", content),
-            None => String::new(),
-        };
-        format!(
-            "You are an AI assistant for Episteme, a document authoring application.\n\
-             You are currently helping the user create a new document.\n\
-             \n\
-             ## Authoring instructions\n\
-             \n\
-             - Use the `write_file` tool to write the document — always write the complete file content\n\
-             - Keep your chat messages concise — ask questions and give brief status updates\n\
-             - Do NOT include section content in your chat messages; write it to the document using write_file\n\
-             - Follow the skill process below to guide the user through each section\n\
-             - After each write, the user sees the updated document in their viewer\n\
-             {}\n\
-             ## Active document\n\
-             {}\n\
-             \n\
-             ## Repository structure\n\
-             {}",
-            skill_section,
-            active_document_section,
-            tree_section
-        )
-    } else {
-        format!(
-            "You are an AI assistant for a document repository called Episteme. \
-You help users understand, navigate, and work with their documentation.\n\
-\n\
-## Active document\n\
-{}\n\
-\n\
-## Repository structure\n\
-{}\n\
-\n\
-When the user asks about a specific document, use the repository structure to identify the right file. \
-If they ask about a file you haven't seen the full contents of, let them know you can see the file exists \
-but would need them to open it for full context.",
-            active_document_section,
-            tree_section
-        )
-    };
-
-    Ok(prompt)
-}
-
-pub fn build_system_prompt_v2(
     mode: &crate::manifest_loader::ModeManifest,
     doc_type: Option<&crate::manifest_loader::DocTypeManifest>,
     process: Option<&crate::manifest_loader::ProcessManifest>,
@@ -331,47 +244,6 @@ mod tests {
         assert!(is_hidden(".git"));
         assert!(!is_hidden("readme.md"));
     }
-
-    #[test]
-    fn test_authoring_prompt_includes_skill_and_instructions() {
-        use tempfile::TempDir;
-        let dir = tempfile::tempdir().unwrap();
-        // Create a dummy markdown file so the workspace has content
-        std::fs::write(dir.path().join("readme.md"), "# Readme").unwrap();
-
-        let prompt = build_system_prompt(
-            None,
-            &[],
-            dir.path().to_str().unwrap(),
-            true,
-            Some("## My Skill\nDo things"),
-        )
-        .unwrap();
-
-        assert!(prompt.contains("Authoring instructions"));
-        assert!(prompt.contains("write_file"));
-        assert!(prompt.contains("## Skill"));
-        assert!(prompt.contains("## My Skill"));
-        assert!(prompt.contains("Repository structure"));
-    }
-
-    #[test]
-    fn test_non_authoring_prompt_unchanged() {
-        let dir = tempfile::tempdir().unwrap();
-        std::fs::write(dir.path().join("doc.md"), "# Doc").unwrap();
-
-        let prompt = build_system_prompt(
-            None,
-            &[],
-            dir.path().to_str().unwrap(),
-            false,
-            None,
-        )
-        .unwrap();
-
-        assert!(prompt.contains("Episteme"));
-        assert!(!prompt.contains("Authoring instructions"));
-    }
 }
 
 #[cfg(test)]
@@ -412,7 +284,7 @@ mod tests_v2 {
     #[test]
     fn test_mode_prompt_always_first() {
         let dir = setup_workspace();
-        let prompt = build_system_prompt_v2(
+        let prompt = build_system_prompt(
             &doc_mode(), None, None, None, dir.path().to_str().unwrap()
         ).unwrap();
         assert!(prompt.starts_with("You are drafting."), "got: {}", &prompt[..100.min(prompt.len())]);
@@ -426,7 +298,7 @@ mod tests_v2 {
             id: "pd".to_string(), name: "PD".to_string(),
             description: None, template: "## Template\n### What".to_string(),
         };
-        let prompt = build_system_prompt_v2(
+        let prompt = build_system_prompt(
             &doc_mode(), Some(&dt), None, None, dir.path().to_str().unwrap()
         ).unwrap();
         assert!(prompt.contains("## Document type"), "got: {}", prompt);
@@ -436,7 +308,7 @@ mod tests_v2 {
     #[test]
     fn test_doc_type_section_omitted_when_none() {
         let dir = setup_workspace();
-        let prompt = build_system_prompt_v2(
+        let prompt = build_system_prompt(
             &doc_mode(), None, None, None, dir.path().to_str().unwrap()
         ).unwrap();
         assert!(!prompt.contains("## Document type"), "got: {}", prompt);
@@ -450,7 +322,7 @@ mod tests_v2 {
             id: "p".to_string(), modes: vec![], doc_types: vec![],
             stages: vec![], instructions: "Step 1: do this.".to_string(),
         };
-        let prompt = build_system_prompt_v2(
+        let prompt = build_system_prompt(
             &doc_mode(), None, Some(&proc), None, dir.path().to_str().unwrap()
         ).unwrap();
         assert!(prompt.contains("## Process guidance"), "got: {}", prompt);
@@ -461,7 +333,7 @@ mod tests_v2 {
     fn test_active_document_omitted_for_workspace_scope() {
         let dir = setup_workspace();
         let doc_path = dir.path().join("readme.md").to_string_lossy().to_string();
-        let prompt = build_system_prompt_v2(
+        let prompt = build_system_prompt(
             &workspace_mode(), None, None,
             Some(&doc_path), dir.path().to_str().unwrap()
         ).unwrap();
@@ -473,7 +345,7 @@ mod tests_v2 {
     fn test_active_document_omitted_for_any_scope() {
         let dir = setup_workspace();
         let doc_path = dir.path().join("readme.md").to_string_lossy().to_string();
-        let prompt = build_system_prompt_v2(
+        let prompt = build_system_prompt(
             &any_mode(), None, None,
             Some(&doc_path), dir.path().to_str().unwrap()
         ).unwrap();
@@ -485,7 +357,7 @@ mod tests_v2 {
     fn test_active_document_included_for_document_scope() {
         let dir = setup_workspace();
         let doc_path = dir.path().join("readme.md").to_string_lossy().to_string();
-        let prompt = build_system_prompt_v2(
+        let prompt = build_system_prompt(
             &doc_mode(), None, None,
             Some(&doc_path), dir.path().to_str().unwrap()
         ).unwrap();
@@ -496,7 +368,7 @@ mod tests_v2 {
     #[test]
     fn test_workspace_listing_always_present() {
         let dir = setup_workspace();
-        let prompt = build_system_prompt_v2(
+        let prompt = build_system_prompt(
             &doc_mode(), None, None, None, dir.path().to_str().unwrap()
         ).unwrap();
         assert!(prompt.contains("## Workspace"), "got: {}", prompt);
