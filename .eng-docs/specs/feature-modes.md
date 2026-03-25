@@ -692,15 +692,15 @@ interface ManifestStore {
       - [x] Registered in `run()` alongside existing `PendingUpdate` state
       - [x] Project compiles
     - **Dependencies**: "Task: Implement `manifest_loader.rs`"
-  - [ ] **Task: Implement `load_manifests` command**
+  - [x] **Task: Implement `load_manifests` command**
     - **Description**: Create a new Tauri command `load_manifests(workspace_path: String, manifest_state: State<ManifestState>) -> Result<LoadedManifests, String>`. Call `manifest_loader::load_manifests()`, define the three built-in modes (Draft, Review, Ask) as hardcoded `ModeManifest` structs in the app, merge them with workspace-loaded modes (workspace modes take precedence on ID collision), store result in `ManifestState`, and return `LoadedManifests`. Register the command in `lib.rs`.
     - **Acceptance criteria**:
-      - [ ] Command callable from frontend via `invoke("load_manifests", { workspacePath })`
-      - [ ] Built-in modes (draft, review, ask) always present in returned modes list
-      - [ ] Workspace modes with matching IDs override built-in modes
-      - [ ] `ManifestState` updated with loaded manifests
-      - [ ] Registered in `lib.rs` invoke handler
-      - [ ] Unit tests: built-in modes present when `.episteme/` absent; workspace mode overrides built-in; all three manifest types returned
+      - [x] Command callable from frontend via `invoke("load_manifests", { workspacePath })`
+      - [x] Built-in modes (draft, review, ask) always present in returned modes list
+      - [x] Workspace modes with matching IDs override built-in modes
+      - [x] `ManifestState` updated with loaded manifests
+      - [x] Registered in `lib.rs` invoke handler
+      - [x] Unit tests: built-in modes present when `.episteme/` absent; workspace mode overrides built-in; all three manifest types returned
     - **Dependencies**: "Task: Implement `manifest_loader.rs`", "Task: Add `ManifestState` to AppState"
   - [ ] **Task: Implement file watcher on `.episteme/`**
     - **Description**: After loading manifests in `load_manifests`, register a `tauri-plugin-fs` watcher on the `.episteme/` directory. On any file change event: reload manifests from disk, update `ManifestState`, and emit a `manifests-reloaded` Tauri event to the frontend window with the updated `LoadedManifests` payload. If `.episteme/` does not exist, skip watcher registration without error.
@@ -850,30 +850,30 @@ interface ManifestStore {
       - [ ] Unit tests updated to use new store shape
     - **Dependencies**: "Task: Implement `useManifestStore`", "Task: Refactor `ai_chat` command"
 
-- [ ] **Story: Built-in mode manifests**
-  - [ ] **Task: Author `draft` built-in mode**
+- [x] **Story: Built-in mode manifests**
+  - [x] **Task: Author `draft` built-in mode**
     - **Description**: Define the Draft mode as a hardcoded `ModeManifest` in `load_manifests` (or a dedicated `built_in_modes.rs`). Scope: `Document`. Tools: `read_file`, `write_file`. System prompt: instructs the AI to help the user write and revise a document, use `write_file` to write content directly, follow any process guidance, and keep chat messages concise.
     - **Acceptance criteria**:
-      - [ ] ID: `draft`, name: `Draft`, scope: `Document`
-      - [ ] Tools: `[read_file, write_file]`
-      - [ ] System prompt covers: write to document via tool, keep chat concise, follow process if present
-      - [ ] Appears in `load_manifests` response without any `.episteme/modes/draft.md` present
+      - [x] ID: `draft`, name: `Draft`, scope: `Document`
+      - [x] Tools: `[read_file, write_file]`
+      - [x] System prompt covers: write to document via tool, keep chat concise, follow process if present
+      - [x] Appears in `load_manifests` response without any `.episteme/modes/draft.md` present
     - **Dependencies**: "Task: Implement `load_manifests` command"
-  - [ ] **Task: Author `review` built-in mode**
+  - [x] **Task: Author `review` built-in mode**
     - **Description**: Define the Review mode as a hardcoded `ModeManifest`. Scope: `Document`. Tools: `read_file`. System prompt: instructs the AI to read the document critically, surface issues with clarity, structure, and completeness, suggest improvements without rewriting, and not modify the document.
     - **Acceptance criteria**:
-      - [ ] ID: `review`, name: `Review`, scope: `Document`
-      - [ ] Tools: `[read_file]`
-      - [ ] System prompt covers: read-only, surface issues, suggest without rewriting
-      - [ ] Appears in `load_manifests` response without any `.episteme/modes/review.md` present
+      - [x] ID: `review`, name: `Review`, scope: `Document`
+      - [x] Tools: `[read_file]`
+      - [x] System prompt covers: read-only, surface issues, suggest without rewriting
+      - [x] Appears in `load_manifests` response without any `.episteme/modes/review.md` present
     - **Dependencies**: "Task: Implement `load_manifests` command"
-  - [ ] **Task: Author `ask` built-in mode**
+  - [x] **Task: Author `ask` built-in mode**
     - **Description**: Define the Ask mode as a hardcoded `ModeManifest`. Scope: `Workspace`. Tools: `read_file`, `list_files`, `search_workspace`. System prompt: instructs the AI to answer questions by drawing on any document in the workspace, use tools to find and read relevant documents, and cite sources by file path.
     - **Acceptance criteria**:
-      - [ ] ID: `ask`, name: `Ask`, scope: `Workspace`
-      - [ ] Tools: `[read_file, list_files, search_workspace]`
-      - [ ] System prompt covers: answer from workspace documents, use tools, cite by path
-      - [ ] Appears in `load_manifests` response without any `.episteme/modes/ask.md` present
+      - [x] ID: `ask`, name: `Ask`, scope: `Workspace`
+      - [x] Tools: `[read_file, list_files, search_workspace]`
+      - [x] System prompt covers: answer from workspace documents, use tools, cite by path
+      - [x] Appears in `load_manifests` response without any `.episteme/modes/ask.md` present
     - **Dependencies**: "Task: Implement `load_manifests` command"
 
 - [ ] **Story: Tests**
