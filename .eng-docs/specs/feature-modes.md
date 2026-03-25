@@ -813,20 +813,20 @@ interface ManifestStore {
       - [ ] Click handler wires to popover open state
       - [ ] Unit test: renders active mode name; renders placeholder when null
     - **Dependencies**: "Task: Implement `useManifestStore`"
-  - [ ] **Task: Implement `ModePopover` component**
+  - [x] **Task: Implement `ModePopover` component**
     - **Description**: Create `src/components/ModePopover.tsx` using Radix `Popover` primitive. Opens above the mode button. Contains: a filter input (auto-focused on open, `--height-control-base`) that filters the mode list as the user types; a scrollable list of applicable modes in alphabetical order (top reserved for future "Recommended" section); each item shows mode name and optional description; active mode shows a `Check` icon; hover uses `--color-bg-hover`. Keyboard: arrow keys navigate, Enter selects, Escape closes. On selection: calls `useManifestStore.setActiveMode(id)` and closes popover.
     - **Acceptance criteria**:
-      - [ ] Popover opens above mode button, width 280px
-      - [ ] Filter input auto-focused on open
-      - [ ] Typing filters mode list (case-insensitive, matches name or description)
-      - [ ] Modes listed alphabetically
-      - [ ] Active mode shows `Check` icon
-      - [ ] Each item shows name; description shown if present
-      - [ ] Arrow key navigation cycles through visible items
-      - [ ] Enter selects focused item, closes popover
-      - [ ] Escape closes popover without selection
-      - [ ] Selecting a mode calls `setActiveMode` and closes popover
-      - [ ] Unit tests: filter narrows list; active mode checkmark; selection calls setActiveMode; keyboard navigation
+      - [x] Popover opens above mode button, width 280px
+      - [x] Filter input auto-focused on open
+      - [x] Typing filters mode list (case-insensitive, matches name or description)
+      - [x] Modes listed alphabetically
+      - [x] Active mode shows `Check` icon
+      - [x] Each item shows name; description shown if present
+      - [x] Arrow key navigation cycles through visible items
+      - [x] Enter selects focused item, closes popover
+      - [x] Escape closes popover without selection
+      - [x] Selecting a mode calls `setActiveMode` and closes popover
+      - [x] Unit tests: filter narrows list; active mode checkmark; selection calls setActiveMode; keyboard navigation
     - **Dependencies**: "Task: Implement `ModeButton` component"
   - [ ] **Task: Wire `ModeButton` into `ChatInputCard` and `ChatView`**
     - **Description**: `ChatInputCard` already has a `modeButton?: ReactNode` slot. In the parent component that renders `ChatInputCard` (likely `ChatView` or `AiChatPanel`), pass `<ModeButton />` as the `modeButton` prop. Ensure `ModePopover` is rendered in the correct position relative to the button.
