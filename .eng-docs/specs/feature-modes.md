@@ -802,16 +802,16 @@ interface ManifestStore {
       - [ ] Unit tests: manifests loaded on workspace open, store updated on reload event
     - **Dependencies**: "Task: Implement `useManifestStore`", "Task: Implement file watcher on `.episteme/`"
 
-- [ ] **Story: Mode picker UI**
-  - [ ] **Task: Implement `ModeButton` component**
+- [x] **Story: Mode picker UI**
+  - [x] **Task: Implement `ModeButton` component**
     - **Description**: Create `src/components/ui/ModeButton.tsx`. Ghost button (`--height-control-sm`, 24px) showing the active mode's display name and a trailing `ChevronDown` icon (12px). Reads active mode from `useManifestStore`. On click, opens `ModePopover`. Uses design system tokens per spec.
     - **Acceptance criteria**:
-      - [ ] Renders active mode display name from `useManifestStore`
-      - [ ] Ghost button style at `--height-control-sm`
-      - [ ] `ChevronDown` icon trailing
-      - [ ] Renders a placeholder label when `activeMode` is null
-      - [ ] Click handler wires to popover open state
-      - [ ] Unit test: renders active mode name; renders placeholder when null
+      - [x] Renders active mode display name from `useManifestStore`
+      - [x] Ghost button style at `--height-control-sm`
+      - [x] `ChevronDown` icon trailing
+      - [x] Renders a placeholder label when `activeMode` is null
+      - [x] Click handler wires to popover open state
+      - [x] Unit test: renders active mode name; renders placeholder when null
     - **Dependencies**: "Task: Implement `useManifestStore`"
   - [x] **Task: Implement `ModePopover` component**
     - **Description**: Create `src/components/ModePopover.tsx` using Radix `Popover` primitive. Opens above the mode button. Contains: a filter input (auto-focused on open, `--height-control-base`) that filters the mode list as the user types; a scrollable list of applicable modes in alphabetical order (top reserved for future "Recommended" section); each item shows mode name and optional description; active mode shows a `Check` icon; hover uses `--color-bg-hover`. Keyboard: arrow keys navigate, Enter selects, Escape closes. On selection: calls `useManifestStore.setActiveMode(id)` and closes popover.
@@ -828,12 +828,12 @@ interface ManifestStore {
       - [x] Selecting a mode calls `setActiveMode` and closes popover
       - [x] Unit tests: filter narrows list; active mode checkmark; selection calls setActiveMode; keyboard navigation
     - **Dependencies**: "Task: Implement `ModeButton` component"
-  - [ ] **Task: Wire `ModeButton` into `ChatInputCard` and `ChatView`**
+  - [x] **Task: Wire `ModeButton` into `ChatInputCard` and `ChatView`**
     - **Description**: `ChatInputCard` already has a `modeButton?: ReactNode` slot. In the parent component that renders `ChatInputCard` (likely `ChatView` or `AiChatPanel`), pass `<ModeButton />` as the `modeButton` prop. Ensure `ModePopover` is rendered in the correct position relative to the button.
     - **Acceptance criteria**:
-      - [ ] `ModeButton` visible in the chat input bottom bar at all times
-      - [ ] `ModePopover` opens and closes correctly relative to `ModeButton`
-      - [ ] No layout shift in `ChatInputCard` when mode button is present
+      - [x] `ModeButton` visible in the chat input bottom bar at all times
+      - [x] `ModePopover` opens and closes correctly relative to `ModeButton`
+      - [x] No layout shift in `ChatInputCard` when mode button is present
       - [ ] E2E test: mode button visible in chat panel; clicking opens popover
     - **Dependencies**: "Task: Implement `ModePopover` component"
 
