@@ -672,18 +672,18 @@ interface ManifestStore {
       - [ ] Plugin registered in `lib.rs` `run()` via `.plugin(tauri_plugin_fs::init())`
       - [ ] Project compiles with the new dependency
     - **Dependencies**: None
-  - [ ] **Task: Implement `manifest_loader.rs`**
+  - [x] **Task: Implement `manifest_loader.rs`**
     - **Description**: Create `src-tauri/src/manifest_loader.rs`. Implement `load_manifests(workspace_path: &str) -> Result<LoadedManifests, String>` which scans `.episteme/modes/`, `.episteme/doc-types/`, and `.episteme/processes/`. For each `.md` file, parse YAML frontmatter and body. Derive `id` from filename stem. For directory-form processes, read `process.md` as body and note stage paths. Define `ModeManifest`, `DocTypeManifest`, `ProcessManifest`, and `LoadedManifests` structs with serde derives. Do not use `deny_unknown_fields` — manifests must be forward-compatible. Return empty vecs (not an error) if `.episteme/` does not exist.
     - **Acceptance criteria**:
-      - [ ] `ModeManifest`, `DocTypeManifest`, `ProcessManifest`, `LoadedManifests` structs defined with correct fields per spec
-      - [ ] `ModeScope` enum defined with `Document`, `Workspace`, `Any` variants
-      - [ ] `id` derived from filename stem for all manifest types
-      - [ ] Parses frontmatter fields correctly for all three types
-      - [ ] Body (content after frontmatter) stored in `system_prompt` / `template` / `instructions`
-      - [ ] Directory-form process: reads `process.md` as body, stage paths preserved relative to process directory
-      - [ ] Missing `.episteme/` returns empty `LoadedManifests`, not an error
-      - [ ] Unknown frontmatter fields ignored (forward-compatible)
-      - [ ] Unit tests: valid mode, valid doc type, valid process (file and directory forms), missing `.episteme/`, malformed frontmatter
+      - [x] `ModeManifest`, `DocTypeManifest`, `ProcessManifest`, `LoadedManifests` structs defined with correct fields per spec
+      - [x] `ModeScope` enum defined with `Document`, `Workspace`, `Any` variants
+      - [x] `id` derived from filename stem for all manifest types
+      - [x] Parses frontmatter fields correctly for all three types
+      - [x] Body (content after frontmatter) stored in `system_prompt` / `template` / `instructions`
+      - [x] Directory-form process: reads `process.md` as body, stage paths preserved relative to process directory
+      - [x] Missing `.episteme/` returns empty `LoadedManifests`, not an error
+      - [x] Unknown frontmatter fields ignored (forward-compatible)
+      - [x] Unit tests: valid mode, valid doc type, valid process (file and directory forms), missing `.episteme/`, malformed frontmatter
     - **Dependencies**: None
   - [ ] **Task: Add `ManifestState` to AppState**
     - **Description**: Define `pub struct ManifestState(pub std::sync::Mutex<Option<LoadedManifests>>)` in `lib.rs` (or a dedicated `state.rs`). Register it in `run()` via `app.manage(ManifestState(std::sync::Mutex::new(None)))`. Import `LoadedManifests` from `manifest_loader`.
