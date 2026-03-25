@@ -3,6 +3,7 @@ import { invoke, Channel } from "@tauri-apps/api/core";
 import { parsePreferences } from "@/lib/preferences";
 import { useFileTreeStore } from "@/stores/fileTree";
 import { useWorkspaceStore } from "@/stores/workspace";
+import { useManifestStore } from "@/stores/manifests";
 import { type Session, type SessionMessage, type CanonicalMessage, type SessionScope, makeTextBlock, newSession } from "@/lib/session";
 
 export interface ChatMessage {
@@ -18,10 +19,6 @@ interface AiChatStore {
   authChecked: boolean;
   awsProfile: string | null;
   error: string | null;
-  authoringMode: boolean;
-  authoringFilePath: string | null;
-  activeSkill: string | null;
-  documentReloadCounter: number;
   currentSession: Session | null;
   sessions: Session[];
 
@@ -30,7 +27,6 @@ interface AiChatStore {
   sendMessage: (content: string) => Promise<void>;
   setAwsProfile: (profile: string) => Promise<void>;
   clearAwsProfile: () => Promise<void>;
-  startAuthoring: (skillName?: string | null) => void;
   loadSessions: () => Promise<void>;
   saveCurrentSession: () => Promise<void>;
   newSession: () => void;
@@ -49,10 +45,6 @@ export const useAiChatStore = create<AiChatStore>((set, get) => ({
   authChecked: false,
   awsProfile: null,
   error: null,
-  authoringMode: false,
-  authoringFilePath: null,
-  activeSkill: null,
-  documentReloadCounter: 0,
   currentSession: null,
   sessions: [],
 
@@ -129,10 +121,9 @@ export const useAiChatStore = create<AiChatStore>((set, get) => ({
 
     await get().saveCurrentSession();
 
-    const { authoringMode, authoringFilePath, activeSkill, awsProfile } = get();
-    const activeFilePath = authoringMode
-      ? authoringFilePath
-      : useFileTreeStore.getState().selectedFilePath;
+    const { awsProfile } = get();
+    const activeFilePath = useFileTreeStore.getState().selectedFilePath;
+    const activeMode = useManifestStore.getState().activeMode ?? "ask";
     const workspacePath = useWorkspaceStore.getState().folderPath;
     const currentMessages = get().currentSession?.messages_compacted ?? [];
 
@@ -180,10 +171,6 @@ export const useAiChatStore = create<AiChatStore>((set, get) => ({
         });
       } else if (event.type === "DocumentUpdated") {
         const filePath = event.data as string;
-        set((s) => ({
-          authoringFilePath: filePath,
-          documentReloadCounter: s.documentReloadCounter + 1,
-        }));
         useFileTreeStore.getState().selectFile(filePath);
       }
     };
@@ -191,11 +178,10 @@ export const useAiChatStore = create<AiChatStore>((set, get) => ({
     try {
       await invoke("ai_chat", {
         messages: currentMessages,
+        activeMode,
         activeFilePath,
         workspacePath,
         awsProfile,
-        authoringMode,
-        activeSkill,
         onEvent,
       });
     } catch (e) {
@@ -238,25 +224,13 @@ export const useAiChatStore = create<AiChatStore>((set, get) => ({
     }
   },
 
-  startAuthoring: (skillName?: string | null) => {
-    set({
-      authoringMode: true,
-      authoringFilePath: null,
-      activeSkill: skillName ?? null,
-      messages: [],
-      isStreaming: false,
-      streamingContent: "",
-      error: null,
-    });
-  },
-
   loadSessions: async () => {
     const sessions = await invoke<Session[]>("load_sessions");
     const selectedFilePath = useFileTreeStore.getState().selectedFilePath;
     const scope: SessionScope = selectedFilePath
       ? { type: "document", path: selectedFilePath }
       : { type: "workspace" };
-    const current = newSession("view", scope);
+    const current = newSession(useManifestStore.getState().activeMode ?? "ask", scope);
     set({ sessions, currentSession: current });
   },
 
@@ -288,15 +262,11 @@ export const useAiChatStore = create<AiChatStore>((set, get) => ({
       ? { type: "document", path: selectedFilePath }
       : { type: "workspace" };
     set({
-      currentSession: newSession("view", scope),
+      currentSession: newSession(useManifestStore.getState().activeMode ?? "ask", scope),
       messages: [],
       isStreaming: false,
       streamingContent: "",
       error: null,
-      authoringMode: false,
-      authoringFilePath: null,
-      activeSkill: null,
-      documentReloadCounter: 0,
     });
   },
 
@@ -317,8 +287,6 @@ export const useAiChatStore = create<AiChatStore>((set, get) => ({
       isStreaming: false,
       streamingContent: "",
       error: null,
-      authoringMode: false,
-      authoringFilePath: null,
     });
   },
 

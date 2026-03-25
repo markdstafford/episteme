@@ -42,9 +42,10 @@ describe("newSession action — scope derivation", () => {
     expect(useAiChatStore.getState().currentSession?.name).toBe("");
   });
 
-  it("sets last_mode to 'view'", () => {
+  it("sets last_mode from the active manifest mode", () => {
     useAiChatStore.getState().newSession();
-    expect(useAiChatStore.getState().currentSession?.last_mode).toBe("view");
+    // No manifest store mock in this file — store falls back to "ask"
+    expect(useAiChatStore.getState().currentSession?.last_mode).toBe("ask");
   });
 });
 
@@ -99,16 +100,16 @@ describe("resumeSession", () => {
     expect(useAiChatStore.getState().error).toBeNull();
   });
 
-  it("clears authoringMode and authoringFilePath on resume", () => {
+  it("clears streamingContent and error on resume", () => {
     const session = makeSession("abc", "hello");
     useAiChatStore.setState({
       sessions: [session],
-      authoringMode: true,
-      authoringFilePath: "/some/file.md",
+      streamingContent: "leftover",
+      error: "leftover error",
     });
     useAiChatStore.getState().resumeSession("abc");
-    expect(useAiChatStore.getState().authoringMode).toBe(false);
-    expect(useAiChatStore.getState().authoringFilePath).toBeNull();
+    expect(useAiChatStore.getState().streamingContent).toBe("");
+    expect(useAiChatStore.getState().error).toBeNull();
   });
 
   it("is a no-op when id is not found", () => {

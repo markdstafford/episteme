@@ -1,95 +1,135 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { useAiChatStore } from "@/stores/aiChat";
+import { useFileTreeStore } from "@/stores/fileTree";
 
 vi.mock("@tauri-apps/api/core", () => ({
   invoke: vi.fn().mockResolvedValue(undefined),
   Channel: vi.fn().mockImplementation(() => ({ onmessage: null })),
 }));
+
 vi.mock("@/stores/fileTree", () => ({
   useFileTreeStore: {
-    getState: () => ({ selectedFilePath: null, selectFile: vi.fn() }),
+    getState: vi.fn(() => ({
+      selectedFilePath: null,
+      selectFile: vi.fn(),
+    })),
   },
 }));
-vi.mock("@/stores/workspace", () => ({
-  useWorkspaceStore: { getState: () => ({ folderPath: "/workspace" }) },
+
+vi.mock("@/stores/manifests", () => ({
+  useManifestStore: {
+    getState: vi.fn(() => ({ activeMode: "draft" })),
+  },
 }));
+
+vi.mock("@/stores/workspace", () => ({
+  useWorkspaceStore: {
+    getState: vi.fn(() => ({ folderPath: "/workspace" })),
+  },
+}));
+
 vi.mock("@/lib/preferences", () => ({
   parsePreferences: vi.fn().mockReturnValue({}),
 }));
 
-describe("useAiChatStore authoring state", () => {
+describe("useAiChatStore - session behavior", () => {
   beforeEach(() => {
     useAiChatStore.setState({
-      messages: [{ role: "user", content: "hello" }],
+      messages: [],
       isStreaming: false,
       streamingContent: "",
       error: null,
-      authoringMode: false,
-      authoringFilePath: null,
-      activeSkill: null,
-      documentReloadCounter: 0,
-      isAuthenticated: false,
-      authChecked: false,
-      awsProfile: "test-profile",
+      currentSession: null,
+      sessions: [],
+    });
+    vi.clearAllMocks();
+  });
+
+  describe("newSession clears conversation state", () => {
+    it("resets messages to empty array", () => {
+      useAiChatStore.setState({
+        messages: [{ role: "user", content: "hello" }],
+      });
+
+      useAiChatStore.getState().newSession();
+
+      expect(useAiChatStore.getState().messages).toEqual([]);
+    });
+
+    it("resets isStreaming to false", () => {
+      useAiChatStore.setState({ isStreaming: true });
+
+      useAiChatStore.getState().newSession();
+
+      expect(useAiChatStore.getState().isStreaming).toBe(false);
+    });
+
+    it("resets streamingContent to empty string", () => {
+      useAiChatStore.setState({ streamingContent: "partial response" });
+
+      useAiChatStore.getState().newSession();
+
+      expect(useAiChatStore.getState().streamingContent).toBe("");
+    });
+
+    it("resets error to null", () => {
+      useAiChatStore.setState({ error: "some error" });
+
+      useAiChatStore.getState().newSession();
+
+      expect(useAiChatStore.getState().error).toBeNull();
+    });
+
+    it("resets all conversation fields together", () => {
+      useAiChatStore.setState({
+        messages: [{ role: "user", content: "hello" }],
+        isStreaming: true,
+        streamingContent: "partial",
+        error: "some error",
+      });
+
+      useAiChatStore.getState().newSession();
+
+      const s = useAiChatStore.getState();
+      expect(s.messages).toEqual([]);
+      expect(s.isStreaming).toBe(false);
+      expect(s.streamingContent).toBe("");
+      expect(s.error).toBeNull();
     });
   });
 
-  it("startAuthoring sets authoringMode and clears messages", () => {
-    useAiChatStore.getState().startAuthoring();
-    const s = useAiChatStore.getState();
-    expect(s.authoringMode).toBe(true);
-    expect(s.messages).toHaveLength(0);
-    expect(s.authoringFilePath).toBeNull();
-    expect(s.activeSkill).toBeNull();
-  });
+  describe("DocumentUpdated event", () => {
+    it("calls useFileTreeStore.getState().selectFile() with the file path", () => {
+      const mockSelectFile = vi.fn();
+      vi.mocked(useFileTreeStore.getState).mockReturnValue({
+        selectedFilePath: null,
+        selectFile: mockSelectFile,
+      });
 
-  it("newSession resets authoring state", () => {
-    useAiChatStore.setState({
-      authoringMode: true,
-      authoringFilePath: "/workspace/doc.md",
-      activeSkill: "product-description",
-      documentReloadCounter: 3,
-    });
-    useAiChatStore.getState().newSession();
-    const s = useAiChatStore.getState();
-    expect(s.authoringMode).toBe(false);
-    expect(s.authoringFilePath).toBeNull();
-    expect(s.activeSkill).toBeNull();
-    expect(s.documentReloadCounter).toBe(0);
-  });
+      // Simulate what the onEvent Channel handler does when it receives DocumentUpdated
+      const filePath = "/workspace/new-doc.md";
+      useFileTreeStore.getState().selectFile(filePath);
 
-  it("startAuthoring clears streamingContent and error", () => {
-    useAiChatStore.setState({ streamingContent: "...", error: "some error" });
-    useAiChatStore.getState().startAuthoring();
-    const s = useAiChatStore.getState();
-    expect(s.streamingContent).toBe("");
-    expect(s.error).toBeNull();
-  });
-
-  it("DocumentUpdated event updates authoringFilePath and increments documentReloadCounter", () => {
-    useAiChatStore.setState({
-      authoringFilePath: null,
-      documentReloadCounter: 0,
+      expect(mockSelectFile).toHaveBeenCalledWith(filePath);
+      expect(mockSelectFile).toHaveBeenCalledTimes(1);
     });
 
-    // Simulate what the onEvent Channel handler does when it receives DocumentUpdated
-    useAiChatStore.setState((s) => ({
-      authoringFilePath: "/workspace/new-doc.md",
-      documentReloadCounter: s.documentReloadCounter + 1,
-    }));
+    it("calls selectFile with each updated path on multiple DocumentUpdated events", () => {
+      const mockSelectFile = vi.fn();
+      vi.mocked(useFileTreeStore.getState).mockReturnValue({
+        selectedFilePath: null,
+        selectFile: mockSelectFile,
+      });
 
-    const s = useAiChatStore.getState();
-    expect(s.authoringFilePath).toBe("/workspace/new-doc.md");
-    expect(s.documentReloadCounter).toBe(1);
-  });
+      const paths = ["/workspace/doc-a.md", "/workspace/doc-b.md", "/workspace/doc-c.md"];
+      for (const p of paths) {
+        useFileTreeStore.getState().selectFile(p);
+      }
 
-  it("multiple DocumentUpdated events increment documentReloadCounter each time", () => {
-    useAiChatStore.setState({ documentReloadCounter: 0 });
-
-    useAiChatStore.setState((s) => ({ documentReloadCounter: s.documentReloadCounter + 1 }));
-    useAiChatStore.setState((s) => ({ documentReloadCounter: s.documentReloadCounter + 1 }));
-    useAiChatStore.setState((s) => ({ documentReloadCounter: s.documentReloadCounter + 1 }));
-
-    expect(useAiChatStore.getState().documentReloadCounter).toBe(3);
+      expect(mockSelectFile).toHaveBeenCalledTimes(3);
+      expect(mockSelectFile).toHaveBeenNthCalledWith(1, "/workspace/doc-a.md");
+      expect(mockSelectFile).toHaveBeenNthCalledWith(2, "/workspace/doc-b.md");
+      expect(mockSelectFile).toHaveBeenNthCalledWith(3, "/workspace/doc-c.md");
+    });
   });
 });
