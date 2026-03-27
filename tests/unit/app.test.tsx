@@ -236,6 +236,20 @@ describe("App", () => {
 });
 
 describe("FooterBar in App", () => {
+  beforeEach(() => {
+    vi.mocked(listen).mockResolvedValue(vi.fn());
+    vi.mocked(invoke).mockResolvedValue({});
+    useWorkspaceStore.setState({
+      folderPath: null,
+      isLoading: false,
+      error: null,
+      openFolder: vi.fn(),
+      loadSavedFolder: vi.fn(),
+    });
+    useSettingsStore.setState({ settingsOpen: false, activeCategory: "ai" });
+    useShortcutsStore.setState({ actions: {}, actionsRestricted: false });
+  });
+
   it("renders FooterBar in the no-folder layout", () => {
     render(<App />);
     expect(screen.getByRole("button", { name: /hide sidebar/i })).toBeInTheDocument();
