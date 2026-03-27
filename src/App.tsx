@@ -187,8 +187,6 @@ function App() {
         <TitleBar
           folderPath={null}
           onStartAuthoring={() => {}}
-          aiPanelOpen={aiPanelOpen}
-          onToggleAiPanel={() => setAiPanelOpen((v) => !v)}
         />
         <div className="flex flex-1 items-center justify-center bg-(--color-bg-app)">
           <div className="text-center">
@@ -216,8 +214,6 @@ function App() {
         <TitleBar
           folderPath={null}
           onStartAuthoring={() => {}}
-          aiPanelOpen={aiPanelOpen}
-          onToggleAiPanel={() => setAiPanelOpen((v) => !v)}
         />
         <WelcomeScreen />
         <FooterBar
@@ -237,8 +233,6 @@ function App() {
       <TitleBar
         folderPath={folderPath}
         onStartAuthoring={() => {}}
-        aiPanelOpen={aiPanelOpen}
-        onToggleAiPanel={() => setAiPanelOpen((v) => !v)}
       />
       <div className="flex flex-1 min-h-0">
         {sidebarVisible && (
