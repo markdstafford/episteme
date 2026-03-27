@@ -7,8 +7,13 @@ import { parseDocument, resolveInternalLink } from "@/lib/markdown";
 import { MarkdownRenderer } from "@/components/MarkdownRenderer";
 import { FrontmatterBar } from "@/components/FrontmatterBar";
 import { Loader2 } from "lucide-react";
+import { computeReadingTime } from "@/lib/readingTime";
 
-export function DocumentViewer() {
+interface DocumentViewerProps {
+  onReadingTimeChange?: (minutes: number | null) => void;
+}
+
+export function DocumentViewer({ onReadingTimeChange }: DocumentViewerProps = {}) {
   const selectedFilePath = useFileTreeStore((s) => s.selectedFilePath);
   const selectFile = useFileTreeStore((s) => s.selectFile);
   const workspacePath = useWorkspaceStore((s) => s.folderPath);
@@ -24,6 +29,7 @@ const [content, setContent] = useState<string | null>(null);
     if (!selectedFilePath) {
       setContent(null);
       setFrontmatter(null);
+      onReadingTimeChange?.(null);
       return;
     }
 
@@ -41,11 +47,13 @@ const [content, setContent] = useState<string | null>(null);
         const parsed = parseDocument(raw);
         setContent(parsed.content);
         setFrontmatter(parsed.frontmatter);
+        onReadingTimeChange?.(computeReadingTime(parsed.content));
       } catch (e) {
         if (cancelled) return;
         setError(e instanceof Error ? e.message : String(e));
         setContent(null);
         setFrontmatter(null);
+        onReadingTimeChange?.(null);
       } finally {
         if (!cancelled) setIsLoading(false);
       }

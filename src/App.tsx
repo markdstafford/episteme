@@ -253,8 +253,7 @@ function App() {
         ) : (
           <div className="flex flex-1 min-w-0 overflow-hidden">
             <div className="flex-1 flex flex-col overflow-hidden">
-              {/* TODO Task 5: add onReadingTimeChange={setReadingTime} */}
-              <DocumentViewer />
+              <DocumentViewer onReadingTimeChange={setReadingTime} />
             </div>
             {aiPanelOpen && <AiChatPanel />}
           </div>
