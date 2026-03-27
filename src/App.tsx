@@ -17,11 +17,14 @@ import { Loader2 } from "lucide-react";
 import { DesignKitchen } from "@/components/DesignKitchen";
 import { ShortcutsPanel } from "@/components/ShortcutsPanel";
 import { AiChatPanel } from "@/components/AiChatPanel";
+import { FooterBar } from "@/components/FooterBar";
 
 function App() {
   const [showKitchenSink, setShowKitchenSink] = useState(false);
   const [shortcutsPanelOpen, setShortcutsPanelOpen] = useState(false);
   const [aiPanelOpen, setAiPanelOpen] = useState(false);
+  const [sidebarVisible, setSidebarVisible] = useState(true);
+  const [readingTime, setReadingTime] = useState<number | null>(null);
   const folderPath = useWorkspaceStore((s) => s.folderPath);
   const isLoading = useWorkspaceStore((s) => s.isLoading);
   const loadSavedFolder = useWorkspaceStore((s) => s.loadSavedFolder);
@@ -195,6 +198,13 @@ function App() {
             </p>
           </div>
         </div>
+        <FooterBar
+          sidebarVisible={sidebarVisible}
+          onToggleSidebar={() => setSidebarVisible((v) => !v)}
+          aiPanelOpen={aiPanelOpen}
+          onToggleAiPanel={() => setAiPanelOpen((v) => !v)}
+          readingTime={null}
+        />
         {shortcutsPanelOverlay}
       </div>
     );
@@ -210,6 +220,13 @@ function App() {
           onToggleAiPanel={() => setAiPanelOpen((v) => !v)}
         />
         <WelcomeScreen />
+        <FooterBar
+          sidebarVisible={sidebarVisible}
+          onToggleSidebar={() => setSidebarVisible((v) => !v)}
+          aiPanelOpen={aiPanelOpen}
+          onToggleAiPanel={() => setAiPanelOpen((v) => !v)}
+          readingTime={null}
+        />
         {shortcutsPanelOverlay}
       </div>
     );
@@ -224,9 +241,11 @@ function App() {
         onToggleAiPanel={() => setAiPanelOpen((v) => !v)}
       />
       <div className="flex flex-1 min-h-0">
-        <Sidebar>
-          <FileTree />
-        </Sidebar>
+        {sidebarVisible && (
+          <Sidebar>
+            <FileTree />
+          </Sidebar>
+        )}
         {settingsOpen ? (
           <div className="flex-1 flex flex-col animate-fade-in">
             <SettingsPanel />
@@ -234,12 +253,20 @@ function App() {
         ) : (
           <div className="flex flex-1 min-w-0 overflow-hidden">
             <div className="flex-1 flex flex-col overflow-hidden">
+              {/* TODO Task 5: add onReadingTimeChange={setReadingTime} */}
               <DocumentViewer />
             </div>
             {aiPanelOpen && <AiChatPanel />}
           </div>
         )}
       </div>
+      <FooterBar
+        sidebarVisible={sidebarVisible}
+        onToggleSidebar={() => setSidebarVisible((v) => !v)}
+        aiPanelOpen={aiPanelOpen}
+        onToggleAiPanel={() => setAiPanelOpen((v) => !v)}
+        readingTime={readingTime}
+      />
       {shortcutsPanelOverlay}
     </div>
   );
