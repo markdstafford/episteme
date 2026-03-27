@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { FooterBar } from "@/components/FooterBar";
 
 const defaultProps = {
@@ -10,6 +10,8 @@ const defaultProps = {
   onToggleAiPanel: vi.fn(),
   readingTime: null,
 };
+
+beforeEach(() => { vi.clearAllMocks(); });
 
 describe("FooterBar", () => {
   it("renders sidebar toggle button", () => {
