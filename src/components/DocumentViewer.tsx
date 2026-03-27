@@ -63,7 +63,7 @@ const [content, setContent] = useState<string | null>(null);
     return () => {
       cancelled = true;
     };
-  }, [selectedFilePath]);
+  }, [selectedFilePath, onReadingTimeChange]);
 
   const handleLinkClick = useCallback(
     (href: string) => {
