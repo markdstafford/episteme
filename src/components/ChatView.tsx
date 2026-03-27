@@ -132,7 +132,7 @@ export function ChatView({ onShowHistory, onNewSession }: ChatViewProps) {
   return (
     <div
       ref={panelRef}
-      className="w-96 flex flex-col h-full border-l border-(--color-border-subtle) bg-(--color-bg-base)"
+      className="w-[var(--width-ai-panel)] flex flex-col h-full border-l border-(--color-border-subtle) bg-(--color-bg-base)"
     >
       {/* Header */}
       <div className="flex items-center justify-between px-4 h-(--height-titlebar) border-b border-(--color-border-subtle) flex-shrink-0">
