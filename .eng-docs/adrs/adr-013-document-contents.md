@@ -6,7 +6,7 @@ decided_by: markdstafford
 superseded_by: null
 ---
 
-# ADR 013: Document Content Boundary
+# ADR 013: Document Contents
 
 ## Status
 
