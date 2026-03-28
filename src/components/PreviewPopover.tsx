@@ -9,6 +9,7 @@ import { parsePreferences } from '@/lib/preferences'
 // Design token values — must stay in sync with app.css @theme
 const SIDEBAR_WIDTH_PX = 244   // --width-sidebar
 const TITLEBAR_HEIGHT_PX = 32  // --height-titlebar
+const FOOTER_HEIGHT_PX = 24   // --height-footer
 const POPOVER_SIDE_OFFSET = 8  // sideOffset prop — popover starts this far right of the sidebar edge
 const POPOVER_RIGHT_MARGIN = 16 // breathing room before the app's right edge
 
@@ -72,7 +73,7 @@ export const PreviewPopover = forwardRef<PreviewPopoverHandle, PreviewPopoverPro
           if (cancelled) return
           const prefs = parsePreferences(raw)
           const contentW = window.innerWidth - SIDEBAR_WIDTH_PX - POPOVER_SIDE_OFFSET - POPOVER_RIGHT_MARGIN
-          const contentH = window.innerHeight - TITLEBAR_HEIGHT_PX
+          const contentH = window.innerHeight - TITLEBAR_HEIGHT_PX - FOOTER_HEIGHT_PX
           setWidthPx(percentToPx(prefs.preview_width, contentW))
           setHeightPx(percentToPx(prefs.preview_height, contentH))
         })
