@@ -22,7 +22,7 @@ class CodeBlockErrorBoundary extends Component<
   }
 
   componentDidCatch(error: Error) {
-    if (process.env.NODE_ENV !== 'production') {
+    if (import.meta.env.DEV) {
       console.error('[CodeBlockErrorBoundary] Unexpected renderer failure:', error)
     }
   }
@@ -63,6 +63,7 @@ export function CodeBlockDispatcher({ node }: CodeBlockDispatcherProps) {
 // TipTap extension — extends the base CodeBlock to add our React node view
 export const CodeBlock = CodeBlockBase.extend({
   addNodeView() {
-    return ReactNodeViewRenderer(CodeBlockDispatcher)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return ReactNodeViewRenderer(CodeBlockDispatcher as any)
   },
 })

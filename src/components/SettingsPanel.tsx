@@ -74,7 +74,7 @@ function CssLengthSetting({ id, label }: { id: string; label: string }) {
     invoke<Preferences>("load_preferences")
       .then((prefs) => {
         setFullPrefs(prefs);
-        setValue((prefs as Record<string, string>)[id] ?? "");
+        setValue((prefs as Record<string, unknown>)[id] as string ?? "");
         setPrefsLoaded(true);
       })
       .catch(() => {});

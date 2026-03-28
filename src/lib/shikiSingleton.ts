@@ -17,7 +17,8 @@ export function getHighlighter(): Promise<Highlighter> {
         import('@catppuccin/vscode/themes/mocha.json'),
       ])
       return createHighlighter({
-        themes: [latteTheme, mochaTheme],
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        themes: [latteTheme as any, mochaTheme as any],
         langs: [...SUPPORTED_LANGUAGES],
       })
     })()
