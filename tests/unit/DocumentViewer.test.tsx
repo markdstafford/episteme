@@ -219,3 +219,40 @@ describe("DocumentViewer", () => {
     ).toBeInTheDocument();
   });
 });
+
+describe("DocumentViewer reading time", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    useFileTreeStore.setState({
+      nodes: [],
+      expandedPaths: new Set(),
+      selectedFilePath: null,
+      isLoading: false,
+      error: null,
+    });
+    useWorkspaceStore.setState({
+      folderPath: "/workspace",
+      isLoading: false,
+      error: null,
+    });
+    useAiChatStore.setState({ documentReloadCounter: 0 } as any);
+  });
+
+  it("calls onReadingTimeChange with null when no file selected", () => {
+    const onReadingTimeChange = vi.fn();
+    render(<DocumentViewer onReadingTimeChange={onReadingTimeChange} />);
+    expect(onReadingTimeChange).toHaveBeenCalledWith(null);
+  });
+
+  it("calls onReadingTimeChange with computed value when file loads", async () => {
+    const onReadingTimeChange = vi.fn();
+    // 200 words = 1 min
+    const content = Array(200).fill("word").join(" ");
+    mockInvoke.mockResolvedValue(content);
+    useFileTreeStore.setState({ selectedFilePath: "/test/doc.md" });
+    render(<DocumentViewer onReadingTimeChange={onReadingTimeChange} />);
+    await waitFor(() => {
+      expect(onReadingTimeChange).toHaveBeenCalledWith(1);
+    });
+  });
+});

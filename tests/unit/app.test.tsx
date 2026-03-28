@@ -1,4 +1,5 @@
 import { render, screen, waitFor, fireEvent } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import App from "@/App";
 import { useWorkspaceStore } from "@/stores/workspace";
@@ -231,5 +232,54 @@ describe("App", () => {
     // Escape again closes settings
     fireEvent.keyDown(document, { code: "Escape" });
     expect(useSettingsStore.getState().settingsOpen).toBe(false);
+  });
+});
+
+describe("FooterBar in App", () => {
+  beforeEach(() => {
+    vi.mocked(listen).mockResolvedValue(vi.fn());
+    vi.mocked(invoke).mockResolvedValue({});
+    useWorkspaceStore.setState({
+      folderPath: null,
+      isLoading: false,
+      error: null,
+      openFolder: vi.fn(),
+      loadSavedFolder: vi.fn(),
+    });
+    useSettingsStore.setState({ settingsOpen: false, activeCategory: "ai" });
+    useShortcutsStore.setState({ actions: {}, actionsRestricted: false });
+  });
+
+  it("renders FooterBar in the no-folder layout", () => {
+    render(<App />);
+    expect(screen.getByRole("button", { name: /hide sidebar/i })).toBeInTheDocument();
+  });
+
+  it("renders FooterBar in the loading layout", () => {
+    useWorkspaceStore.setState({ isLoading: true, folderPath: null });
+    render(<App />);
+    expect(screen.getByRole("button", { name: /hide sidebar/i })).toBeInTheDocument();
+  });
+
+  it("renders FooterBar in the main layout", () => {
+    useWorkspaceStore.setState({ folderPath: "/some/path" });
+    render(<App />);
+    expect(screen.getByRole("button", { name: /hide sidebar/i })).toBeInTheDocument();
+  });
+
+  it("hides sidebar when sidebar toggle is clicked", async () => {
+    useWorkspaceStore.setState({ folderPath: "/some/path" });
+    render(<App />);
+    expect(document.querySelector("aside")).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: /hide sidebar/i }));
+    expect(document.querySelector("aside")).not.toBeInTheDocument();
+  });
+
+  it("shows sidebar again when toggle is clicked a second time", async () => {
+    useWorkspaceStore.setState({ folderPath: "/some/path" });
+    render(<App />);
+    await userEvent.click(screen.getByRole("button", { name: /hide sidebar/i }));
+    await userEvent.click(screen.getByRole("button", { name: /show sidebar/i }));
+    expect(document.querySelector("aside")).toBeInTheDocument();
   });
 });

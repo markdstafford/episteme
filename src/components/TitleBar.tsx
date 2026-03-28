@@ -1,16 +1,14 @@
 import { useState } from "react";
-import { ChevronLeft, ChevronRight, Share2, Plus, Aperture, MessageSquare } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Aperture } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { CreateNewDialog } from "@/components/CreateNewDialog";
 
 interface TitleBarProps {
   folderPath: string | null;
-  onStartAuthoring: (skillName: string | null) => void;
-  aiPanelOpen?: boolean;
-  onToggleAiPanel?: () => void;
+  onStartAuthoring?: (skillName: string | null) => void;
 }
 
-export function TitleBar({ folderPath, onStartAuthoring, aiPanelOpen, onToggleAiPanel }: TitleBarProps) {
+export function TitleBar({ folderPath, onStartAuthoring }: TitleBarProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
 
   return (
@@ -98,23 +96,6 @@ export function TitleBar({ folderPath, onStartAuthoring, aiPanelOpen, onToggleAi
             variant="ghost"
             size="sm"
             iconOnly
-            aria-label="Toggle AI panel"
-            onClick={onToggleAiPanel}
-            style={{
-              color: aiPanelOpen
-                ? "var(--color-accent)"
-                : "var(--color-text-tertiary)",
-            }}
-          >
-            <MessageSquare size={16} />
-          </Button>
-          <Button variant="ghost" size="sm" iconOnly aria-label="Share" disabled style={{ color: "var(--color-text-tertiary)" }}>
-            <Share2 size={16} />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            iconOnly
             aria-label="New document"
             disabled={folderPath === null}
             onClick={() => setDialogOpen(true)}
@@ -128,7 +109,7 @@ export function TitleBar({ folderPath, onStartAuthoring, aiPanelOpen, onToggleAi
         <CreateNewDialog
           workspacePath={folderPath}
           onSelect={(skillName) => {
-            onStartAuthoring(skillName);
+            onStartAuthoring?.(skillName);
             setDialogOpen(false);
           }}
           onClose={() => setDialogOpen(false)}

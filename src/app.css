@@ -43,6 +43,8 @@
   --height-nav-item: 28px;
   --height-toolbar: 39px;
   --height-titlebar: 32px;
+  --height-footer: 24px;
+  --width-ai-panel: 384px;
   --width-sidebar: 244px;
   --doc-content-width: 680px;
 
@@ -86,6 +88,10 @@
   --shadow-base: 0 2px 8px oklch(0% 0 0 / 0.12);
   --shadow-lg: 0 8px 24px oklch(0% 0 0 / 0.16);
   --shadow-inset-border: inset 0 0 0 1px;
+}
+
+html, body {
+  overflow: hidden;
 }
 
 /* Dark mode tokens */
