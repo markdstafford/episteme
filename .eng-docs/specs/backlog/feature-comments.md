@@ -140,62 +140,133 @@ flowchart TD
 
 ### Key UI components
 
+Message rendering follows the existing `ChatMessage` pattern: user messages right-aligned with accent background; AI messages left-aligned with subtle background. Thread messages (multi-participant) add a name + timestamp above each bubble to distinguish participants.
+
 #### Comment view (AI panel state)
 
 Comment view is a state of the AI panel, not a document mode. It opens when the user clicks the comment trigger in the document margin. The quoted text block is pinned at the top throughout the session and updates if the anchor is relocated.
 
 The input uses the existing `ChatInputCard` pattern. Placeholder: "What's your question or concern?"
 
-#### Queued message
-
-Appears in the comment view message stack when a comment is staged for sending. Shows the version that will be sent (AI-enhanced by default) with a toggle group to switch between versions and a countdown pill to cancel.
-
+**State 1 — just opened:**
 ```
-│  [👤]  just now                  [queued]    │
+┌──────────────────────────────────────────────┐
+│  [bot-message-square]  New comment     [×]   │
+├──────────────────────────────────────────────┤
+│  ╔════════════════════════════════════════╗  │
+│  ║ "The retry queue throughput target     ║  │
+│  ║  is set to 1,000 req/s per node"       ║  │
+│  ╚════════════════════════════════════════╝  │
+├──────────────────────────────────────────────┤
 │  ┌──────────────────────────────────────┐   │
-│  │  The throughput target is already    │   │
+│  │  What's your question or concern?    │   │
+│  ├──────────────────────────────────────┤   │
+│  │                                [↑]   │   │
+│  └──────────────────────────────────────┘   │
+└──────────────────────────────────────────────┘
+```
+
+**State 2 — user sent, AI processing:**
+```
+│  ╔════════════════════════════════════════╗  │
+│  ║ "The retry queue throughput target..." ║  │
+│  ╚════════════════════════════════════════╝  │
+│                                              │
+│                        this number seems low │
+│                                   [accent ▶] │
+│                                              │
+│  [subtle ▶] ·  ·  ·                          │
+```
+
+**State 3 — deflection attempt:**
+```
+│                        this number seems low │
+│                                   [accent ▶] │
+│                                              │
+│  [subtle ▶] This is covered in the product  │
+│  description — failed notifications surface  │
+│  as warnings within 60 seconds (Goals,       │
+│  item 3). Does that answer your question?    │
+│                                              │
+│  ┌──────────────────────────────────────┐   │
+│  │  Reply...                            │   │
+│  ├──────────────────────────────────────┤   │
+│  │  [No, file anyway]             [↑]   │   │
+│  └──────────────────────────────────────┘   │
+```
+
+`[No, file anyway]` in the left slot of the input as a quick action; user can also reply naturally.
+
+**State 4 — redirect + queued (anchor already moved, quoted text updated):**
+```
+│  ╔════════════════════════════════════════╗  │
+│  ║ "The infrastructure constraint sets   ║  │
+│  ║  the throughput ceiling at..."        ║  │  ← updated anchor
+│  ╚════════════════════════════════════════╝  │
+│                                              │
+│                        this number seems low │
+│                                   [accent ▶] │
+│                                              │
+│  [subtle ▶] Got it. I've moved your comment  │
+│  to the Constraints section where this       │
+│  target originates — it'll land better       │
+│  there.                      [Go back]       │
+│                                              │
+│  ┌──────────────────────────────────────┐   │
+│  │  The throughput target is already    │   │  ← queued card
 │  │  exceeded on busy days — the         │   │
 │  │  constraint driving this needs       │   │
 │  │  revisiting.                         │   │
 │  │                                      │   │
-│  │  [blocking?]  [✨▌👤] [× ████░░ 24s]│   │
+│  │  [blocking?] [✨▌👤] [× ████░░ 24s] │   │
 │  └──────────────────────────────────────┘   │
 ```
 
-- **Toggle group** (`[✨▌👤]`): Radix `ToggleGroup`. Selected segment has accent background. Switches the displayed text and the version that will be sent. User avatar shown at top regardless of selection.
-- **Countdown pill** (`[× ████░░ 24s]`): tappable — clicking cancels the comment entirely. Progress bar drains to zero then comment sends and animates into a normal message bubble.
-- **Blocking toggle** (`[blocking?]`): sets blocking/non-blocking before send. Remains toggleable on the thread after send.
+`[Go back]` is inline on the AI message. Quoted block at top updates immediately when anchor moves and again if user reverts.
+
+#### Queued message
+
+Appears in the comment view or thread view message stack when a comment is staged for sending. AI-enhanced version shown by default.
+
+- **Toggle group** (`[✨▌👤]`): Radix `ToggleGroup`. Selected segment has accent background. Switches the displayed text and the version that will be sent.
+- **Countdown pill** (`[× ████░░ 24s]`): tappable — clicking cancels. Progress bar drains to zero, then comment sends and animates into a normal message bubble.
+- **Blocking toggle** (`[blocking?]`): sets blocking/non-blocking on the thread before send.
 
 #### Thread view (AI panel state)
 
-Same panel state as comment view but shows an existing thread. Quoted text pinned at top. Messages in chronological order. Input at bottom with same queued message behaviour on reply.
+Same panel state as comment view but shows an existing thread. Quoted text pinned at top. Multi-participant messages show name + timestamp above each bubble. Input at bottom with same queued message behaviour on reply.
 
 ```
+┌──────────────────────────────────────────────┐
 │  [bot-message-square]  Thread          [×]   │
+├──────────────────────────────────────────────┤
 │  ╔════════════════════════════════════════╗  │
 │  ║ "The retry queue throughput target     ║  │
 │  ║  is set to 1,000 req/s per node"       ║  │
 │  ╚════════════════════════════════════════╝  │
 │                                  [blocking]  │
 │                                              │
-│  [👤]  Raquel  ·  2h ago                     │
-│  The throughput target is already exceeded   │
-│  on busy days — the constraint driving       │
-│  this needs revisiting.                      │
+│  Raquel  ·  2h ago                           │
+│  [subtle ▶] The throughput target is         │
+│  already exceeded on busy days — the         │
+│  constraint driving this needs revisiting.   │
 │                                              │
 │  ───────────────────────────────────────     │
 │                                              │
-│  [👤]  Eric  ·  1h ago                       │
-│  Updated the constraint and flagged the      │
-│  throughput target for revision before       │
-│  implementation begins.                      │
+│  Eric  ·  1h ago                             │
+│  [subtle ▶] Updated the constraint and       │
+│  flagged the throughput target for           │
+│  revision before implementation begins.      │
 │                          [resolved pending]  │
 │                                              │
+├──────────────────────────────────────────────┤
 │  ┌──────────────────────────────────────┐   │
 │  │  Reply...                            │   │
 │  ├──────────────────────────────────────┤   │
 │  │                                [↑]   │   │
 │  └──────────────────────────────────────┘   │
+└──────────────────────────────────────────────┘
+```
 
 ## Tech spec
 
