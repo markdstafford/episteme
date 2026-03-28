@@ -230,11 +230,43 @@ Appears in the comment view or thread view message stack when a comment is stage
 
 - **Toggle group** (`[✨▌👤]`): Radix `ToggleGroup`. Selected segment has accent background. Switches the displayed text and the version that will be sent.
 - **Countdown pill** (`[× ████░░ 24s]`): tappable — clicking cancels. Progress bar drains to zero, then comment sends and animates into a normal message bubble.
-- **Blocking toggle** (`[blocking?]`): sets blocking/non-blocking on the thread before send.
+- **Blocking toggle** (`[octagon-x]`): sets blocking/non-blocking on the thread before send. Uses the same blocking row component described below.
+
+#### Blocking row
+
+Appears below the quoted text block in both comment view and thread view. Tracks blocking status on the thread with a full audit history.
+
+- **Icon**: `octagon-x` from Lucide. Clicking the icon toggles blocking status. Only the icon is clickable.
+- **Non-blocking state**: icon in `--color-text-tertiary` (subtle/muted). No label text.
+- **Blocking state**: icon in `--color-state-danger`. Label "blocking" appears inline as confirmation of the toggled state.
+- **Attribution**: most recent action shown as `name · time ago` to the right of the icon/label.
+- **Hover**: hovering anywhere over the row reveals a history popover anchored to the row. Icon brightens to `--color-text-primary` on row hover to hint interactivity.
+
+**Non-blocking:**
+```
+│  [octagon-x · tertiary]  Raquel · 2h ago     │
+```
+
+**Blocking:**
+```
+│  [octagon-x · danger]  blocking · Aaron · 30m ago   │
+```
+
+**History popover (row hover):**
+```
+│  ┌──────────────────────────────────┐         │
+│  │  ● blocking      Raquel · 2h    │         │
+│  │  ○ non-blocking  Eric · 1h      │         │
+│  │  ● blocking      Aaron · 30m    │         │
+│  └──────────────────────────────────┘         │
+│  [octagon-x · danger]  blocking · Aaron · 30m │
+```
+
+Blocking status is a property of the thread, not individual messages. Any participant can toggle it at any time. An open blocking thread prevents document progression regardless of when it was marked blocking.
 
 #### Thread view (AI panel state)
 
-Same panel state as comment view but shows an existing thread. Quoted text pinned at top. Multi-participant messages show name + timestamp above each bubble. Input at bottom with same queued message behaviour on reply.
+Same panel state as comment view but shows an existing thread. Quoted text pinned at top, followed by the blocking row. Multi-participant messages show avatar + name + timestamp above each bubble. Messages from the current user are right-aligned (accent); all others are left-aligned (subtle). Input at bottom with same queued message behaviour on reply.
 
 ```
 ┌──────────────────────────────────────────────┐
@@ -244,16 +276,16 @@ Same panel state as comment view but shows an existing thread. Quoted text pinne
 │  ║ "The retry queue throughput target     ║  │
 │  ║  is set to 1,000 req/s per node"       ║  │
 │  ╚════════════════════════════════════════╝  │
-│                                  [blocking]  │
+│  [octagon-x · danger]  blocking · Raquel · 2h│
 │                                              │
-│  Raquel  ·  2h ago                           │
+│  [av] Raquel  ·  2h ago                      │
 │  [subtle ▶] The throughput target is         │
 │  already exceeded on busy days — the         │
 │  constraint driving this needs revisiting.   │
 │                                              │
 │  ───────────────────────────────────────     │
 │                                              │
-│  Eric  ·  1h ago                             │
+│  [av] Eric  ·  1h ago                        │
 │  [subtle ▶] Updated the constraint and       │
 │  flagged the throughput target for           │
 │  revision before implementation begins.      │
