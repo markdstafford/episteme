@@ -248,25 +248,28 @@ Appears in the comment view message stack when a comment is staged for sending. 
 
 Appears below the quoted text block in thread view. Hidden in comment view until the first comment sends and a thread is created. Tracks blocking status with a full audit history.
 
-- **Icon**: `octagon-x` from Lucide. Only the icon is clickable — clicking toggles blocking status.
-- **No history yet** (default state, never explicitly toggled): icon only, no text.
+Thread **status** (`open` | `resolved`) and **blocking** (boolean) are independent. Blocking is only toggleable when status = open. When status = resolved, the octagon-x icon is non-interactive but its value is preserved in case the thread re-opens.
+
+- **Icon**: `octagon-x` from Lucide. Only the icon is clickable — only when status = open.
+- **No history yet** (default, never explicitly toggled): icon only, no text.
 - **Non-blocking** (explicitly set): icon in `--color-text-tertiary` + `name · time ago`.
-- **Blocking**: icon in `--color-state-danger` + label "blocking" + `name · time ago`.
-- **Hover anywhere on the row**: history popover appears. Icon brightens to `--color-text-primary` on hover to hint interactivity.
+- **Blocking** (status = open): icon in `--color-state-danger` + label "blocking" + `name · time ago`.
+- **Resolved** (any blocking value): icon in `--color-state-success`, non-interactive.
+- **Hover anywhere on the row**: history popover appears. Icon brightens to `--color-text-primary` on hover (only when interactive).
 
 **Default (never toggled):**
 ```
 │  [octagon-x · tertiary]                          │
 ```
 
-**Non-blocking (explicitly set):**
-```
-│  [octagon-x · tertiary]  Raquel · 2h ago         │
-```
-
-**Blocking:**
+**Blocking (status = open):**
 ```
 │  [octagon-x · danger]  blocking · Aaron · 30m ago │
+```
+
+**Resolved (blocking preserved but dormant):**
+```
+│  [octagon-x · success · disabled]  resolved · Eric · 1h ago │
 ```
 
 **History popover (row hover):**
@@ -276,14 +279,47 @@ Appears below the quoted text block in thread view. Hidden in comment view until
 │  │  ○ non-blocking  Eric · 1h      │            │
 │  │  ● blocking      Aaron · 30m    │            │
 │  └──────────────────────────────────┘            │
-│  [octagon-x · danger]  blocking · Aaron · 30m    │
 ```
 
-Blocking status is a property of the thread, not individual messages. Any participant can toggle it at any time. An open blocking thread prevents document progression regardless of when it was marked blocking.
+Blocking is a property of the thread, not individual messages. Any participant can toggle it while the thread is open. An open blocking thread prevents document progression regardless of when it was marked blocking.
+
+#### Virtual cards
+
+Persistent AI-generated cards that appear at the end of the message stream in thread view, above the input. Which card shows depends on thread status and the current user's role relative to the document.
+
+**Card A — doc author, status = open**
+
+The document author (identified from frontmatter) sees a card prompting resolution:
+
+```
+│  [✨]  Ready to mark this thread as resolved?    │
+│                                                  │
+│  [Mark as resolved]                              │
+```
+
+**Card B — all users, status = resolved**
+
+All users see the resolved card. Re-opening requires inline confirmation to prevent accidental clicks:
+
+*Default state:*
+```
+│  [✨]  This thread was marked as resolved.       │
+│                                                  │
+│  [Re-open]                                       │
+```
+
+*After clicking `[Re-open]`:*
+```
+│  [✨]  This thread was marked as resolved.       │
+│                                                  │
+│  Re-open this thread?  [Confirm]  [Cancel]       │
+```
+
+Sending any message does not affect thread status. Status only changes via explicit button action.
 
 #### Thread view (AI panel state)
 
-Quoted text pinned at top, followed by the blocking row. Multi-participant messages show avatar + name + timestamp above each bubble. Messages from the current user are right-aligned (accent); all others are left-aligned (subtle). No separator between messages — bubbles are visually distinguishable. Input at bottom with same queued message behaviour on reply.
+Quoted text pinned at top, followed by the blocking row. Multi-participant messages show avatar + name + timestamp above each bubble. Messages from the current user are right-aligned (accent); all others are left-aligned (subtle). No separator between messages — bubbles are visually distinguishable. Virtual card appears at end of message stream. Input always available regardless of status.
 
 Header: `[←]  Threads  [×]` — `[←]` returns to threads list, `[×]` closes to chat.
 
@@ -298,14 +334,17 @@ Header: `[←]  Threads  [×]` — `[←]` returns to threads list, `[×]` close
 │  [octagon-x · danger]  blocking · Raquel · 2h│
 │                                              │
 │  [av] Raquel  ·  2h ago                      │
-│  [subtle ▶] The throughput target is         │
-│  already exceeded on busy days — the         │
-│  constraint driving this needs revisiting.   │
+│  [subtle ▶] The throughput target is already │
+│  exceeded on busy days — the constraint      │
+│  driving this needs revisiting.              │
 │                                              │
 │  [av] Eric  ·  1h ago                        │
 │  [subtle ▶] Updated the constraint and       │
 │  flagged the throughput target for revision. │
-│                          [resolved pending]  │
+│                                              │
+│  [✨]  Ready to mark this thread as          │
+│  resolved?                                   │
+│  [Mark as resolved]                          │
 │                                              │
 ├──────────────────────────────────────────────┤
 │  ┌──────────────────────────────────────┐   │
@@ -318,14 +357,15 @@ Header: `[←]  Threads  [×]` — `[←]` returns to threads list, `[×]` close
 
 #### Document decorations
 
-TipTap `Decoration.inline` applies a dotted underline to anchored text. Decoration color reflects thread state:
+TipTap `Decoration.inline` applies a dotted underline to anchored text. Decoration color reflects thread state — success takes precedence over danger once resolved:
 
-| State | Color token | Notes |
+| Status | Blocking | Color token |
 |---|---|---|
-| Open, non-blocking | `--color-state-warning` | Yellow |
-| Open, blocking | `--color-state-danger` | Red |
-| Resolved pending confirmation | `--color-state-success` | Green |
-| Resolved | `--color-state-success` | Green; hidden if "show resolved decorations" setting is off |
+| open | false | `--color-state-warning` |
+| open | true | `--color-state-danger` |
+| resolved | any | `--color-state-success` |
+
+Resolved decorations hidden if "show resolved decorations" setting is off (Settings panel, reading preferences, default: on).
 
 "Show resolved decorations" is a user setting in the Settings panel (reading preferences). Default: on.
 
