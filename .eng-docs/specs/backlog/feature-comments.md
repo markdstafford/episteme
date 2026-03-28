@@ -42,15 +42,63 @@ Raquel reaches the section on notification templates and selects a paragraph abo
 
 Eric opens the notification system tech design and sees two comment threads in the sidebar. Both were filed by Raquel during her review.
 
-He opens the throughput comment first — it's marked blocking, anchored to the Constraints section. Raquel's comment reads: "The throughput target is already exceeded on busy days with the current user base — the constraint driving this needs revisiting." Eric agrees. He clicks to have AI suggest a fix. The AI proposes updating the constraint to reference current peak load metrics and adds a note that the throughput target will be revisited before implementation. It also drafts a reply to Raquel's thread: "Updated the constraint and flagged the throughput target for revision before we begin implementation." Eric reviews both, makes a small edit to the proposed document change, and approves. The fix is applied and the reply is posted. The comment moves to resolved pending Raquel's confirmation.
+He opens the throughput comment first — it's marked blocking, anchored to the Constraints section. Raquel's comment reads: "The throughput target is already exceeded on busy days with the current user base — the constraint driving this needs revisiting." Eric agrees. He clicks to have AI suggest a fix. The AI proposes updating the constraint to reference current peak load metrics and adds a note that the throughput target will be revisited before implementation. It also drafts a reply to Raquel's thread: "Updated the constraint and flagged the throughput target for revision before we begin implementation." Eric reviews both, makes a small edit to the proposed document change, and approves. The fix is applied and the reply is posted. The comment moves to resolved pending confirmation.
 
 Eric opens the versioning ownership comment next — non-blocking, anchored to the template versioning paragraph. Raquel's comment asks who owns the versioning process. Eric isn't sure himself and wants Raquel's read before he specifies anything. He starts typing a reply and the AI asks: "Are you asking Raquel to propose an owner, or flagging that this needs a broader decision?" Eric responds that it needs a broader decision. The AI drafts: "Agreed this isn't clear — I'd rather not specify an owner without a conversation. Can you flag whether you think this is blocking or whether we can decide post-implementation?" Eric approves the reply and it posts. The thread stays open.
 
+### Aaron reviews before approving
+
+Aaron opens the notification system tech design to review it for approval. The sidebar shows two comment threads. The throughput comment — blocking — is marked "resolved pending confirmation." The versioning ownership comment is open and non-blocking; the thread shows Eric's reply asking for a broader conversation about ownership before the doc specifies anything.
+
+Aaron reads through the document and the threads. The throughput fix looks right to him. He can't approve yet — the blocking comment is waiting on Raquel — but he adds a reply to the versioning thread: "Engineering should own this. We can document it in the tech design before implementation." He marks his review complete and waits.
+
+Raquel returns, sees Eric's fix to the Constraints section, and agrees it addresses her concern. She closes the thread. Aaron is notified that the blocking comment is resolved. He opens the document, sees both threads are now either resolved or non-blocking, and approves. The versioning thread — with Eric's and Aaron's replies — is automatically resolved on approval, preserving the full conversation as a record.
+
 ## User stories
+
+**Raquel reviews the notification system tech design**
+
+- Raquel can select text in a document and initiate a comment in Review mode
+- Before filing, AI checks whether the document or a related document already answers Raquel's concern
+- When a different passage more precisely captures Raquel's concern, AI suggests moving the anchor there
+- AI proposes refined comment text before the comment is filed
+- Raquel can mark a comment as blocking or non-blocking before filing
+- Raquel can override AI suggestions and file a comment as written
+
+**Eric works through Raquel's comments**
+
+- Eric can see all open comment threads for a document in the sidebar
+- AI suggests a document fix when Eric is responding to a comment
+- Eric can review and edit an AI-proposed document change before it is applied
+- AI drafts a reply for Eric's review when he responds to a comment thread
+- AI asks a clarifying question to understand Eric's intent before drafting a reply
+- Eric can see a blocking comment move to "resolved pending confirmation" after addressing it
+
+**Aaron reviews before approving**
+
+- Aaron can see the blocking/non-blocking status of all comment threads
+- Aaron can see when a blocking comment is "resolved pending confirmation"
+- Aaron can reply to a comment thread
+- Raquel can close a "resolved pending confirmation" thread after reviewing the fix
+- *(out of scope)* Aaron is prevented from approving while a blocking comment is unresolved
+- *(out of scope)* Aaron can approve a document once all blocking comments are resolved or confirmed
+- *(out of scope)* Open non-blocking threads are automatically resolved when a document is approved
 
 ## Goals
 
+- Reviewers leave fewer redundant or answerable comments — AI successfully deflects questions that are already addressed in the document or related documents
+- Comments that are filed are higher quality — clearly worded, anchored to the most relevant passage, and marked with appropriate blocking status
+- Review cycles produce a legible thread history — every filed comment has a clear resolution path and outcome visible to all participants
+- Blocking comments reliably gate downstream actions — a document with an unresolved blocking comment cannot move forward until it is addressed and confirmed
+
 ## Non-goals
+
+- Approving documents — blocking comment enforcement is defined here, but the approval action itself is out of scope
+- Automatic resolution of open threads when a document is approved
+- Document-level comments not anchored to specific text
+- Reactions
+- Real-time concurrent commenting
+- Notifications
 
 ## Design spec
 
