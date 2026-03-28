@@ -102,7 +102,100 @@ Raquel returns, sees Eric's fix to the Constraints section, and agrees it addres
 
 ## Design spec
 
-*(Added by design specs stage)*
+### User flows
+
+#### Comment creation flow
+
+```mermaid
+flowchart TD
+    A[User selects text] --> B[Clicks trigger in margin]
+    B --> C[Comment view opens\nquoted text pinned]
+    C --> D[User types concern and sends]
+    D --> E[AI checks document\nand related documents]
+
+    E --> F{Answer found?}
+    F -->|Yes| G[AI surfaces the answer\ndeflection attempt]
+    G --> H{User}
+    H -->|Acceptable| I[Deflect: comment view closes]
+    H -->|No| J
+
+    F -->|No| J
+
+    J{Better location?}
+    J -->|Yes| K[AI moves anchor proactively\nUpdates quoted text + viewport\nRedirection attempt in chat]
+    K --> L{User}
+    L -->|Keep| N
+    L -->|Go back| M[Anchor reverts\nUpdates quoted text + viewport]
+    M --> N
+
+    J -->|No| N
+
+    N[AI suggests comment text]
+    N --> O[Queued state\nblocking toggle · AI·raw toggle · countdown]
+    O --> P{Before timeout}
+    P -->|Cancel| Q[Discarded]
+    P -->|Timeout| R[Comment sent]
+    R --> S[Thread created\nBlocking toggleable]
+```
+
+### Key UI components
+
+#### Comment view (AI panel state)
+
+Comment view is a state of the AI panel, not a document mode. It opens when the user clicks the comment trigger in the document margin. The quoted text block is pinned at the top throughout the session and updates if the anchor is relocated.
+
+The input uses the existing `ChatInputCard` pattern. Placeholder: "What's your question or concern?"
+
+#### Queued message
+
+Appears in the comment view message stack when a comment is staged for sending. Shows the version that will be sent (AI-enhanced by default) with a toggle group to switch between versions and a countdown pill to cancel.
+
+```
+│  [👤]  just now                  [queued]    │
+│  ┌──────────────────────────────────────┐   │
+│  │  The throughput target is already    │   │
+│  │  exceeded on busy days — the         │   │
+│  │  constraint driving this needs       │   │
+│  │  revisiting.                         │   │
+│  │                                      │   │
+│  │  [blocking?]  [✨▌👤] [× ████░░ 24s]│   │
+│  └──────────────────────────────────────┘   │
+```
+
+- **Toggle group** (`[✨▌👤]`): Radix `ToggleGroup`. Selected segment has accent background. Switches the displayed text and the version that will be sent. User avatar shown at top regardless of selection.
+- **Countdown pill** (`[× ████░░ 24s]`): tappable — clicking cancels the comment entirely. Progress bar drains to zero then comment sends and animates into a normal message bubble.
+- **Blocking toggle** (`[blocking?]`): sets blocking/non-blocking before send. Remains toggleable on the thread after send.
+
+#### Thread view (AI panel state)
+
+Same panel state as comment view but shows an existing thread. Quoted text pinned at top. Messages in chronological order. Input at bottom with same queued message behaviour on reply.
+
+```
+│  [bot-message-square]  Thread          [×]   │
+│  ╔════════════════════════════════════════╗  │
+│  ║ "The retry queue throughput target     ║  │
+│  ║  is set to 1,000 req/s per node"       ║  │
+│  ╚════════════════════════════════════════╝  │
+│                                  [blocking]  │
+│                                              │
+│  [👤]  Raquel  ·  2h ago                     │
+│  The throughput target is already exceeded   │
+│  on busy days — the constraint driving       │
+│  this needs revisiting.                      │
+│                                              │
+│  ───────────────────────────────────────     │
+│                                              │
+│  [👤]  Eric  ·  1h ago                       │
+│  Updated the constraint and flagged the      │
+│  throughput target for revision before       │
+│  implementation begins.                      │
+│                          [resolved pending]  │
+│                                              │
+│  ┌──────────────────────────────────────┐   │
+│  │  Reply...                            │   │
+│  ├──────────────────────────────────────┤   │
+│  │                                [↑]   │   │
+│  └──────────────────────────────────────┘   │
 
 ## Tech spec
 
