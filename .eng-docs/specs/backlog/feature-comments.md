@@ -300,6 +300,49 @@ Same panel state as comment view but shows an existing thread. Quoted text pinne
 └──────────────────────────────────────────────┘
 ```
 
+#### Document decorations
+
+TipTap `Decoration.inline` applies a dotted underline to anchored text. Decoration color reflects thread state:
+
+| State | Color token | Notes |
+|---|---|---|
+| Open, non-blocking | `--color-state-warning` | Yellow |
+| Open, blocking | `--color-state-danger` | Red |
+| Resolved pending confirmation | `--color-state-success` | Green |
+| Resolved | `--color-state-success` | Green; hidden if "show resolved decorations" setting is off |
+
+"Show resolved decorations" is a user setting in the Settings panel (reading preferences). Default: on.
+
+Clicking a decorated passage opens thread view in the AI panel.
+
+#### Right rail
+
+A narrow strip (`--width-comment-rail: 24px`) to the right of the document content column showing thread indicator bubbles aligned vertically to their anchor's first line.
+
+Only rendered when the document pane is wide enough to accommodate the rail without consuming content space. Breakpoint: window width ≥ 1440px (doc pane ≥ 768px, leaving ≥ 34px right margin around the 680px content column). Hidden below this breakpoint — underline decorations remain the only inline indicator.
+
+Each bubble shows:
+- Thread status icon (color matches underline state)
+- Collapsed into a count badge when multiple threads are anchored within the same viewport region
+
+Hover over a bubble: thread preview popover.
+Click a bubble: opens thread view in AI panel.
+
+#### Threads view (AI panel state)
+
+Replaces whatever is currently showing in the AI panel. Lists all threads for the open document. Each row shows:
+- Anchor text snippet
+- Thread status (open / resolved-pending / resolved)
+- Blocking indicator (`octagon-x` icon in danger color if blocking)
+- Participant avatars
+- Last activity timestamp
+
+Clicking a row opens thread view. Thread view has a back button to return to threads view.
+
+Accessible from the AI panel header (icon button, similar to the session history `clock` button).
+
+Keyboard shortcuts navigate between anchored passages in the document (next/previous thread).
+
 ## Tech spec
 
 *(Added by tech specs stage)*
