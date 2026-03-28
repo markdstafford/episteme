@@ -289,7 +289,7 @@ Persistent AI-generated cards that appear at the end of the message stream in th
 
 **Card A — doc author, status = open**
 
-The document author (identified from frontmatter) sees a card prompting resolution:
+The document author (identified from frontmatter) sees a card prompting resolution. Only appears once the thread has at least one reply from someone other than the original commenter — avoids prompting resolution on a thread that hasn't been addressed yet.
 
 ```
 │  [✨]  Ready to mark this thread as resolved?    │
