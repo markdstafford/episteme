@@ -42,17 +42,15 @@ Raquel reaches the section on notification templates and selects a paragraph abo
 
 Eric opens the notification system tech design and sees two comment threads in the sidebar. Both were filed by Raquel during her review.
 
-He opens the throughput comment first — it's marked blocking, anchored to the Constraints section. Raquel's comment reads: "The throughput target is already exceeded on busy days with the current user base — the constraint driving this needs revisiting." Eric agrees. He clicks to have AI suggest a fix. The AI proposes updating the constraint to reference current peak load metrics and adds a note that the throughput target will be revisited before implementation. It also drafts a reply to Raquel's thread: "Updated the constraint and flagged the throughput target for revision before we begin implementation." Eric reviews both, makes a small edit to the proposed document change, and approves. The fix is applied and the reply is posted. The comment moves to resolved pending confirmation.
+He opens the throughput comment first — it's marked blocking, anchored to the Constraints section. Raquel's comment reads: "The throughput target is already exceeded on busy days with the current user base — the constraint driving this needs revisiting." Eric sees a virtual card prompting him to address the thread. He clicks "Suggest a fix" — the AI proposes updating the constraint to reference current peak load metrics and adds a note that the throughput target will be revisited before implementation. It also drafts a reply: "Updated the constraint and flagged the throughput target for revision before we begin implementation." Eric reviews both, makes a small edit to the proposed document change, and approves. The fix is applied, the reply is posted, and Eric clicks "Mark as resolved." The thread is now resolved.
 
 Eric opens the versioning ownership comment next — non-blocking, anchored to the template versioning paragraph. Raquel's comment asks who owns the versioning process. Eric isn't sure himself and wants Raquel's read before he specifies anything. He starts typing a reply and the AI asks: "Are you asking Raquel to propose an owner, or flagging that this needs a broader decision?" Eric responds that it needs a broader decision. The AI drafts: "Agreed this isn't clear — I'd rather not specify an owner without a conversation. Can you flag whether you think this is blocking or whether we can decide post-implementation?" Eric approves the reply and it posts. The thread stays open.
 
 ### Aaron reviews before approving
 
-Aaron opens the notification system tech design to review it for approval. The sidebar shows two comment threads. The throughput comment — blocking — is marked "resolved pending confirmation." The versioning ownership comment is open and non-blocking; the thread shows Eric's reply asking for a broader conversation about ownership before the doc specifies anything.
+Aaron opens the notification system tech design to review it for approval. The sidebar shows two comment threads. The throughput comment is resolved — its border and decoration are success green, but the blocking indicator is preserved. The versioning ownership comment is open and non-blocking; the thread shows Eric's reply asking for a broader conversation about ownership before the doc specifies anything.
 
-Aaron reads through the document and the threads. The throughput fix looks right to him. He can't approve yet — the blocking comment is waiting on Raquel — but he adds a reply to the versioning thread: "Engineering should own this. We can document it in the tech design before implementation." He marks his review complete and waits.
-
-Raquel returns, sees Eric's fix to the Constraints section, and agrees it addresses her concern. She closes the thread. Aaron is notified that the blocking comment is resolved. He opens the document, sees both threads are now either resolved or non-blocking, and approves. The versioning thread — with Eric's and Aaron's replies — is automatically resolved on approval, preserving the full conversation as a record.
+Aaron reads through the document and the threads. The throughput resolution looks right to him. He adds a reply to the versioning thread: "Engineering should own this. We can document it in the tech design before implementation." He marks his review complete. Since the blocking thread is resolved and the remaining open thread is non-blocking, Aaron can proceed with approval. The versioning thread — with Eric's and Aaron's replies — is automatically resolved on approval, preserving the full conversation as a record.
 
 ## User stories
 
@@ -72,14 +70,13 @@ Raquel returns, sees Eric's fix to the Constraints section, and agrees it addres
 - Eric can review and edit an AI-proposed document change before it is applied
 - AI drafts a reply for Eric's review when he responds to a comment thread
 - AI asks a clarifying question to understand Eric's intent before drafting a reply
-- Eric can see a blocking comment move to "resolved pending confirmation" after addressing it
+- Eric can mark a thread as resolved after applying a fix
 
 **Aaron reviews before approving**
 
-- Aaron can see the blocking/non-blocking status of all comment threads
-- Aaron can see when a blocking comment is "resolved pending confirmation"
+- Aaron can see the blocking/non-blocking and resolved/open status of all comment threads
 - Aaron can reply to a comment thread
-- Raquel can close a "resolved pending confirmation" thread after reviewing the fix
+- Any participant can re-open a resolved thread via the virtual card
 - *(out of scope)* Aaron is prevented from approving while a blocking comment is unresolved
 - *(out of scope)* Aaron can approve a document once all blocking comments are resolved or confirmed
 - *(out of scope)* Open non-blocking threads are automatically resolved when a document is approved
@@ -109,14 +106,14 @@ Raquel returns, sees Eric's fix to the Constraints section, and agrees it addres
 ```mermaid
 flowchart TD
     A[User selects text] --> B[Clicks trigger in margin]
-    B --> C[Comment view opens\nquoted text pinned]
+    B --> C[New comment view opens\nquoted text pinned]
     C --> D[User types concern and sends]
     D --> E[AI checks document\nand related documents]
 
     E --> F{Answer found?}
     F -->|Yes| G[AI surfaces the answer\ndeflection attempt]
     G --> H{User}
-    H -->|Acceptable| I[Deflect: comment view closes]
+    H -->|Acceptable| I[Deflect: new comment view closes]
     H -->|No| J
 
     F -->|No| J
@@ -142,16 +139,16 @@ flowchart TD
 
 Message rendering follows the existing `ChatMessage` pattern: user messages right-aligned with accent background; AI messages left-aligned with subtle background. Thread messages (multi-participant) add a name + timestamp above each bubble to distinguish participants.
 
-#### Comment view (AI panel state)
+#### New comment view (AI panel state)
 
-Comment view is a state of the AI panel, not a document mode. It opens when the user clicks the comment trigger in the document margin. The quoted text block is pinned at the top throughout the session and updates if the anchor is relocated.
+New comment view is a state of the AI panel, not a document mode. It opens when the user clicks the comment trigger in the document margin. The quoted text block is pinned at the top throughout the session and updates if the anchor is relocated.
 
 The input uses the existing `ChatInputCard` pattern. Placeholder: "What's your question or concern?"
 
 **State 1 — just opened:**
 ```
 ┌──────────────────────────────────────────────┐
-│  [bot-message-square]  New comment     [×]   │
+│  [message-square-plus]  New comment    [×]   │
 ├──────────────────────────────────────────────┤
 │  ╔════════════════════════════════════════╗  │
 │  ║ "The retry queue throughput target     ║  │
@@ -218,19 +215,20 @@ The input uses the existing `ChatInputCard` pattern. Placeholder: "What's your q
 │  │  constraint driving this needs       │   │
 │  │  revisiting.                         │   │
 │  │                                      │   │
-│  │  [blocking?] [✨▌👤] [× ████░░ 24s] │   │
+│  │  [✨▌👤]          [× ████░░ 24s]    │   │
 │  └──────────────────────────────────────┘   │
+│  [octagon-x · tertiary]                     │
 ```
 
 `[Go back]` is inline on the AI message. Quoted block at top updates immediately when anchor moves and again if user reverts.
 
 #### Queued message
 
-Appears in the comment view message stack when a comment is staged for sending. AI-enhanced version shown by default. A simple blocking toggle row appears below the queued card — the thread does not exist yet so the full blocking row (with history) is hidden until the comment sends.
+Appears in the new comment view message stack when a comment is staged for sending. AI-enhanced version shown by default. A simple status toggle appears below the queued card — the thread does not exist yet so the full status row (with history) is hidden until the comment sends.
 
 - **Toggle group** (`[✨▌👤]`): Radix `ToggleGroup`. Selected segment has accent background. Switches the displayed text and the version that will be sent.
 - **Countdown pill** (`[× ████░░ 24s]`): tappable — clicking cancels. Progress bar drains to zero, then comment sends and animates into a normal message bubble.
-- **Blocking toggle below card**: `octagon-x` icon only — no attribution, no history. Clicking toggles blocking for when the thread is created.
+- **Status toggle below card**: `octagon-x` icon only — no attribution, no history. Clicking toggles blocking for when the thread is created.
 
 ```
 │  ┌──────────────────────────────────────┐   │
@@ -244,17 +242,17 @@ Appears in the comment view message stack when a comment is staged for sending. 
 │  [octagon-x · tertiary]                     │
 ```
 
-#### Blocking row
+#### Status row
 
-Appears below the quoted text block in thread view. Hidden in comment view until the first comment sends and a thread is created. Tracks blocking status with a full audit history.
+Appears below the quoted text block in thread view. Hidden in new comment view until the first comment sends and a thread is created. Tracks both blocking status and thread status with a full audit history.
 
-Thread **status** (`open` | `resolved`) and **blocking** (boolean) are independent. Blocking is only toggleable when status = open. When status = resolved, the octagon-x icon is non-interactive but its value is preserved in case the thread re-opens.
+Thread **status** (`open` | `resolved`) and **blocking** (boolean) are independent. Blocking is only toggleable when status = open. When status = resolved, the `octagon-x` icon is non-interactive but its value is preserved in case the thread re-opens.
 
 - **Icon**: `octagon-x` from Lucide. Only the icon is clickable — only when status = open.
 - **No history yet** (default, never explicitly toggled): icon only, no text.
 - **Non-blocking** (explicitly set): icon in `--color-text-tertiary` + `name · time ago`.
 - **Blocking** (status = open): icon in `--color-state-danger` + label "blocking" + `name · time ago`.
-- **Resolved** (any blocking value): icon in `--color-state-success`, non-interactive.
+- **Resolved** (any blocking value): icon in `--color-state-success`, non-interactive + `name · time ago`.
 - **Hover anywhere on the row**: history popover appears. Icon brightens to `--color-text-primary` on hover (only when interactive).
 
 **Default (never toggled):**
@@ -273,11 +271,15 @@ Thread **status** (`open` | `resolved`) and **blocking** (boolean) are independe
 ```
 
 **History popover (row hover):**
+
+Each entry uses `→ state` format — consistent across all event types. Possible states: `blocking`, `non-blocking`, `resolved`, `re-opened`.
+
 ```
 │  ┌──────────────────────────────────┐            │
-│  │  ● blocking      Raquel · 2h    │            │
-│  │  ○ non-blocking  Eric · 1h      │            │
-│  │  ● blocking      Aaron · 30m    │            │
+│  │  → blocking      Raquel · 2h    │            │
+│  │  → non-blocking  Eric · 1h      │            │
+│  │  → blocking      Aaron · 30m    │            │
+│  │  → resolved      Eric · 10m     │            │
 │  └──────────────────────────────────┘            │
 ```
 
@@ -291,10 +293,12 @@ Persistent AI-generated cards that appear at the end of the message stream in th
 
 The document author (identified from frontmatter) sees a card prompting resolution. Only appears once the thread has at least one reply from someone other than the original commenter — avoids prompting resolution on a thread that hasn't been addressed yet.
 
+Two actions: `[Suggest a fix]` triggers the AI fix flow (AI proposes a document edit and draft reply, follows the queued message pattern); `[Mark as resolved]` resolves the thread directly without a document change.
+
 ```
-│  [✨]  Ready to mark this thread as resolved?    │
+│  [✨]  Ready to address this thread?             │
 │                                                  │
-│  [Mark as resolved]                              │
+│  [Suggest a fix]    [Mark as resolved]           │
 ```
 
 **Card B — all users, status = resolved**
@@ -319,7 +323,7 @@ Sending any message does not affect thread status. Status only changes via expli
 
 #### Thread view (AI panel state)
 
-Quoted text pinned at top, followed by the blocking row. Multi-participant messages show avatar + name + timestamp above each bubble. Messages from the current user are right-aligned (accent); all others are left-aligned (subtle). No separator between messages — bubbles are visually distinguishable. Virtual card appears at end of message stream. Input always available regardless of status.
+Quoted text pinned at top, followed by the status row. Multi-participant messages show avatar + name + timestamp above each bubble. Messages from the current user are right-aligned (accent); all others are left-aligned (subtle). No separator between messages — bubbles are visually distinguishable. Virtual card appears at end of message stream. Input always available regardless of status.
 
 Header: `[←]  Threads  [×]` — `[←]` returns to threads list, `[×]` closes to chat.
 
@@ -342,9 +346,8 @@ Header: `[←]  Threads  [×]` — `[←]` returns to threads list, `[×]` close
 │  [subtle ▶] Updated the constraint and       │
 │  flagged the throughput target for revision. │
 │                                              │
-│  [✨]  Ready to mark this thread as          │
-│  resolved?                                   │
-│  [Mark as resolved]                          │
+│  [✨]  Ready to address this thread?         │
+│  [Suggest a fix]    [Mark as resolved]       │
 │                                              │
 ├──────────────────────────────────────────────┤
 │  ┌──────────────────────────────────────┐   │
@@ -366,8 +369,6 @@ TipTap `Decoration.inline` applies a dotted underline to anchored text. Decorati
 | resolved | any | `--color-state-success` |
 
 Resolved decorations hidden if "show resolved decorations" setting is off (Settings panel, reading preferences, default: on).
-
-"Show resolved decorations" is a user setting in the Settings panel (reading preferences). Default: on.
 
 Clicking a decorated passage opens thread view in the AI panel.
 
