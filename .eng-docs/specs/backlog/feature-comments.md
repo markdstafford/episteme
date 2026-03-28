@@ -226,51 +226,70 @@ The input uses the existing `ChatInputCard` pattern. Placeholder: "What's your q
 
 #### Queued message
 
-Appears in the comment view or thread view message stack when a comment is staged for sending. AI-enhanced version shown by default.
+Appears in the comment view message stack when a comment is staged for sending. AI-enhanced version shown by default. A simple blocking toggle row appears below the queued card — the thread does not exist yet so the full blocking row (with history) is hidden until the comment sends.
 
 - **Toggle group** (`[✨▌👤]`): Radix `ToggleGroup`. Selected segment has accent background. Switches the displayed text and the version that will be sent.
 - **Countdown pill** (`[× ████░░ 24s]`): tappable — clicking cancels. Progress bar drains to zero, then comment sends and animates into a normal message bubble.
-- **Blocking toggle** (`[octagon-x]`): sets blocking/non-blocking on the thread before send. Uses the same blocking row component described below.
+- **Blocking toggle below card**: `octagon-x` icon only — no attribution, no history. Clicking toggles blocking for when the thread is created.
+
+```
+│  ┌──────────────────────────────────────┐   │
+│  │  The throughput target is already    │   │
+│  │  exceeded on busy days — the         │   │
+│  │  constraint driving this needs       │   │
+│  │  revisiting.                         │   │
+│  │                                      │   │
+│  │  [✨▌👤]          [× ████░░ 24s]    │   │
+│  └──────────────────────────────────────┘   │
+│  [octagon-x · tertiary]                     │
+```
 
 #### Blocking row
 
-Appears below the quoted text block in both comment view and thread view. Tracks blocking status on the thread with a full audit history.
+Appears below the quoted text block in thread view. Hidden in comment view until the first comment sends and a thread is created. Tracks blocking status with a full audit history.
 
-- **Icon**: `octagon-x` from Lucide. Clicking the icon toggles blocking status. Only the icon is clickable.
-- **Non-blocking state**: icon in `--color-text-tertiary` (subtle/muted). No label text.
-- **Blocking state**: icon in `--color-state-danger`. Label "blocking" appears inline as confirmation of the toggled state.
-- **Attribution**: most recent action shown as `name · time ago` to the right of the icon/label.
-- **Hover**: hovering anywhere over the row reveals a history popover anchored to the row. Icon brightens to `--color-text-primary` on row hover to hint interactivity.
+- **Icon**: `octagon-x` from Lucide. Only the icon is clickable — clicking toggles blocking status.
+- **No history yet** (default state, never explicitly toggled): icon only, no text.
+- **Non-blocking** (explicitly set): icon in `--color-text-tertiary` + `name · time ago`.
+- **Blocking**: icon in `--color-state-danger` + label "blocking" + `name · time ago`.
+- **Hover anywhere on the row**: history popover appears. Icon brightens to `--color-text-primary` on hover to hint interactivity.
 
-**Non-blocking:**
+**Default (never toggled):**
 ```
-│  [octagon-x · tertiary]  Raquel · 2h ago     │
+│  [octagon-x · tertiary]                          │
+```
+
+**Non-blocking (explicitly set):**
+```
+│  [octagon-x · tertiary]  Raquel · 2h ago         │
 ```
 
 **Blocking:**
 ```
-│  [octagon-x · danger]  blocking · Aaron · 30m ago   │
+│  [octagon-x · danger]  blocking · Aaron · 30m ago │
 ```
 
 **History popover (row hover):**
 ```
-│  ┌──────────────────────────────────┐         │
-│  │  ● blocking      Raquel · 2h    │         │
-│  │  ○ non-blocking  Eric · 1h      │         │
-│  │  ● blocking      Aaron · 30m    │         │
-│  └──────────────────────────────────┘         │
-│  [octagon-x · danger]  blocking · Aaron · 30m │
+│  ┌──────────────────────────────────┐            │
+│  │  ● blocking      Raquel · 2h    │            │
+│  │  ○ non-blocking  Eric · 1h      │            │
+│  │  ● blocking      Aaron · 30m    │            │
+│  └──────────────────────────────────┘            │
+│  [octagon-x · danger]  blocking · Aaron · 30m    │
 ```
 
 Blocking status is a property of the thread, not individual messages. Any participant can toggle it at any time. An open blocking thread prevents document progression regardless of when it was marked blocking.
 
 #### Thread view (AI panel state)
 
-Same panel state as comment view but shows an existing thread. Quoted text pinned at top, followed by the blocking row. Multi-participant messages show avatar + name + timestamp above each bubble. Messages from the current user are right-aligned (accent); all others are left-aligned (subtle). Input at bottom with same queued message behaviour on reply.
+Quoted text pinned at top, followed by the blocking row. Multi-participant messages show avatar + name + timestamp above each bubble. Messages from the current user are right-aligned (accent); all others are left-aligned (subtle). No separator between messages — bubbles are visually distinguishable. Input at bottom with same queued message behaviour on reply.
+
+Header: `[←]  Threads  [×]` — `[←]` returns to threads list, `[×]` closes to chat.
 
 ```
 ┌──────────────────────────────────────────────┐
-│  [bot-message-square]  Thread          [×]   │
+│  [←]  Threads                          [×]   │
 ├──────────────────────────────────────────────┤
 │  ╔════════════════════════════════════════╗  │
 │  ║ "The retry queue throughput target     ║  │
@@ -283,12 +302,9 @@ Same panel state as comment view but shows an existing thread. Quoted text pinne
 │  already exceeded on busy days — the         │
 │  constraint driving this needs revisiting.   │
 │                                              │
-│  ───────────────────────────────────────     │
-│                                              │
 │  [av] Eric  ·  1h ago                        │
 │  [subtle ▶] Updated the constraint and       │
-│  flagged the throughput target for           │
-│  revision before implementation begins.      │
+│  flagged the throughput target for revision. │
 │                          [resolved pending]  │
 │                                              │
 ├──────────────────────────────────────────────┤
@@ -330,18 +346,36 @@ Click a bubble: opens thread view in AI panel.
 
 #### Threads view (AI panel state)
 
-Replaces whatever is currently showing in the AI panel. Lists all threads for the open document. Each row shows:
-- Anchor text snippet
-- Thread status (open / resolved-pending / resolved)
-- Blocking indicator (`octagon-x` icon in danger color if blocking)
-- Participant avatars
-- Last activity timestamp
+Replaces whatever is currently showing in the AI panel. Header: `[messages-square]  Threads` — no back button (top-level view). Accessible from the AI panel header via a `messages-square` icon button.
 
-Clicking a row opens thread view. Thread view has a back button to return to threads view.
+Each row follows the session history row pattern: 3px state-color left border → pin icon → content → (no ellipsis menu). Pin icon hidden unless pinned; shown on hover. Pinned threads sort to top.
 
-Accessible from the AI panel header (icon button, similar to the session history `clock` button).
+Row content:
+- First line: `octagon-x · danger` if blocking, then anchor text snippet (truncated)
+- Second line: participant avatars + last activity timestamp + status label if resolved
 
-Keyboard shortcuts navigate between anchored passages in the document (next/previous thread).
+Currently-open thread has `--color-bg-subtle` background. All rows have a bottom border.
+
+Clicking a row opens thread view. Keyboard shortcuts navigate between anchored passages in the document (next/previous thread).
+
+```
+┌──────────────────────────────────────────────┐
+│  [messages-square]  Threads                  │
+├──────────────────────────────────────────────┤
+│                                              │
+│▐ [pin] [octagon-x·danger]  "The retry queue  │  ← danger border, bg-subtle (active)
+│         throughput target is set to..."      │
+│         [av·R] [av·E]  ·  1h ago            │
+│                                              │
+│▐ [pin] "It's not clear whether product or    │  ← warning border
+│         engineering owns the template..."    │
+│         [av·R] [av·E] [av·A]  ·  30m ago    │
+│                                              │
+│▐ [pin] "What happens when this fails?"       │  ← success border, dimmer text
+│         [av·R]  ·  3h ago  ·  resolved      │
+│                                              │
+└──────────────────────────────────────────────┘
+```
 
 ## Tech spec
 
