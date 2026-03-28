@@ -90,6 +90,10 @@
   --shadow-inset-border: inset 0 0 0 1px;
 }
 
+html, body {
+  overflow: hidden;
+}
+
 /* Dark mode tokens */
 @layer base {
   :root {
