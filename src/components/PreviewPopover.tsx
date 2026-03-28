@@ -102,6 +102,7 @@ export const PreviewPopover = forwardRef<PreviewPopoverHandle, PreviewPopoverPro
             side="right"
             align="start"
             sideOffset={POPOVER_SIDE_OFFSET}
+            collisionPadding={{ bottom: FOOTER_HEIGHT_PX }}
             onMouseEnter={onMouseEnter}
             onMouseLeave={onMouseLeave}
             onOpenAutoFocus={(e) => e.preventDefault()}
