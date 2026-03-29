@@ -6,6 +6,7 @@ export const PreferencesSchema = z.object({
   recently_used_skill_types: z.array(z.string()).default([]),
   preview_width: z.string().regex(/^\d+(\.\d+)?%$/).default('50%').catch('50%'),
   preview_height: z.string().regex(/^\d+(\.\d+)?%$/).default('75%').catch('75%'),
+  github_login: z.string().nullable().default(null),
 });
 
 export type Preferences = z.infer<typeof PreferencesSchema>;
@@ -16,6 +17,7 @@ export const DEFAULT_PREFERENCES: Preferences = {
   recently_used_skill_types: [],
   preview_width: '50%',
   preview_height: '75%',
+  github_login: null,
 };
 
 export function parsePreferences(data: unknown): Preferences {

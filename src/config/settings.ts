@@ -44,6 +44,13 @@ export const settingsConfig: SettingsCategory[] = [
             order: 1,
             defaultValue: "",
           },
+          {
+            id: "github_login",
+            label: "GitHub Username",
+            type: "text",
+            order: 2,
+            defaultValue: "",
+          },
         ],
       },
     ],
