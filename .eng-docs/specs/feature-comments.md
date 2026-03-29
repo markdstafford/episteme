@@ -921,74 +921,74 @@ SQLite queries use parameterized statements throughout — no string interpolati
       - [x] `update_thread_anchors` skips unknown `thread_id` values without failing the whole batch
     - **Dependencies**: Task: Initialize `.episteme/` directory and SQLite schema
 
-- [ ] **Story: Threads Zustand store**
-  - [ ] **Task: Define TypeScript types**
+- [x] **Story: Threads Zustand store**
+  - [x] **Task: Define TypeScript types**
     - **Description**: Define all TypeScript types for comment-related data structures used across the frontend. These mirror the DB schema and Tauri command return types. Exported from a central `src/types/comments.ts`.
     - **Acceptance criteria**:
-      - [ ] `Anchor` type: `{ from: number, to: number, quotedText: string, stale: boolean }`
-      - [ ] `Thread` type: all `threads` table fields plus `comments: Comment[]` and `events: ThreadEvent[]`
-      - [ ] `Comment`, `ThreadEvent`, `QueuedComment` types match their respective table schemas
-      - [ ] `ThreadStatus` union: `'open' | 'resolved'`
-      - [ ] `ThreadEventType` union: `'open' | 'blocking' | 'non-blocking' | 'resolved' | 're-opened'`
-      - [ ] All types exported from `src/types/comments.ts`
+      - [x] `Anchor` type: `{ from: number, to: number, quotedText: string, stale: boolean }`
+      - [x] `Thread` type: all `threads` table fields plus `comments: Comment[]` and `events: ThreadEvent[]`
+      - [x] `Comment`, `ThreadEvent`, `QueuedComment` types match their respective table schemas
+      - [x] `ThreadStatus` union: `'open' | 'resolved'`
+      - [x] `ThreadEventType` union: `'open' | 'blocking' | 'non-blocking' | 'resolved' | 're-opened'`
+      - [x] All types exported from `src/types/comments.ts`
     - **Dependencies**: None
 
-  - [ ] **Task: Implement store structure and `loadThreads` action**
+  - [x] **Task: Implement store structure and `loadThreads` action**
     - **Description**: Create the `threads` Zustand store. `loadThreads(docId)` calls the `load_threads` Tauri command, populates store state, and triggers decoration recomputation. Store clears when the active document changes.
     - **Acceptance criteria**:
-      - [ ] Store holds `threads: Thread[]` for the active document
-      - [ ] `loadThreads` invokes `load_threads` and populates the store
-      - [ ] Store clears threads when the active document changes
-      - [ ] `loadThreads` called automatically when a document is opened
-      - [ ] Loading state exposed for UI
-      - [ ] Unit tests cover load and clear behaviors
+      - [x] Store holds `threads: Thread[]` for the active document
+      - [x] `loadThreads` invokes `load_threads` and populates the store
+      - [x] Store clears threads when the active document changes
+      - [x] `loadThreads` called automatically when a document is opened
+      - [x] Loading state exposed for UI
+      - [x] Unit tests cover load and clear behaviors
     - **Dependencies**: Task: Define TypeScript types, Task: Implement `load_threads`
 
-  - [ ] **Task: Implement decoration computation**
+  - [x] **Task: Implement decoration computation**
     - **Description**: Pure function that takes the current thread list and TipTap document, and returns a `DecorationSet` applying the correct color to each anchored character range. Handles overlapping threads with worst-color precedence (danger > warning > success). Integrated into the store — recomputed whenever threads change.
     - **Acceptance criteria**:
-      - [ ] Open non-blocking thread → `--color-state-warning` dotted underline
-      - [ ] Open blocking thread → `--color-state-danger` dotted underline
-      - [ ] Resolved thread → `--color-state-success` dotted underline (or none if setting off)
-      - [ ] Stale thread → no decoration
-      - [ ] Overlapping threads: each character gets worst-case color across all spanning threads
-      - [ ] Decoration boundaries precise at anchor endpoints
-      - [ ] Decoration recomputed when any thread status, blocking, or stale flag changes
-      - [ ] Unit tests: single thread per state, two overlapping, three-way overlap, stale, setting off
+      - [x] Open non-blocking thread → `--color-state-warning` dotted underline
+      - [x] Open blocking thread → `--color-state-danger` dotted underline
+      - [x] Resolved thread → `--color-state-success` dotted underline (or none if setting off)
+      - [x] Stale thread → no decoration
+      - [x] Overlapping threads: each character gets worst-case color across all spanning threads
+      - [x] Decoration boundaries precise at anchor endpoints
+      - [x] Decoration recomputed when any thread status, blocking, or stale flag changes
+      - [x] Unit tests: single thread per state, two overlapping, three-way overlap, stale, setting off
     - **Dependencies**: Task: Implement store structure and `loadThreads` action
 
-  - [ ] **Task: Implement thread mutation actions**
+  - [x] **Task: Implement thread mutation actions**
     - **Description**: Store actions wrapping each Tauri mutation command: `resolveThread`, `reopenThread`, `toggleBlocking`, `togglePinned`. Each calls the appropriate Tauri command, updates store state optimistically, and triggers decoration recomputation.
     - **Acceptance criteria**:
-      - [ ] `resolveThread` calls `update_thread_status`, updates status and appends `→ resolved` event in store
-      - [ ] `reopenThread` calls `update_thread_status`, updates status and appends `→ re-opened` event
-      - [ ] `toggleBlocking` calls `toggle_blocking`, flips blocking in store, appends event; shows error toast if thread is resolved
-      - [ ] `togglePinned` calls `toggle_pinned`, flips pinned in store
-      - [ ] All actions trigger decoration recomputation
-      - [ ] Unit tests for each action
+      - [x] `resolveThread` calls `update_thread_status`, updates status and appends `→ resolved` event in store
+      - [x] `reopenThread` calls `update_thread_status`, updates status and appends `→ re-opened` event
+      - [x] `toggleBlocking` calls `toggle_blocking`, flips blocking in store, appends event; shows error toast if thread is resolved
+      - [x] `togglePinned` calls `toggle_pinned`, flips pinned in store
+      - [x] All actions trigger decoration recomputation
+      - [x] Unit tests for each action
     - **Dependencies**: Task: Implement store structure and `loadThreads` action, Task: Implement `update_thread_status`, Task: Implement `toggle_blocking`, Task: Implement `toggle_pinned`
 
-  - [ ] **Task: Implement in-session anchor update**
+  - [x] **Task: Implement in-session anchor update**
     - **Description**: When the TipTap document changes, the threads store remaps all in-memory anchor positions using ProseMirror's `tr.mapping.map()`, persists the new positions via `update_thread_anchors`, and triggers decoration recomputation. Anchors whose positions collapse to the same point are marked stale.
     - **Acceptance criteria**:
-      - [ ] A ProseMirror plugin or TipTap extension listens to every document-changing transaction
-      - [ ] All thread anchors remapped using `tr.mapping.map(from)` and `tr.mapping.map(to)` on each transaction
-      - [ ] Remapped positions written to store and persisted via `update_thread_anchors`
-      - [ ] Decorations recomputed after anchor update
-      - [ ] Anchors where `from` and `to` map to the same point are marked stale
-      - [ ] Unit tests: insert before anchor, insert inside anchor, delete overlapping anchor
+      - [x] A ProseMirror plugin or TipTap extension listens to every document-changing transaction
+      - [x] All thread anchors remapped using `tr.mapping.map(from)` and `tr.mapping.map(to)` on each transaction
+      - [x] Remapped positions written to store and persisted via `update_thread_anchors`
+      - [x] Decorations recomputed after anchor update
+      - [x] Anchors where `from` and `to` map to the same point are marked stale
+      - [x] Unit tests: insert before anchor, insert inside anchor, delete overlapping anchor
     - **Dependencies**: Task: Implement decoration computation, Task: Implement `cancel_queued_comment`, `load_queued_comments`, and `update_thread_anchors`
 
-  - [ ] **Task: Implement queued comment state management**
+  - [x] **Task: Implement queued comment state management**
     - **Description**: Store actions for the full queued comment lifecycle: `stageComment`, `commitComment`, `cancelQueuedComment`. `stageComment` persists via `queue_comment` and starts a countdown timer. `commitComment` calls `commit_comment` and transitions the UI. On app launch, `loadQueuedComments` flushes expired rows and resumes countdowns for unexpired ones from remaining time.
     - **Acceptance criteria**:
-      - [ ] `stageComment` calls `queue_comment` Tauri command and stores queued entry in state
-      - [ ] Countdown timer tracks `expires_at` and fires `commitComment` at expiry
-      - [ ] `commitComment` calls `commit_comment`, adds resulting thread/comment to store, removes queued entry
-      - [ ] `cancelQueuedComment` calls `cancel_queued_comment`, removes queued entry from store
-      - [ ] On app launch, `load_queued_comments` called; expired rows immediately committed; unexpired rows resume countdown from remaining time (not full timeout)
-      - [ ] `updateQueuedBody` calls `queue_comment` upsert with updated body; `toggleQueuedBody` calls `toggle_queued_body`
-      - [ ] Unit tests: stage → commit, stage → cancel, launch with expired, launch with unexpired
+      - [x] `stageComment` calls `queue_comment` Tauri command and stores queued entry in state
+      - [x] Countdown timer tracks `expires_at` and fires `commitComment` at expiry
+      - [x] `commitComment` calls `commit_comment`, adds resulting thread/comment to store, removes queued entry
+      - [x] `cancelQueuedComment` calls `cancel_queued_comment`, removes queued entry from store
+      - [x] On app launch, `load_queued_comments` called; expired rows immediately committed; unexpired rows resume countdown from remaining time (not full timeout)
+      - [x] `updateQueuedBody` calls `queue_comment` upsert with updated body; `toggleQueuedBody` calls `toggle_queued_body`
+      - [x] Unit tests: stage → commit, stage → cancel, launch with expired, launch with unexpired
     - **Dependencies**: Task: Implement store structure and `loadThreads` action, Task: Implement `commit_comment`, Task: Implement `queue_comment` and `toggle_queued_body`, Task: Implement `cancel_queued_comment`, `load_queued_comments`, and `update_thread_anchors`
 
 - [ ] **Story: Document decorations and comment trigger**
