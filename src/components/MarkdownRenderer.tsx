@@ -102,14 +102,20 @@ export function MarkdownRenderer({
     }
   }, [content, editor]);
 
-  // When content or docId changes and the editor is ready, reload threads using
-  // the rendered plain text (not raw markdown) so ProseMirror positions match.
+  // When content changes and the editor is ready:
+  // 1. Always update activeDocContent so AI comment views have document text.
+  // 2. If docId is present, also reload threads using the rendered plain text
+  //    (not raw markdown) so ProseMirror positions match what's stored in DB.
   useEffect(() => {
-    if (!editor || !docId) return;
-    // Defer one tick to ensure TipTap has finished parsing
+    if (!editor) return;
     const id = setTimeout(() => {
       const renderedText = editor.state.doc.textContent;
-      useThreadsStore.getState().loadThreads(docId, renderedText);
+      // Always make the rendered text available for AI calls
+      useThreadsStore.getState().setActiveDocContent(renderedText);
+      // Only load threads when we have a doc_id to look up
+      if (docId) {
+        useThreadsStore.getState().loadThreads(docId, renderedText);
+      }
     }, 0);
     return () => clearTimeout(id);
   }, [editor, content, docId]);

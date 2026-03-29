@@ -11,6 +11,7 @@ interface ThreadsStore {
 
   loadThreads: (docId: string, docContent: string) => Promise<void>;
   clearThreads: () => void;
+  setActiveDocContent: (content: string) => void;
 
   resolveThread: (threadId: string) => Promise<void>;
   reopenThread: (threadId: string) => Promise<void>;
@@ -49,6 +50,10 @@ export const useThreadsStore = create<ThreadsStore>((set, get) => ({
 
   clearThreads() {
     set({ threads: [], activeDocId: null });
+  },
+
+  setActiveDocContent(content) {
+    set({ activeDocContent: content });
   },
 
   async resolveThread(threadId) {
