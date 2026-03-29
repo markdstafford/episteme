@@ -776,6 +776,31 @@ Not applicable for a local desktop app.
 | Up/down navigation in thread view | Navigate to next/previous thread by anchor order |
 | AI enhancement disabled in settings | Queue comment → no AI enhancement attempted → only raw body available |
 
+### 7. Alternatives considered
+
+**SQLite vs. JSON sidecar files for external content storage**
+
+JSON sidecar files (one per document) were the initial candidate. They are human-readable, git-diffable, and require no schema migration. SQLite was chosen because it is queryable (cross-document queries, filtered views), handles concurrent writes more gracefully, provides a natural home for Yjs update logs when real-time sync is added, and accommodates future content types as new tables without file proliferation. The git-diff concern is moot given ADR-013 establishes that this data is not document truth.
+
+**W3C Web Annotation / Hypothesis multi-selector anchor model**
+
+The W3C approach stores multiple selector types simultaneously (`TextQuoteSelector`, `TextPositionSelector`, `RangeSelector`) and resolves them in priority order. Episteme's `{ anchor_from, anchor_to, quoted_text }` model is a simplified version of this — ProseMirror positions as the fast path, `quoted_text` as the resilient fallback. Full multi-selector support was not adopted because the two-field model covers the relevant failure modes for a local-first, single-user-at-a-time workflow.
+
+**Yjs `RelativePosition` for anchor tracking**
+
+Yjs `RelativePosition` anchors are CRDT-native and survive concurrent edits perfectly. They were not adopted because Yjs is not yet in the stack, and the migration path when it is added is contained to the anchor sub-object — a small, isolated change.
+
+### 8. Risks
+
+| Risk | Likelihood | Mitigation |
+|---|---|---|
+| Anchor drift after bulk AI document rewrites | High | See markdstafford/episteme#121. `update_thread_anchors` + `quoted_text` fallback handles incremental edits. For bulk rewrites, the proposed approach is to pass thread anchors as context in the AI edit request and ask AI to return updated positions. Open question: whether ProseMirror integer positions can be reliably mapped by AI, or whether conversion to raw character offsets is required first. |
+| `doc_id` frontmatter write conflicts with concurrent edits | Low | Write is guarded by "if absent" check; worst case is two writes of different UUIDs in a race — the second overwrites the first, orphaning any threads created under the first UUID. Acceptable risk for initial version. |
+| SQLite file corruption on abrupt app termination during write | Low | SQLite's WAL mode provides crash safety; queued comment table gives a recovery path for in-flight commits |
+| AI vetting latency makes comment creation feel slow | Medium | Vetting runs after user sends; the queued countdown gives perceived responsiveness. If AI call exceeds countdown, file without vetting. Timeout configurable in settings. |
+| `quoted_text` fuzzy match finds wrong passage in docs with repeated text | Low-Medium | Prefix/suffix context in `quoted_text` (from ProseMirror selection) disambiguates; stale flag set if confidence is low |
+| Overlapping thread decoration complexity at scale | Low | Decoration recomputed on thread store updates; performance should be fine for typical document sizes, but may need debouncing for large documents with many threads |
+
 ### 4. Security, privacy, and compliance
 
 **Authentication and authorization**
