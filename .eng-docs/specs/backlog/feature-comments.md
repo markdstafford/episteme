@@ -695,6 +695,24 @@ For each character position in the document, collect all threads whose anchor sp
 3. App launch: call `load_expired_queued_comments` → flush each immediately
 4. Cancel: call `delete_queued_comment`, clear React state
 
+### 4. Security, privacy, and compliance
+
+**Authentication and authorization**
+
+Comment creation and mutation require an authenticated session (GitHub OAuth, ADR-005). The current user identity is resolved from the auth session in Rust on every command — never trusted from the frontend. There is no per-thread access control in this version; any authenticated user can add comments, toggle blocking, and toggle pinned.
+
+**Data privacy**
+
+Comment data is stored locally in `.episteme/content.db`. The only PII stored is GitHub logins in the `author` and `changed_by` columns. No comment data is transmitted to any server — AI calls send document content and comment thread context to Claude via Bedrock (existing pattern from the AI chat feature; no new data exposure introduced by this feature).
+
+The `doc_id` UUID written to frontmatter is non-sensitive.
+
+**Input validation**
+
+Comment bodies are user-supplied text rendered in the AI panel. They must be sanitized before rendering to prevent XSS. TipTap's `MarkdownRenderer` handles this for document content; comment bodies should pass through the same renderer or an equivalent sanitization step — raw HTML must not be injected into the DOM.
+
+SQLite queries use parameterized statements throughout — no string interpolation in SQL.
+
 ## Task list
 
 *(Added by task decomposition stage)*
