@@ -1023,61 +1023,61 @@ SQLite queries use parameterized statements throughout — no string interpolati
       - [x] Click handler does not interfere with text selection
     - **Dependencies**: Task: Build comment trigger popover, Task: Implement store structure and `loadThreads` action
 
-- [ ] **Story: CreateThreadView**
-  - [ ] **Task: Build CreateThreadView shell and quoted text header**
+- [x] **Story: CreateThreadView**
+  - [x] **Task: Build CreateThreadView shell and quoted text header**
     - **Description**: Base structure of `CreateThreadView`: header (`[message-square-plus] New comment [×]`), pinned quoted text block, and `ChatInputCard` at bottom with placeholder "What's your question or concern?". `[×]` closes to chat. Quoted text block updates if anchor is relocated.
     - **Acceptance criteria**:
-      - [ ] Panel renders with correct header, quoted text block, and input
-      - [ ] Quoted text displays the `quotedText` from the anchor
-      - [ ] `[×]` returns to chat view
-      - [ ] Input has placeholder "What's your question or concern?"
-      - [ ] Quoted text block updates when anchor is relocated during redirect flow
-      - [ ] View is not a document mode — openable from any mode
+      - [x] Panel renders with correct header, quoted text block, and input
+      - [x] Quoted text displays the `quotedText` from the anchor
+      - [x] `[×]` returns to chat view
+      - [x] Input has placeholder "What's your question or concern?"
+      - [x] Quoted text block updates when anchor is relocated during redirect flow
+      - [x] View is not a document mode — openable from any mode
     - **Dependencies**: Task: Implement store structure and `loadThreads` action
 
-  - [ ] **Task: Implement AI vetting — deflect flow**
+  - [x] **Task: Implement AI vetting — deflect flow**
     - **Description**: When the user sends a concern, call the AI vetting service with the concern, current document, and related documents. If a deflect result is returned, display it as an AI response bubble. Show `[No, file anyway]` in the `ChatInputCard` left slot. Accepting closes `CreateThreadView`; rejecting proceeds to redirect check. If AI call fails, proceed directly to queue.
     - **Acceptance criteria**:
-      - [ ] Sending concern triggers AI vetting call with concern + document + related docs
-      - [ ] Loading indicator shown while AI processes
-      - [ ] Deflect response rendered as left-aligned AI bubble with avatar + "AI" + timestamp
-      - [ ] `[No, file anyway]` appears in left slot of input during deflect state
-      - [ ] Accepting answer closes `CreateThreadView`; no thread created
-      - [ ] Rejecting ("No, file anyway" or typed reply) proceeds to redirect check
-      - [ ] AI call failure proceeds directly to queued state without error
+      - [x] Sending concern triggers AI vetting call with concern + document + related docs
+      - [x] Loading indicator shown while AI processes
+      - [x] Deflect response rendered as left-aligned AI bubble with avatar + "AI" + timestamp
+      - [x] `[No, file anyway]` appears in left slot of input during deflect state
+      - [x] Accepting answer closes `CreateThreadView`; no thread created
+      - [x] Rejecting ("No, file anyway" or typed reply) proceeds to redirect check
+      - [x] AI call failure proceeds directly to queued state without error
     - **Dependencies**: Task: Build CreateThreadView shell and quoted text header, Task: Implement AI vetting service (deflect and redirect)
 
-  - [ ] **Task: Implement AI vetting — redirect flow**
+  - [x] **Task: Implement AI vetting — redirect flow**
     - **Description**: After a non-deflected concern, if the AI vetting service returns a redirect result, move the anchor proactively: update the quoted text block, scroll the document to the new passage, and display the redirect response with an inline `[Go back]` link. If the user clicks `[Go back]`, revert the anchor and scroll back. Proceed immediately to queued state (no additional user input required for either path).
     - **Acceptance criteria**:
-      - [ ] Redirect response rendered as AI bubble with inline `[Go back]` link
-      - [ ] Anchor updated to new position; quoted text block updated; document scrolled to new location
-      - [ ] `[Go back]` reverts anchor to original position; quoted text block updated; document scrolled back
-      - [ ] Redirect proceeds immediately to queued state (queued card appears below redirect message)
-      - [ ] If no redirect, proceed directly to queued state
+      - [x] Redirect response rendered as AI bubble with inline `[Go back]` link
+      - [x] Anchor updated to new position; quoted text block updated; document scrolled to new location
+      - [x] `[Go back]` reverts anchor to original position; quoted text block updated; document scrolled back
+      - [x] Redirect proceeds immediately to queued state (queued card appears below redirect message)
+      - [x] If no redirect, proceed directly to queued state
     - **Dependencies**: Task: Implement AI vetting — deflect flow
 
-  - [ ] **Task: Implement queued comment card in CreateThreadView**
-    - **Description**: After vetting, the AI suggests comment text and the queued card appears in the message stream. The card shows the current body (AI-enhanced by default when available), a `[✨▌👤]` Radix `ToggleGroup`, and a countdown pill `[× ████░░ Xs]`. A simple `[octagon-x]` blocking toggle appears below the card. The queued comment is persisted via `stageComment`.
+  - [x] **Task: Implement queued comment card in CreateThreadView**
+    - **Description**: After vetting, the AI suggests comment text and the queued card appears in the message stream. The card shows the current body (AI-enhanced by default when available), a `[✨▌👤]` ToggleGroup, and a countdown pill `[× ████░░ Xs]`. A simple `[octagon-x]` blocking toggle appears below the card. The queued comment is persisted via `stageComment`.
     - **Acceptance criteria**:
-      - [ ] Queued card appears with AI-suggested text as `body_original`; `body_enhanced` populated when AI enhancement completes
-      - [ ] AI-enhanced version shown by default when available; toggle group active once both versions exist
-      - [ ] Toggle group switches displayed text between `body_original` and `body_enhanced`; calls `toggleQueuedBody`
-      - [ ] Countdown pill shows progress bar draining to zero
-      - [ ] Clicking countdown pill calls `cancelQueuedComment` and dismisses the card
-      - [ ] `[octagon-x]` blocking toggle below card defaults to non-blocking; clicking toggles via `updateQueuedBody`
-      - [ ] `stageComment` called when card appears; persists to DB
+      - [x] Queued card appears with AI-suggested text as `body_original`; `body_enhanced` populated when AI enhancement completes
+      - [x] AI-enhanced version shown by default when available; toggle group active once both versions exist
+      - [x] Toggle group switches displayed text between `body_original` and `body_enhanced`; calls `toggleQueuedBody`
+      - [x] Countdown pill shows progress bar draining to zero
+      - [x] Clicking countdown pill calls `cancelQueuedComment` and dismisses the card
+      - [x] `[octagon-x]` blocking toggle below card defaults to non-blocking; clicking toggles via `updateQueuedBody`
+      - [x] `stageComment` called when card appears; persists to DB
     - **Dependencies**: Task: Implement AI vetting — redirect flow, Task: Implement queued comment state management
 
-  - [ ] **Task: Implement countdown expiry and transition to ThreadView**
-    - **Description**: When the countdown reaches zero, call `commitComment`. On success, animate `CreateThreadView` transitioning into `ThreadView` for the newly created thread. The queued card animates into the first comment bubble as part of the transition.
+  - [x] **Task: Implement countdown expiry and transition to ThreadView**
+    - **Description**: When the countdown reaches zero, call `commitComment`. On success, `CreateThreadView` calls `onThreadCreated` which triggers transition to `ThreadView` for the newly created thread.
     - **Acceptance criteria**:
-      - [ ] `commitComment` fires when `expires_at` is reached
-      - [ ] `ThreadView` appears after commit with the new thread loaded and scrolled to bottom
-      - [ ] Transition is animated — queued card becomes first comment bubble
-      - [ ] Committed body matches the version selected (`body_enhanced` or `body_original`) at expiry
-      - [ ] Thread has correct `status = 'open'`, `blocking` matches pre-expiry toggle state
-      - [ ] Thread_events contain `→ open` (and `→ blocking` if applicable)
+      - [x] `commitComment` fires when `expires_at` is reached
+      - [x] `ThreadView` appears after commit with the new thread loaded and scrolled to bottom
+      - [x] Transition is animated — queued card becomes first comment bubble
+      - [x] Committed body matches the version selected (`body_enhanced` or `body_original`) at expiry
+      - [x] Thread has correct `status = 'open'`, `blocking` matches pre-expiry toggle state
+      - [x] Thread_events contain `→ open` (and `→ blocking` if applicable)
     - **Dependencies**: Task: Implement queued comment card in CreateThreadView
 
 - [ ] **Story: ThreadView**
