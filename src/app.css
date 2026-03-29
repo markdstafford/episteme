@@ -318,11 +318,14 @@ html, body {
   }
   .thread-decoration-warning {
     text-decoration-color: var(--color-state-warning);
+    background-color: color-mix(in oklch, var(--color-state-warning) 20%, transparent);
   }
   .thread-decoration-danger {
     text-decoration-color: var(--color-state-danger);
+    background-color: color-mix(in oklch, var(--color-state-danger) 20%, transparent);
   }
   .thread-decoration-success {
     text-decoration-color: var(--color-state-success);
+    background-color: color-mix(in oklch, var(--color-state-success) 20%, transparent);
   }
 }
