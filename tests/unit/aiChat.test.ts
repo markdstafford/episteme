@@ -333,6 +333,12 @@ describe("useAiChatStore", () => {
           recently_used_skill_types: [],
           preview_width: "50%",
           preview_height: "75%",
+          github_login: null,
+          comment_deflect_instruction: "",
+          comment_redirect_instruction: "",
+          show_resolved_decorations: true,
+          ai_enhancement_enabled: true,
+          ai_enhancement_timeout_seconds: 30,
         },
       });
     });

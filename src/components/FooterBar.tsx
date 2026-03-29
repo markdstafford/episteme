@@ -1,4 +1,4 @@
-import { PanelLeft, Sparkles } from "lucide-react";
+import { PanelLeft, Sparkles, MessagesSquare } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 
 interface FooterBarProps {
@@ -7,6 +7,9 @@ interface FooterBarProps {
   aiPanelOpen: boolean;
   onToggleAiPanel: () => void;
   readingTime: number | null;
+  documentOpen?: boolean;
+  threadsViewActive?: boolean;
+  onToggleThreadsView?: () => void;
 }
 
 export function FooterBar({
@@ -15,6 +18,9 @@ export function FooterBar({
   aiPanelOpen,
   onToggleAiPanel,
   readingTime,
+  documentOpen,
+  threadsViewActive,
+  onToggleThreadsView,
 }: FooterBarProps) {
   return (
     <div
@@ -87,6 +93,23 @@ export function FooterBar({
           flexShrink: 0,
         }}
       >
+        {documentOpen && onToggleThreadsView && (
+          <Button
+            variant="ghost"
+            size="sm"
+            iconOnly
+            data-testid="threads-button"
+            aria-label="Show threads"
+            onClick={onToggleThreadsView}
+            style={{
+              color: threadsViewActive
+                ? "var(--color-accent)"
+                : "var(--color-text-tertiary)",
+            }}
+          >
+            <MessagesSquare size={14} />
+          </Button>
+        )}
         <Button
           variant="ghost"
           size="sm"

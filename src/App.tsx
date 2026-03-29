@@ -16,8 +16,10 @@ import { parsePreferences } from "@/lib/preferences";
 import { Loader2 } from "lucide-react";
 import { DesignKitchen } from "@/components/DesignKitchen";
 import { ShortcutsPanel } from "@/components/ShortcutsPanel";
-import { AiChatPanel } from "@/components/AiChatPanel";
+import { AiChatPanel, type AiChatPanelCommentTrigger } from "@/components/AiChatPanel";
 import { FooterBar } from "@/components/FooterBar";
+import { useFileTreeStore } from "@/stores/fileTree";
+import { useThreadsStore } from "@/stores/threads";
 
 function App() {
   const [showKitchenSink, setShowKitchenSink] = useState(false);
@@ -25,7 +27,11 @@ function App() {
   const [aiPanelOpen, setAiPanelOpen] = useState(false);
   const [sidebarVisible, setSidebarVisible] = useState(true);
   const [readingTime, setReadingTime] = useState<number | null>(null);
+  const [commentTrigger, setCommentTrigger] = useState<AiChatPanelCommentTrigger | null>(null);
+  const [threadsViewActive, setThreadsViewActive] = useState(false);
+  const selectedFilePath = useFileTreeStore((s) => s.selectedFilePath);
   const folderPath = useWorkspaceStore((s) => s.folderPath);
+  const initQueuedOnLaunch = useThreadsStore((s) => s.initQueuedOnLaunch);
   const isLoading = useWorkspaceStore((s) => s.isLoading);
   const loadSavedFolder = useWorkspaceStore((s) => s.loadSavedFolder);
   const openFolder = useWorkspaceStore((s) => s.openFolder);
@@ -46,6 +52,11 @@ function App() {
     const unlisten = listen("menu:open-folder", () => openFolder());
     return () => { unlisten.then((f) => f()); };
   }, [openFolder]);
+
+  // Restore any queued comments that survived an app close
+  useEffect(() => {
+    initQueuedOnLaunch();
+  }, [initQueuedOnLaunch]);
 
   useEffect(() => {
     const unlisten = listen("menu:open-settings", () => {
@@ -247,9 +258,32 @@ function App() {
         ) : (
           <div className="flex flex-1 min-w-0 overflow-hidden">
             <div className="flex-1 flex flex-col overflow-hidden">
-              <DocumentViewer onReadingTimeChange={setReadingTime} />
+              <DocumentViewer
+                onReadingTimeChange={setReadingTime}
+                onCommentTrigger={(anchor) => {
+                  setAiPanelOpen(true);
+                  setCommentTrigger({ type: "create-thread", anchor });
+                }}
+                onThreadClick={(threadId) => {
+                  setAiPanelOpen(true);
+                  setCommentTrigger({ type: "thread", threadId });
+                }}
+                onThreadsFilterClick={(filterIds) => {
+                  setAiPanelOpen(true);
+                  setCommentTrigger({ type: "threads-filtered", filterIds });
+                }}
+              />
             </div>
-            {aiPanelOpen && <AiChatPanel />}
+            {aiPanelOpen && (
+              <AiChatPanel
+                commentTrigger={commentTrigger}
+                onCommentTriggerConsumed={() => setCommentTrigger(null)}
+                onOpenThreadsView={(fn) => {
+                  // Store callback reference for footer button — call when button clicked
+                  (window as any).__openThreadsView = fn;
+                }}
+              />
+            )}
           </div>
         )}
       </div>
@@ -259,6 +293,18 @@ function App() {
         aiPanelOpen={aiPanelOpen}
         onToggleAiPanel={() => setAiPanelOpen((v) => !v)}
         readingTime={readingTime}
+        documentOpen={!!selectedFilePath}
+        threadsViewActive={threadsViewActive}
+        onToggleThreadsView={() => {
+          setAiPanelOpen(true);
+          if (threadsViewActive) {
+            setCommentTrigger(null);
+            setThreadsViewActive(false);
+          } else {
+            setThreadsViewActive(true);
+            (window as any).__openThreadsView?.();
+          }
+        }}
       />
       {shortcutsPanelOverlay}
     </div>

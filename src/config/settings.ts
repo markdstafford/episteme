@@ -1,10 +1,11 @@
 import type { LucideIcon } from "lucide-react";
-import { FileText, Sparkles } from "lucide-react";
+import { FileText, Sparkles, BookOpen } from "lucide-react";
+import { DEFAULT_DEFLECT_INSTRUCTION, DEFAULT_REDIRECT_INSTRUCTION } from "@/lib/commentAi";
 
 export interface SettingItem {
   id: string;
   label: string;
-  type: "text" | "select" | "toggle";
+  type: "text" | "select" | "toggle" | "textarea";
   order: number;
   defaultValue: string | boolean;
   options?: Array<{ value: string; label: string }>;
@@ -43,6 +44,63 @@ export const settingsConfig: SettingsCategory[] = [
             type: "text",
             order: 1,
             defaultValue: "",
+          },
+          {
+            id: "github_login",
+            label: "GitHub Username",
+            type: "text",
+            order: 2,
+            defaultValue: "",
+          },
+          {
+            id: "comment_deflect_instruction",
+            label: "Deflect instruction",
+            type: "textarea",
+            order: 8,
+            defaultValue: DEFAULT_DEFLECT_INSTRUCTION,
+          },
+          {
+            id: "comment_redirect_instruction",
+            label: "Redirect instruction",
+            type: "textarea",
+            order: 9,
+            defaultValue: DEFAULT_REDIRECT_INSTRUCTION,
+          },
+          {
+            id: "ai_enhancement_enabled",
+            label: "AI comment enhancement",
+            type: "toggle",
+            order: 10,
+            defaultValue: true,
+          },
+          {
+            id: "ai_enhancement_timeout_seconds",
+            label: "Enhancement timeout (seconds)",
+            type: "text",
+            order: 11,
+            defaultValue: "30",
+          },
+        ],
+      },
+    ],
+  },
+  {
+    id: "reading",
+    label: "Reading",
+    icon: BookOpen,
+    order: 2,
+    sections: [
+      {
+        id: "preferences",
+        label: "Preferences",
+        order: 1,
+        settings: [
+          {
+            id: "show_resolved_decorations",
+            label: "Show resolved comment decorations",
+            type: "toggle",
+            order: 1,
+            defaultValue: true,
           },
         ],
       },

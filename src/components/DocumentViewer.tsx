@@ -4,24 +4,32 @@ import { open } from "@tauri-apps/plugin-shell";
 import { useFileTreeStore } from "@/stores/fileTree";
 import { useWorkspaceStore } from "@/stores/workspace";
 import { parseDocument, resolveInternalLink } from "@/lib/markdown";
-import { MarkdownRenderer } from "@/components/MarkdownRenderer";
+import { MarkdownRenderer, type CommentTriggerAnchor } from "@/components/MarkdownRenderer";
 import { FrontmatterBar } from "@/components/FrontmatterBar";
 import { Loader2 } from "lucide-react";
 import { computeReadingTime } from "@/lib/readingTime";
 
 interface DocumentViewerProps {
   onReadingTimeChange?: (minutes: number | null) => void;
+  onCommentTrigger?: (anchor: CommentTriggerAnchor) => void;
+  onThreadClick?: (threadId: string) => void;
+  onThreadsFilterClick?: (threadIds: string[]) => void;
+  showResolvedDecorations?: boolean;
 }
 
-export function DocumentViewer({ onReadingTimeChange }: DocumentViewerProps = {}) {
+export function DocumentViewer({
+  onReadingTimeChange,
+  onCommentTrigger,
+  onThreadClick,
+  onThreadsFilterClick,
+  showResolvedDecorations = true,
+}: DocumentViewerProps = {}) {
   const selectedFilePath = useFileTreeStore((s) => s.selectedFilePath);
   const selectFile = useFileTreeStore((s) => s.selectFile);
   const workspacePath = useWorkspaceStore((s) => s.folderPath);
-const [content, setContent] = useState<string | null>(null);
-  const [frontmatter, setFrontmatter] = useState<Record<
-    string,
-    unknown
-  > | null>(null);
+  const [content, setContent] = useState<string | null>(null);
+  const [frontmatter, setFrontmatter] = useState<Record<string, unknown> | null>(null);
+  const [docId, setDocId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -29,6 +37,7 @@ const [content, setContent] = useState<string | null>(null);
     if (!selectedFilePath) {
       setContent(null);
       setFrontmatter(null);
+      setDocId(null);
       onReadingTimeChange?.(null);
       return;
     }
@@ -39,20 +48,22 @@ const [content, setContent] = useState<string | null>(null);
       setIsLoading(true);
       setError(null);
       try {
-        const raw = await invoke<string>("read_file", {
-          filePath: selectedFilePath,
-          workspacePath,
-        });
+        const [raw, id] = await Promise.all([
+          invoke<string>("read_file", { filePath: selectedFilePath, workspacePath }),
+          invoke<string>("ensure_doc_id_for_file", { filePath: selectedFilePath }),
+        ]);
         if (cancelled) return;
         const parsed = parseDocument(raw);
         setContent(parsed.content);
         setFrontmatter(parsed.frontmatter);
+        setDocId(id);
         onReadingTimeChange?.(computeReadingTime(parsed.content));
       } catch (e) {
         if (cancelled) return;
         setError(e instanceof Error ? e.message : String(e));
         setContent(null);
         setFrontmatter(null);
+        setDocId(null);
         onReadingTimeChange?.(null);
       } finally {
         if (!cancelled) setIsLoading(false);
@@ -139,6 +150,11 @@ const [content, setContent] = useState<string | null>(null);
                 content={content}
                 onLinkClick={handleLinkClick}
                 className="prose prose-tiptap dark:prose-invert max-w-none"
+                onCommentTrigger={onCommentTrigger}
+                onThreadClick={onThreadClick}
+                onThreadsFilterClick={onThreadsFilterClick}
+                showResolvedDecorations={showResolvedDecorations}
+                docId={docId ?? undefined}
               />
             </div>
           )}

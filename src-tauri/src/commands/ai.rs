@@ -621,3 +621,46 @@ mod tests {
     }
 
 }
+
+/// Simple non-streaming single-turn Claude call for comment AI services.
+/// Returns the full response text.
+#[tauri::command]
+pub async fn ai_complete(
+    system_prompt: String,
+    user_message: String,
+    aws_profile: String,
+) -> Result<String, String> {
+    validate_aws_profile(&aws_profile)?;
+
+    let config = aws_config::defaults(BehaviorVersion::latest())
+        .profile_name(&aws_profile)
+        .load()
+        .await;
+
+    let client = BedrockClient::new(&config);
+
+    let response = client
+        .converse()
+        .model_id("us.anthropic.claude-sonnet-4-6")
+        .system(SystemContentBlock::Text(system_prompt))
+        .messages(
+            Message::builder()
+                .role(ConversationRole::User)
+                .content(ContentBlock::Text(user_message))
+                .build()
+                .map_err(|e| e.to_string())?,
+        )
+        .send()
+        .await
+        .map_err(|e| e.to_string())?;
+
+    let text = response
+        .output()
+        .and_then(|o| o.as_message().ok())
+        .and_then(|m| m.content().first())
+        .and_then(|b| b.as_text().ok())
+        .cloned()
+        .unwrap_or_default();
+
+    Ok(text)
+}

@@ -1,4 +1,5 @@
 pub mod ai;
+pub mod comments;
 pub mod files;
 pub mod folder;
 pub mod manifests;

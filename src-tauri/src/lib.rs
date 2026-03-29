@@ -1,5 +1,8 @@
 mod commands;
+mod comments_types;
 mod context;
+mod db;
+mod frontmatter;
 mod manifest_loader;
 mod session;
 mod tool_catalog;
@@ -29,6 +32,7 @@ pub fn run() {
       commands::ai::ai_check_auth,
       commands::ai::ai_chat,
       commands::ai::ai_suggest_session_name,
+      commands::ai::ai_complete,
       commands::skills::count_documents_by_type,
       commands::manifests::load_manifests,
       commands::updater::check_for_update,
@@ -37,6 +41,20 @@ pub fn run() {
       commands::sessions::save_session,
       commands::sessions::delete_session,
       commands::sessions::pin_session,
+      commands::comments::init_workspace_db,
+      commands::comments::get_doc_id_for_file,
+      commands::comments::ensure_doc_id_for_file,
+      commands::comments::ensure_all_doc_ids,
+      commands::comments::load_threads,
+      commands::comments::commit_comment,
+      commands::comments::update_thread_status,
+      commands::comments::toggle_blocking,
+      commands::comments::toggle_pinned,
+      commands::comments::queue_comment,
+      commands::comments::toggle_queued_body,
+      commands::comments::cancel_queued_comment,
+      commands::comments::load_queued_comments,
+      commands::comments::update_thread_anchors,
     ])
     .setup(|app| {
       if cfg!(debug_assertions) {
@@ -66,6 +84,7 @@ pub fn run() {
       app.manage(commands::sessions::SessionsLock(std::sync::Mutex::new(())));
       app.manage(ManifestState(std::sync::Mutex::new(None)));
       app.manage(WatcherState(std::sync::Mutex::new(None)));
+      app.manage(db::DbState(std::sync::Mutex::new(None)));
 
       Ok(())
     })

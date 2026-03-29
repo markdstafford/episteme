@@ -22,7 +22,7 @@ describe("settingsConfig", () => {
         section.settings.forEach((setting) => {
           expect(setting.id).toBeTruthy();
           expect(setting.label).toBeTruthy();
-          expect(["text", "select", "toggle"]).toContain(setting.type);
+          expect(["text", "select", "toggle", "textarea"]).toContain(setting.type);
           expect(typeof setting.order).toBe("number");
         });
       });
@@ -34,6 +34,28 @@ describe("settingsConfig", () => {
     expect(ai).toBeDefined();
     const allSettings = ai!.sections.flatMap((s) => s.settings);
     expect(allSettings.some((s) => s.id === "aws_profile")).toBe(true);
+  });
+
+  it("show_resolved_decorations setting exists with toggle type and default true", () => {
+    const allSettings = settingsConfig.flatMap((c) => c.sections.flatMap((s) => s.settings));
+    const s = allSettings.find((s) => s.id === "show_resolved_decorations");
+    expect(s).toBeDefined();
+    expect(s?.type).toBe("toggle");
+    expect(s?.defaultValue).toBe(true);
+  });
+
+  it("ai_enhancement_enabled setting exists with toggle type", () => {
+    const allSettings = settingsConfig.flatMap((c) => c.sections.flatMap((s) => s.settings));
+    const s = allSettings.find((s) => s.id === "ai_enhancement_enabled");
+    expect(s?.type).toBe("toggle");
+    expect(s?.defaultValue).toBe(true);
+  });
+
+  it("ai_enhancement_timeout_seconds setting exists with text type", () => {
+    const allSettings = settingsConfig.flatMap((c) => c.sections.flatMap((s) => s.settings));
+    const s = allSettings.find((s) => s.id === "ai_enhancement_timeout_seconds");
+    expect(s?.type).toBe("text");
+    expect(s?.defaultValue).toBe("30");
   });
 });
 

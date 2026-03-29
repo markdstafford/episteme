@@ -114,6 +114,49 @@ function CssLengthSetting({ id, label }: { id: string; label: string }) {
 }
 
 const CSS_LENGTH_IDS = new Set(["preview_width", "preview_height"]);
+const TEXTAREA_IDS = new Set(["comment_deflect_instruction", "comment_redirect_instruction"]);
+
+function TextareaSetting({ id, label, placeholder }: { id: string; label: string; placeholder?: string }) {
+  const [value, setValue] = useState("");
+  const [fullPrefs, setFullPrefs] = useState<Preferences>(parsePreferences({}));
+  const [prefsLoaded, setPrefsLoaded] = useState(false);
+
+  useEffect(() => {
+    invoke<Preferences>("load_preferences")
+      .then((prefs) => {
+        setFullPrefs(prefs);
+        setValue((prefs as Record<string, unknown>)[id] as string ?? "");
+        setPrefsLoaded(true);
+      })
+      .catch(() => {});
+  }, [id]);
+
+  const handleChange = (raw: string) => {
+    if (!prefsLoaded) return;
+    setValue(raw);
+    const merged = { ...fullPrefs, [id]: raw };
+    invoke("save_preferences", { preferences: merged }).catch(() => {});
+  };
+
+  return (
+    <div className="flex flex-col gap-[var(--space-2)]">
+      <label
+        htmlFor={id}
+        className="text-[length:var(--font-size-ui-base)] text-(--color-text-secondary)"
+      >
+        {label}
+      </label>
+      <textarea
+        id={id}
+        value={value}
+        onChange={(e) => handleChange(e.target.value)}
+        placeholder={placeholder}
+        rows={4}
+        className="w-full resize-y rounded-(--radius-base) border border-(--color-border-subtle) bg-(--color-bg-base) px-3 py-2 text-[length:var(--font-size-ui-sm)] text-(--color-text-primary) outline-none focus:border-(--color-accent)"
+      />
+    </div>
+  );
+}
 
 function SettingControl({ settingId }: { settingId: string }) {
   const setting = settingsConfig
@@ -125,6 +168,15 @@ function SettingControl({ settingId }: { settingId: string }) {
   }
   if (CSS_LENGTH_IDS.has(settingId)) {
     return <CssLengthSetting id={settingId} label={setting?.label ?? settingId} />;
+  }
+  if (TEXTAREA_IDS.has(settingId)) {
+    return (
+      <TextareaSetting
+        id={settingId}
+        label={setting?.label ?? settingId}
+        placeholder={typeof setting?.defaultValue === "string" ? setting.defaultValue : undefined}
+      />
+    );
   }
   if (import.meta.env.DEV) console.warn(`No control for setting: ${settingId}`);
   return null;
