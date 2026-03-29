@@ -695,6 +695,31 @@ For each character position in the document, collect all threads whose anchor sp
 3. App launch: call `load_expired_queued_comments` → flush each immediately
 4. Cancel: call `delete_queued_comment`, clear React state
 
+### 5. Observability
+
+For a local desktop app, traditional server observability (metrics dashboards, alerting) doesn't apply. The relevant concerns are logging and future instrumentation hooks.
+
+**Logging**
+
+| Event | Level | Notes |
+|---|---|---|
+| Thread created | `info` | Include `thread_id`, `doc_id` |
+| Comment committed | `info` | Include `thread_id`, source (queued/immediate) |
+| Anchor reconciliation: stale anchor | `warn` | Include `thread_id`, `quoted_text` |
+| Anchor reconciliation: position updated | `debug` | |
+| AI vetting call (deflect/redirect/suggest) | `debug` | Include latency |
+| AI enhancement call | `debug` | Include latency, whether enhanced version was used |
+| DB write failure | `error` | |
+| Queued comments flushed on launch | `info` | Include count |
+
+**Metrics**
+
+No runtime metrics infrastructure in this version. Candidate for future addition: AI deflection rate (comments deflected / total comment attempts) as a product health signal.
+
+**Alerting**
+
+Not applicable for a local desktop app.
+
 ### 4. Security, privacy, and compliance
 
 **Authentication and authorization**
