@@ -44,6 +44,7 @@ pub fn run() {
       commands::comments::init_workspace_db,
       commands::comments::get_doc_id_for_file,
       commands::comments::ensure_doc_id_for_file,
+      commands::comments::ensure_all_doc_ids,
       commands::comments::load_threads,
       commands::comments::commit_comment,
       commands::comments::update_thread_status,

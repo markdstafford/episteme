@@ -55,6 +55,9 @@ export const useWorkspaceStore = create<WorkspaceStore>((set, get) => ({
         await invoke("init_workspace_db", { workspacePath: path }).catch((e) =>
           console.error("Failed to init workspace DB:", e),
         );
+        invoke("ensure_all_doc_ids", { workspacePath: path }).catch((e) =>
+          console.error("Failed to ensure doc IDs:", e),
+        );
       } else {
         set({ isLoading: false });
       }
@@ -78,6 +81,9 @@ export const useWorkspaceStore = create<WorkspaceStore>((set, get) => ({
         await invoke("init_workspace_db", {
           workspacePath: prefs.last_opened_folder,
         }).catch((e) => console.error("Failed to init workspace DB:", e));
+        invoke("ensure_all_doc_ids", {
+          workspacePath: prefs.last_opened_folder,
+        }).catch((e) => console.error("Failed to ensure doc IDs:", e));
       }
     } catch (e) {
       set({

@@ -102,20 +102,15 @@ export function MarkdownRenderer({
     }
   }, [content, editor]);
 
-  // When content changes and the editor is ready:
-  // 1. Always update activeDocContent so AI comment views have document text.
-  // 2. If docId is present, also reload threads using the rendered plain text
-  //    (not raw markdown) so ProseMirror positions match what's stored in DB.
+  // When content or docId changes and the editor is ready, load threads using
+  // the rendered plain text (not raw markdown) so ProseMirror positions match
+  // what's stored in the DB. docId is always provided (DocumentViewer calls
+  // ensure_doc_id_for_file on every file open).
   useEffect(() => {
-    if (!editor) return;
+    if (!editor || !docId) return;
     const id = setTimeout(() => {
       const renderedText = editor.state.doc.textContent;
-      // Always make the rendered text available for AI calls
-      useThreadsStore.getState().setActiveDocContent(renderedText);
-      // Only load threads when we have a doc_id to look up
-      if (docId) {
-        useThreadsStore.getState().loadThreads(docId, renderedText);
-      }
+      useThreadsStore.getState().loadThreads(docId, renderedText);
     }, 0);
     return () => clearTimeout(id);
   }, [editor, content, docId]);

@@ -27,11 +27,9 @@ export function DocumentViewer({
   const selectedFilePath = useFileTreeStore((s) => s.selectedFilePath);
   const selectFile = useFileTreeStore((s) => s.selectFile);
   const workspacePath = useWorkspaceStore((s) => s.folderPath);
-const [content, setContent] = useState<string | null>(null);
-  const [frontmatter, setFrontmatter] = useState<Record<
-    string,
-    unknown
-  > | null>(null);
+  const [content, setContent] = useState<string | null>(null);
+  const [frontmatter, setFrontmatter] = useState<Record<string, unknown> | null>(null);
+  const [docId, setDocId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -39,6 +37,7 @@ const [content, setContent] = useState<string | null>(null);
     if (!selectedFilePath) {
       setContent(null);
       setFrontmatter(null);
+      setDocId(null);
       onReadingTimeChange?.(null);
       return;
     }
@@ -49,20 +48,22 @@ const [content, setContent] = useState<string | null>(null);
       setIsLoading(true);
       setError(null);
       try {
-        const raw = await invoke<string>("read_file", {
-          filePath: selectedFilePath,
-          workspacePath,
-        });
+        const [raw, id] = await Promise.all([
+          invoke<string>("read_file", { filePath: selectedFilePath, workspacePath }),
+          invoke<string>("ensure_doc_id_for_file", { filePath: selectedFilePath }),
+        ]);
         if (cancelled) return;
         const parsed = parseDocument(raw);
         setContent(parsed.content);
         setFrontmatter(parsed.frontmatter);
+        setDocId(id);
         onReadingTimeChange?.(computeReadingTime(parsed.content));
       } catch (e) {
         if (cancelled) return;
         setError(e instanceof Error ? e.message : String(e));
         setContent(null);
         setFrontmatter(null);
+        setDocId(null);
         onReadingTimeChange?.(null);
       } finally {
         if (!cancelled) setIsLoading(false);
@@ -153,7 +154,7 @@ const [content, setContent] = useState<string | null>(null);
                 onThreadClick={onThreadClick}
                 onThreadsFilterClick={onThreadsFilterClick}
                 showResolvedDecorations={showResolvedDecorations}
-                docId={(frontmatter?.doc_id as string) || undefined}
+                docId={docId ?? undefined}
               />
             </div>
           )}

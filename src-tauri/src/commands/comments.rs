@@ -57,10 +57,51 @@ pub async fn get_doc_id_for_file(file_path: String) -> Result<Option<String>, St
 }
 
 /// Returns the existing doc_id or writes a new UUID v4 to the file and returns it.
-/// Frontend calls this before queue_comment for new-thread comments.
 #[tauri::command]
 pub async fn ensure_doc_id_for_file(file_path: String) -> Result<String, String> {
     crate::frontmatter::ensure_doc_id(&file_path)
+}
+
+/// Walk all markdown files in the workspace and ensure each has a doc_id.
+/// Called once on workspace open so every document always has an ID.
+#[tauri::command]
+pub async fn ensure_all_doc_ids(workspace_path: String) -> Result<(), String> {
+    fn walk(dir: &std::path::Path) -> Vec<std::path::PathBuf> {
+        let mut files = Vec::new();
+        if let Ok(entries) = std::fs::read_dir(dir) {
+            for entry in entries.flatten() {
+                let path = entry.path();
+                if path.is_dir() {
+                    // Skip hidden dirs and .episteme
+                    let name = path.file_name().and_then(|n| n.to_str()).unwrap_or("");
+                    if !name.starts_with('.') {
+                        files.extend(walk(&path));
+                    }
+                } else if path.extension().and_then(|e| e.to_str()) == Some("md") {
+                    files.push(path);
+                }
+            }
+        }
+        files
+    }
+
+    let root = std::path::Path::new(&workspace_path);
+    let md_files = walk(root);
+    let mut assigned = 0usize;
+
+    for path in &md_files {
+        match crate::frontmatter::ensure_doc_id(path.to_str().unwrap_or("")) {
+            Ok(_) => assigned += 1,
+            Err(e) => log::warn!("ensure_all_doc_ids: skipping {:?}: {}", path, e),
+        }
+    }
+
+    log::info!(
+        "ensure_all_doc_ids: processed {} markdown files in {}",
+        assigned,
+        workspace_path
+    );
+    Ok(())
 }
 
 // ── load_threads ──────────────────────────────────────────────────────────────
@@ -352,10 +393,8 @@ pub async fn commit_comment(
     id: String,
     doc_file_path: Option<String>,
 ) -> Result<CommitResult, String> {
+    let _ = doc_file_path; // doc_id is guaranteed present — ensure_all_doc_ids runs on workspace open
     let current_user = current_user_from_app(&app);
-    if let Some(path) = &doc_file_path {
-        crate::frontmatter::ensure_doc_id(path)?;
-    }
     with_db(&app, |conn| commit_comment_on_conn(conn, &id, &current_user))
 }
 
