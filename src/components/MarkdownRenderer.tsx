@@ -219,7 +219,6 @@ export function MarkdownRenderer({
             top: selectionPopover.y - 36,
             zIndex: 50,
           }}
-          className="bg-(--color-bg-elevated) border border-(--color-border-subtle) rounded-(--radius-base) shadow-md p-1"
         >
           <button
             className="p-1 rounded-(--radius-sm) hover:bg-(--color-bg-subtle) text-(--color-text-secondary)"
