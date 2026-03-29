@@ -99,21 +99,67 @@ Aaron reads through the document and the threads. The throughput resolution look
 
 ## Design spec
 
-### User flows
+### Thread states
+
+Each thread has two independent properties:
+
+- **Status**: `open` | `resolved`
+- **Blocking**: boolean — only toggleable when status = `open`; preserved when resolved
+
+Visual treatment across all surfaces (decoration, rail bubble, threads view border, status row icon):
+
+| Status | Blocking | Color |
+|---|---|---|
+| open | false | `--color-state-warning` |
+| open | true | `--color-state-danger` |
+| resolved | any | `--color-state-success` |
+
+Success takes precedence over danger once resolved — a thread that was blocking shows success coloring when resolved, with the blocking value preserved silently.
+
+### Document decorations and comment trigger
+
+TipTap `Decoration.inline` applies a dotted underline to anchored text using the color from the thread state table above. Resolved decorations are hidden if "show resolved decorations" is off (Settings panel, reading preferences, default: on).
+
+**Comment trigger:** when the user selects text, a small popover appears anchored to the end of the selection containing a `message-square-plus` button. Clicking it opens the new thread view in the AI panel with the selection quoted.
+
+```
+  ...the throughput target is set to 1,000 req/s▌
+                                    ┌──────────┐
+                                    │  [✚ msg] │
+                                    └──────────┘
+```
+
+Clicking a decorated passage on an existing thread opens thread view in the AI panel.
+
+**Right rail:** a narrow strip (`--width-comment-rail: 24px`) to the right of the content column showing thread indicator bubbles aligned to their anchor's first line. Only rendered at window width ≥ 1440px — below this breakpoint, decorations are the only inline indicator. Each bubble uses the thread state color; bubbles collapse into a count badge when multiple threads are anchored within the same viewport region. Hover: thread preview popover. Click: opens thread view.
+
+### AI panel views
+
+Three views handle comments in the AI panel. Each replaces whatever is currently showing. All follow the existing `ChatMessage` rendering pattern: current user messages right-aligned with accent background; all others left-aligned with subtle background. Multi-participant views add avatar + name + timestamp above each non-current-user bubble.
+
+| View | Header | Trigger |
+|---|---|---|
+| New thread view | `[message-square-plus]  New comment  [×]` | Comment trigger popover in document |
+| Thread view | `[←]  Threads  [×]` | Clicking a decoration or threads view row |
+| Threads view | `[messages-square]  Threads` | `messages-square` icon in AI panel header |
+
+### New thread view
+
+The new thread view guides the user through creating a comment. It is not a document mode — it can be opened from any mode. The quoted selection is pinned at the top throughout and updates if the anchor is relocated.
 
 #### Comment creation flow
 
 ```mermaid
 flowchart TD
-    A[User selects text] --> B[Clicks trigger in margin]
-    B --> C[New comment view opens\nquoted text pinned]
+    A[User selects text] --> B[Clicks trigger popover]
+    B --> C[New thread view opens\nquoted text pinned]
     C --> D[User types concern and sends]
     D --> E[AI checks document\nand related documents]
 
     E --> F{Answer found?}
     F -->|Yes| G[AI surfaces the answer\ndeflection attempt]
     G --> H{User}
-    H -->|Acceptable| I[Deflect: new comment view closes]
+    H -->|Acceptable| I[Deflect: new thread view closes]
     H -->|No| J
 
     F -->|No| J
@@ -135,17 +181,12 @@ flowchart TD
     R --> S[Thread created\nBlocking toggleable]
 ```
 
-### Key UI components
+#### UI states
 
-Message rendering follows the existing `ChatMessage` pattern: user messages right-aligned with accent background; AI messages left-aligned with subtle background. Thread messages (multi-participant) add a name + timestamp above each bubble to distinguish participants.
+**State 1 — just opened**
 
-#### New comment view (AI panel state)
+The panel switches to new thread view. The quoted selection is pinned at the top as a persistent reference. The input awaits the user's question or concern.
 
-New comment view is a state of the AI panel, not a document mode. It opens when the user clicks the comment trigger in the document margin. The quoted text block is pinned at the top throughout the session and updates if the anchor is relocated.
-
-The input uses the existing `ChatInputCard` pattern. Placeholder: "What's your question or concern?"
-
-**State 1 — just opened:**
 ```
 ┌──────────────────────────────────────────────┐
 │  [message-square-plus]  New comment    [×]   │
@@ -163,7 +204,10 @@ The input uses the existing `ChatInputCard` pattern. Placeholder: "What's your q
 └──────────────────────────────────────────────┘
 ```
 
-**State 2 — user sent, AI processing:**
+**State 2 — processing**
+
+The user's message appears right-aligned. AI is scanning the document and related documents — checking for an existing answer and a better anchor location.
+
 ```
 │  ╔════════════════════════════════════════╗  │
 │  ║ "The retry queue throughput target..." ║  │
@@ -175,7 +219,10 @@ The input uses the existing `ChatInputCard` pattern. Placeholder: "What's your q
 │  [subtle ▶] ·  ·  ·                          │
 ```
 
-**State 3 — deflection attempt:**
+**State 3 — deflection attempt**
+
+AI has found what it believes answers the concern and surfaces the reference inline. The user can confirm (view closes) or reject and continue filing. `[No, file anyway]` appears in the left slot of the input as a quick action; the user can also reply naturally.
+
 ```
 │                        this number seems low │
 │                                   [accent ▶] │
@@ -192,9 +239,10 @@ The input uses the existing `ChatInputCard` pattern. Placeholder: "What's your q
 │  └──────────────────────────────────────┘   │
 ```
 
-`[No, file anyway]` in the left slot of the input as a quick action; user can also reply naturally.
+**State 4 — redirect + queued**
 
-**State 4 — redirect + queued (anchor already moved, quoted text updated):**
+AI found a better anchor and moved it proactively — the quoted text block updates to show the new selection and the document scrolls to it. The redirect message appears with an inline `[Go back]` link. The comment is immediately staged as a queued card below the AI message. The user can revert the anchor at any time before the countdown expires.
+
 ```
 │  ╔════════════════════════════════════════╗  │
 │  ║ "The infrastructure constraint sets   ║  │
@@ -210,28 +258,6 @@ The input uses the existing `ChatInputCard` pattern. Placeholder: "What's your q
 │  there.                      [Go back]       │
 │                                              │
 │  ┌──────────────────────────────────────┐   │
-│  │  The throughput target is already    │   │  ← queued card
-│  │  exceeded on busy days — the         │   │
-│  │  constraint driving this needs       │   │
-│  │  revisiting.                         │   │
-│  │                                      │   │
-│  │  [✨▌👤]          [× ████░░ 24s]    │   │
-│  └──────────────────────────────────────┘   │
-│  [octagon-x · tertiary]                     │
-```
-
-`[Go back]` is inline on the AI message. Quoted block at top updates immediately when anchor moves and again if user reverts.
-
-#### Queued message
-
-Appears in the new comment view message stack when a comment is staged for sending. AI-enhanced version shown by default. A simple status toggle appears below the queued card — the thread does not exist yet so the full status row (with history) is hidden until the comment sends.
-
-- **Toggle group** (`[✨▌👤]`): Radix `ToggleGroup`. Selected segment has accent background. Switches the displayed text and the version that will be sent.
-- **Countdown pill** (`[× ████░░ 24s]`): tappable — clicking cancels. Progress bar drains to zero, then comment sends and animates into a normal message bubble.
-- **Status toggle below card**: `octagon-x` icon only — no attribution, no history. Clicking toggles blocking for when the thread is created.
-
-```
-│  ┌──────────────────────────────────────┐   │
 │  │  The throughput target is already    │   │
 │  │  exceeded on busy days — the         │   │
 │  │  constraint driving this needs       │   │
@@ -242,90 +268,86 @@ Appears in the new comment view message stack when a comment is staged for sendi
 │  [octagon-x · tertiary]                     │
 ```
 
+### Thread view
+
+The thread view shows an existing thread. Quoted text is pinned at the top, followed by the status row. Messages are displayed in chronological order. A virtual card appears at the end of the message stream. The input is always available regardless of thread status.
+
+Header: `[←]  Threads  [×]` — `[←]` returns to threads list, `[×]` closes to chat.
+
+#### Queued message
+
+Appears in the message stack when a reply is staged for sending. AI-enhanced version shown by default.
+
+- **Toggle group** (`[✨▌👤]`): Radix `ToggleGroup`. Selected segment has accent background. Switches the displayed text and the version that will be sent.
+- **Countdown pill** (`[× ████░░ 24s]`): tappable — clicking cancels. Progress bar drains to zero, then the message sends and animates into a normal bubble.
+
+In the new thread view, a simple status toggle (`octagon-x` icon only, no history) appears below the queued card to set blocking before the thread is created. The full status row replaces it once the thread exists.
+
+```
+│  ┌──────────────────────────────────────┐   │
+│  │  The throughput target is already    │   │
+│  │  exceeded on busy days — the         │   │
+│  │  constraint driving this needs       │   │
+│  │  revisiting.                         │   │
+│  │                                      │   │
+│  │  [✨▌👤]          [× ████░░ 24s]    │   │
+│  └──────────────────────────────────────┘   │
+│  [octagon-x · tertiary]                     │  ← new thread view only
+```
+
 #### Status row
 
-Appears below the quoted text block in thread view. Hidden in new comment view until the first comment sends and a thread is created. Tracks both blocking status and thread status with a full audit history.
+Appears below the quoted text block in thread view. Tracks blocking and status with a full audit history. Thread status and blocking are independent — see thread states table above.
 
-Thread **status** (`open` | `resolved`) and **blocking** (boolean) are independent. Blocking is only toggleable when status = open. When status = resolved, the `octagon-x` icon is non-interactive but its value is preserved in case the thread re-opens.
-
-- **Icon**: `octagon-x` from Lucide. Only the icon is clickable — only when status = open.
-- **No history yet** (default, never explicitly toggled): icon only, no text.
-- **Non-blocking** (explicitly set): icon in `--color-text-tertiary` + `name · time ago`.
-- **Blocking** (status = open): icon in `--color-state-danger` + label "blocking" + `name · time ago`.
-- **Resolved** (any blocking value): icon in `--color-state-success`, non-interactive + `name · time ago`.
-- **Hover anywhere on the row**: history popover appears. Icon brightens to `--color-text-primary` on hover (only when interactive).
-
-**Default (never toggled):**
-```
-│  [octagon-x · tertiary]                          │
-```
-
-**Blocking (status = open):**
-```
-│  [octagon-x · danger]  blocking · Aaron · 30m ago │
-```
-
-**Resolved (blocking preserved but dormant):**
-```
-│  [octagon-x · success · disabled]  resolved · Eric · 1h ago │
-```
-
-**History popover (row hover):**
-
-Each entry uses `→ state` format — consistent across all event types. Possible states: `blocking`, `non-blocking`, `resolved`, `re-opened`.
+- **Icon**: `octagon-x` from Lucide. Only clickable when status = `open`.
+- **No history yet**: icon only, no text.
+- **Non-blocking** (explicitly set): `--color-text-tertiary` + `name · time ago`.
+- **Blocking**: `--color-state-danger` + label "blocking" + `name · time ago`.
+- **Resolved**: `--color-state-success`, non-interactive + `name · time ago`.
+- **Hover anywhere on the row**: history popover. Icon brightens on hover when interactive.
 
 ```
-│  ┌──────────────────────────────────┐            │
-│  │  → blocking      Raquel · 2h    │            │
-│  │  → non-blocking  Eric · 1h      │            │
-│  │  → blocking      Aaron · 30m    │            │
-│  │  → resolved      Eric · 10m     │            │
-│  └──────────────────────────────────┘            │
+[octagon-x · tertiary]                           ← default
+[octagon-x · danger]  blocking · Aaron · 30m     ← blocking
+[octagon-x · success · disabled]  resolved · Eric · 1h  ← resolved
 ```
 
-Blocking is a property of the thread, not individual messages. Any participant can toggle it while the thread is open. An open blocking thread prevents document progression regardless of when it was marked blocking.
+**History popover** — `→ state` format, consistent across all event types:
+
+```
+│  ┌──────────────────────────────────┐  │
+│  │  → blocking      Raquel · 2h    │  │
+│  │  → non-blocking  Eric · 1h      │  │
+│  │  → blocking      Aaron · 30m    │  │
+│  │  → resolved      Eric · 10m     │  │
+│  └──────────────────────────────────┘  │
+```
+
+Possible states: `blocking`, `non-blocking`, `resolved`, `re-opened`.
 
 #### Virtual cards
 
-Persistent AI-generated cards that appear at the end of the message stream in thread view, above the input. Which card shows depends on thread status and the current user's role relative to the document.
+Appear at the end of the message stream, above the input. Status only changes via explicit button action — sending a message does not affect status.
 
-**Card A — doc author, status = open**
-
-The document author (identified from frontmatter) sees a card prompting resolution. Only appears once the thread has at least one reply from someone other than the original commenter — avoids prompting resolution on a thread that hasn't been addressed yet.
-
-Two actions: `[Suggest a fix]` triggers the AI fix flow (AI proposes a document edit and draft reply, follows the queued message pattern); `[Mark as resolved]` resolves the thread directly without a document change.
-
+**Card A — doc author, status = open, thread has ≥1 reply from a non-original-commenter:**
 ```
 │  [✨]  Ready to address this thread?             │
-│                                                  │
 │  [Suggest a fix]    [Mark as resolved]           │
 ```
+`[Suggest a fix]` triggers the AI fix flow (AI proposes a document edit and draft reply, follows the queued message pattern). `[Mark as resolved]` resolves directly without a document change.
 
-**Card B — all users, status = resolved**
-
-All users see the resolved card. Re-opening requires inline confirmation to prevent accidental clicks:
-
-*Default state:*
+**Card B — all users, status = resolved:**
 ```
 │  [✨]  This thread was marked as resolved.       │
-│                                                  │
 │  [Re-open]                                       │
 ```
-
-*After clicking `[Re-open]`:*
+After clicking `[Re-open]`, inline confirmation:
 ```
 │  [✨]  This thread was marked as resolved.       │
-│                                                  │
 │  Re-open this thread?  [Confirm]  [Cancel]       │
 ```
 
-Sending any message does not affect thread status. Status only changes via explicit button action.
-
-#### Thread view (AI panel state)
-
-Quoted text pinned at top, followed by the status row. Multi-participant messages show avatar + name + timestamp above each bubble. Messages from the current user are right-aligned (accent); all others are left-aligned (subtle). No separator between messages — bubbles are visually distinguishable. Virtual card appears at end of message stream. Input always available regardless of status.
-
-Header: `[←]  Threads  [×]` — `[←]` returns to threads list, `[×]` closes to chat.
+#### Thread view mock
 
 ```
 ┌──────────────────────────────────────────────┐
@@ -358,46 +380,17 @@ Header: `[←]  Threads  [×]` — `[←]` returns to threads list, `[×]` close
 └──────────────────────────────────────────────┘
 ```
 
-#### Document decorations
-
-TipTap `Decoration.inline` applies a dotted underline to anchored text. Decoration color reflects thread state — success takes precedence over danger once resolved:
-
-| Status | Blocking | Color token |
-|---|---|---|
-| open | false | `--color-state-warning` |
-| open | true | `--color-state-danger` |
-| resolved | any | `--color-state-success` |
-
-Resolved decorations hidden if "show resolved decorations" setting is off (Settings panel, reading preferences, default: on).
-
-Clicking a decorated passage opens thread view in the AI panel.
-
-#### Right rail
-
-A narrow strip (`--width-comment-rail: 24px`) to the right of the document content column showing thread indicator bubbles aligned vertically to their anchor's first line.
-
-Only rendered when the document pane is wide enough to accommodate the rail without consuming content space. Breakpoint: window width ≥ 1440px (doc pane ≥ 768px, leaving ≥ 34px right margin around the 680px content column). Hidden below this breakpoint — underline decorations remain the only inline indicator.
-
-Each bubble shows:
-- Thread status icon (color matches underline state)
-- Collapsed into a count badge when multiple threads are anchored within the same viewport region
-
-Hover over a bubble: thread preview popover.
-Click a bubble: opens thread view in AI panel.
-
-#### Threads view (AI panel state)
+### Threads view
 
 Replaces whatever is currently showing in the AI panel. Header: `[messages-square]  Threads` — no back button (top-level view). Accessible from the AI panel header via a `messages-square` icon button.
 
-Each row follows the session history row pattern: 3px state-color left border → pin icon → content → (no ellipsis menu). Pin icon hidden unless pinned; shown on hover. Pinned threads sort to top.
+Each row follows the session history row pattern: 3px state-color left border → pin icon → content. Pin icon hidden unless pinned; shown on hover. Pinned threads sort to top. No ellipsis menu — threads are not user-managed objects.
 
 Row content:
 - First line: `octagon-x · danger` if blocking, then anchor text snippet (truncated)
 - Second line: participant avatars + last activity timestamp + status label if resolved
 
-Currently-open thread has `--color-bg-subtle` background. All rows have a bottom border.
-
-Clicking a row opens thread view. Keyboard shortcuts navigate between anchored passages in the document (next/previous thread).
+Currently-open thread has `--color-bg-subtle` background. All rows have a bottom border. Clicking a row opens thread view. Keyboard shortcuts navigate between anchored passages in the document (next/previous thread).
 
 ```
 ┌──────────────────────────────────────────────┐
