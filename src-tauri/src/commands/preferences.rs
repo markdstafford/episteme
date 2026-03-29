@@ -13,6 +13,8 @@ pub struct Preferences {
     pub preview_width: String,
     #[serde(default = "default_preview_height")]
     pub preview_height: String,
+    #[serde(default)]
+    pub github_login: Option<String>,
 }
 
 fn default_preview_width() -> String { "50%".to_string() }
@@ -26,8 +28,24 @@ impl Default for Preferences {
             recently_used_skill_types: Vec::new(),
             preview_width: default_preview_width(),
             preview_height: default_preview_height(),
+            github_login: None,
         }
     }
+}
+
+pub fn load_preferences_sync(app: &tauri::AppHandle) -> Preferences {
+    let path = match preferences_path(app) {
+        Ok(p) => p,
+        Err(_) => return Preferences::default(),
+    };
+    if !path.exists() {
+        return Preferences::default();
+    }
+    let contents = match std::fs::read_to_string(&path) {
+        Ok(c) => c,
+        Err(_) => return Preferences::default(),
+    };
+    serde_json::from_str(&contents).unwrap_or_else(|_| Preferences::default())
 }
 
 fn preferences_path(app: &tauri::AppHandle) -> Result<std::path::PathBuf, String> {
