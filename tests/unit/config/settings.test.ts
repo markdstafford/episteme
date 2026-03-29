@@ -22,7 +22,7 @@ describe("settingsConfig", () => {
         section.settings.forEach((setting) => {
           expect(setting.id).toBeTruthy();
           expect(setting.label).toBeTruthy();
-          expect(["text", "select", "toggle"]).toContain(setting.type);
+          expect(["text", "select", "toggle", "textarea"]).toContain(setting.type);
           expect(typeof setting.order).toBe("number");
         });
       });

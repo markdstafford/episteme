@@ -1,10 +1,11 @@
 import type { LucideIcon } from "lucide-react";
 import { FileText, Sparkles, BookOpen } from "lucide-react";
+import { DEFAULT_DEFLECT_INSTRUCTION, DEFAULT_REDIRECT_INSTRUCTION } from "@/lib/commentAi";
 
 export interface SettingItem {
   id: string;
   label: string;
-  type: "text" | "select" | "toggle";
+  type: "text" | "select" | "toggle" | "textarea";
   order: number;
   defaultValue: string | boolean;
   options?: Array<{ value: string; label: string }>;
@@ -50,6 +51,20 @@ export const settingsConfig: SettingsCategory[] = [
             type: "text",
             order: 2,
             defaultValue: "",
+          },
+          {
+            id: "comment_deflect_instruction",
+            label: "Deflect instruction",
+            type: "textarea",
+            order: 8,
+            defaultValue: DEFAULT_DEFLECT_INSTRUCTION,
+          },
+          {
+            id: "comment_redirect_instruction",
+            label: "Redirect instruction",
+            type: "textarea",
+            order: 9,
+            defaultValue: DEFAULT_REDIRECT_INSTRUCTION,
           },
           {
             id: "ai_enhancement_enabled",

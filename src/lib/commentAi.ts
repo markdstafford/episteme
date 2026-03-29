@@ -32,6 +32,10 @@ export interface VetParams {
   relatedDocs: string[];
   awsProfile: string;
   workspacePath: string;
+  /** Override the deflect instruction. Defaults to DEFAULT_DEFLECT_INSTRUCTION. */
+  deflectInstruction?: string;
+  /** Override the redirect instruction. Defaults to DEFAULT_REDIRECT_INSTRUCTION. */
+  redirectInstruction?: string;
 }
 
 // ── Internal helper ───────────────────────────────────────────────────────────
@@ -76,16 +80,29 @@ function extractJson(response: string): unknown | null {
 
 // ── Vetting service ───────────────────────────────────────────────────────────
 
-const VET_SYSTEM_PROMPT = `You are an AI assistant reviewing a document comment before it is filed.
+export const DEFAULT_DEFLECT_INSTRUCTION =
+  "The concern is a question or request for clarification that is directly and explicitly answered in the document. Do NOT deflect if the concern is an opinion, assertion, disagreement, or challenge to the document content — even if the document addresses the topic.";
+
+export const DEFAULT_REDIRECT_INSTRUCTION =
+  "The concern would be better anchored to a different passage — for example the user selected a summary but the actual definition or constraint is stated elsewhere in the document.";
+
+function buildVetPrompt(deflect: string, redirect: string): string {
+  return `You are an AI assistant reviewing a document comment before it is filed.
 Given a reviewer's concern and the document content, determine:
-1. If the concern is ALREADY ANSWERED in the document → {"type":"deflect","answer":"<explanation>"}
-2. If a DIFFERENT passage better captures the concern → {"type":"redirect","newFrom":<int>,"newTo":<int>,"newQuotedText":"<text>"}
+1. If ${deflect} → {"type":"deflect","answer":"<explanation>"}
+2. If ${redirect} → {"type":"redirect","newFrom":<int>,"newTo":<int>,"newQuotedText":"<text>"}
 3. Otherwise → {"type":"proceed"}
 
 Prioritize deflect > redirect > proceed.
 Respond ONLY with valid JSON matching one of the three shapes above. No markdown fences.`;
+}
 
 export async function vetComment(params: VetParams): Promise<VetResult> {
+  const vetPrompt = buildVetPrompt(
+    params.deflectInstruction ?? DEFAULT_DEFLECT_INSTRUCTION,
+    params.redirectInstruction ?? DEFAULT_REDIRECT_INSTRUCTION,
+  );
+
   const userMsg = [
     `Reviewer concern: "${params.concern}"`,
     `Document:\n${params.docContent}`,
@@ -99,7 +116,7 @@ export async function vetComment(params: VetParams): Promise<VetResult> {
   // Auth errors propagate; other errors fall back to proceed
   let response: string;
   try {
-    response = await callAi(VET_SYSTEM_PROMPT, userMsg, params.awsProfile);
+    response = await callAi(vetPrompt, userMsg, params.awsProfile);
   } catch (e) {
     if (isAuthError(String(e))) throw e;
     return { type: "proceed" };

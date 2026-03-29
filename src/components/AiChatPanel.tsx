@@ -62,14 +62,19 @@ export function AiChatPanel({
   const selectedFilePath = useFileTreeStore((s) => s.selectedFilePath);
   const workspacePath = useWorkspaceStore((s) => s.folderPath) ?? "";
   const [githubLogin, setGithubLogin] = useState<string>("unknown");
+  const [deflectInstruction, setDeflectInstruction] = useState<string | undefined>(undefined);
+  const [redirectInstruction, setRedirectInstruction] = useState<string | undefined>(undefined);
 
-  // Load github_login from preferences for comment authorship identity
+  // Load user identity and custom vetting instructions from preferences
   useEffect(() => {
     Promise.resolve(invoke("load_preferences"))
       .then((raw) => {
         if (raw == null) return;
         const prefs = parsePreferences(raw);
         if (prefs.github_login) setGithubLogin(prefs.github_login);
+        // Empty string means "use the default"; only override when non-empty
+        if (prefs.comment_deflect_instruction) setDeflectInstruction(prefs.comment_deflect_instruction);
+        if (prefs.comment_redirect_instruction) setRedirectInstruction(prefs.comment_redirect_instruction);
       })
       .catch(() => {});
   }, []);
@@ -141,6 +146,8 @@ export function AiChatPanel({
             workspacePath={workspacePath}
             docContent={activeDocContent}
             docFilePath={selectedFilePath ?? undefined}
+            deflectInstruction={deflectInstruction}
+            redirectInstruction={redirectInstruction}
           />
         </div>
       );

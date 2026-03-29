@@ -28,6 +28,8 @@ export interface CreateThreadViewProps {
   docFilePath?: string;
   aiEnhancementEnabled?: boolean;
   aiEnhancementTimeoutMs?: number;
+  deflectInstruction?: string;
+  redirectInstruction?: string;
 }
 
 const COUNTDOWN_SECONDS = 30;
@@ -43,6 +45,8 @@ export function CreateThreadView({
   docFilePath,
   aiEnhancementEnabled = true,
   aiEnhancementTimeoutMs = 30000,
+  deflectInstruction,
+  redirectInstruction,
 }: CreateThreadViewProps) {
   const [anchor, setAnchor] = useState(initialAnchor);
   const [stage, setStage] = useState<FlowStage>("input");
@@ -83,6 +87,8 @@ export function CreateThreadView({
         relatedDocs: [],
         awsProfile,
         workspacePath,
+        deflectInstruction,
+        redirectInstruction,
       });
     } catch (e) {
       const msg = String(e);
@@ -340,17 +346,24 @@ export function CreateThreadView({
         </div>
       )}
 
+      {/* Deflect virtual card */}
+      {stage === "deflect" && (
+        <div className="mx-3 mb-2 border border-(--color-border-subtle) rounded-(--radius-base) p-3 text-[length:var(--font-size-ui-sm)]">
+          <div className="text-(--color-text-secondary) mb-2">
+            ✨ Does that answer your concern?
+          </div>
+          <button
+            onClick={handleNoFileAnyway}
+            className="text-[length:var(--font-size-ui-xs)] px-2 py-1 border border-(--color-border-subtle) rounded-(--radius-sm) text-(--color-text-secondary) hover:text-(--color-text-primary)"
+          >
+            No, file anyway
+          </button>
+        </div>
+      )}
+
       {/* Input area */}
       {(stage === "input" || stage === "deflect") && (
         <div className="border-t border-(--color-border-subtle) p-2">
-          {stage === "deflect" && (
-            <button
-              onClick={handleNoFileAnyway}
-              className="text-[length:var(--font-size-ui-xs)] text-(--color-text-tertiary) mb-1 hover:text-(--color-text-secondary)"
-            >
-              No, file anyway
-            </button>
-          )}
           <textarea
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
@@ -364,7 +377,7 @@ export function CreateThreadView({
             className="w-full resize-none bg-transparent text-[length:var(--font-size-ui-sm)] outline-none"
             rows={2}
           />
-          <div className="flex justify-end">
+          <div className="flex justify-end mt-1">
             <button
               onClick={() => handleSend(inputValue)}
               disabled={!inputValue.trim()}

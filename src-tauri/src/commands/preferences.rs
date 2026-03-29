@@ -15,6 +15,10 @@ pub struct Preferences {
     pub preview_height: String,
     #[serde(default)]
     pub github_login: Option<String>,
+    #[serde(default)]
+    pub comment_deflect_instruction: String,
+    #[serde(default)]
+    pub comment_redirect_instruction: String,
     #[serde(default = "default_true")]
     pub show_resolved_decorations: bool,
     #[serde(default = "default_true")]
@@ -38,6 +42,8 @@ impl Default for Preferences {
             preview_width: default_preview_width(),
             preview_height: default_preview_height(),
             github_login: None,
+            comment_deflect_instruction: String::new(),
+            comment_redirect_instruction: String::new(),
             show_resolved_decorations: true,
             ai_enhancement_enabled: true,
             ai_enhancement_timeout_seconds: 30,
