@@ -19,6 +19,7 @@ import { ShortcutsPanel } from "@/components/ShortcutsPanel";
 import { AiChatPanel, type AiChatPanelCommentTrigger } from "@/components/AiChatPanel";
 import { FooterBar } from "@/components/FooterBar";
 import { useFileTreeStore } from "@/stores/fileTree";
+import { useThreadsStore } from "@/stores/threads";
 
 function App() {
   const [showKitchenSink, setShowKitchenSink] = useState(false);
@@ -30,6 +31,7 @@ function App() {
   const [threadsViewActive, setThreadsViewActive] = useState(false);
   const selectedFilePath = useFileTreeStore((s) => s.selectedFilePath);
   const folderPath = useWorkspaceStore((s) => s.folderPath);
+  const initQueuedOnLaunch = useThreadsStore((s) => s.initQueuedOnLaunch);
   const isLoading = useWorkspaceStore((s) => s.isLoading);
   const loadSavedFolder = useWorkspaceStore((s) => s.loadSavedFolder);
   const openFolder = useWorkspaceStore((s) => s.openFolder);
@@ -50,6 +52,11 @@ function App() {
     const unlisten = listen("menu:open-folder", () => openFolder());
     return () => { unlisten.then((f) => f()); };
   }, [openFolder]);
+
+  // Restore any queued comments that survived an app close
+  useEffect(() => {
+    initQueuedOnLaunch();
+  }, [initQueuedOnLaunch]);
 
   useEffect(() => {
     const unlisten = listen("menu:open-settings", () => {

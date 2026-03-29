@@ -3,6 +3,8 @@ import { useAiChatStore } from "@/stores/aiChat";
 import { useFileTreeStore } from "@/stores/fileTree";
 import { useWorkspaceStore } from "@/stores/workspace";
 import { useThreadsStore } from "@/stores/threads";
+import { invoke } from "@tauri-apps/api/core";
+import { parsePreferences } from "@/lib/preferences";
 import { ConfigurationView } from "@/components/ConfigurationView";
 import { ChatView } from "@/components/ChatView";
 import { SessionHistoryView } from "@/components/SessionHistoryView";
@@ -58,7 +60,20 @@ export function AiChatPanel({
 
   const selectedFilePath = useFileTreeStore((s) => s.selectedFilePath);
   const workspacePath = useWorkspaceStore((s) => s.folderPath) ?? "";
+  const [githubLogin, setGithubLogin] = useState<string>("unknown");
+
+  // Load github_login from preferences for comment authorship identity
+  useEffect(() => {
+    Promise.resolve(invoke("load_preferences"))
+      .then((raw) => {
+        if (raw == null) return;
+        const prefs = parsePreferences(raw);
+        if (prefs.github_login) setGithubLogin(prefs.github_login);
+      })
+      .catch(() => {});
+  }, []);
   const threads = useThreadsStore((s) => s.threads);
+  const activeDocContent = useThreadsStore((s) => s.activeDocContent);
 
   useEffect(() => {
     checkAuth();
@@ -109,7 +124,7 @@ export function AiChatPanel({
           }}
           awsProfile={awsProfile ?? ""}
           workspacePath={workspacePath}
-          docContent=""
+          docContent={activeDocContent}
           docFilePath={selectedFilePath ?? undefined}
         />
       );
@@ -123,8 +138,8 @@ export function AiChatPanel({
         return (
           <ThreadView
             thread={thread}
-            currentUser={awsProfile ?? "unknown"}
-            docAuthor={awsProfile ?? "unknown"}
+            currentUser={githubLogin}
+            docAuthor={githubLogin}
             onBack={
               commentView.fromList
                 ? () => setCommentView({ type: "threads" })
@@ -152,7 +167,7 @@ export function AiChatPanel({
                 : undefined
             }
             awsProfile={awsProfile ?? ""}
-            docContent=""
+            docContent={activeDocContent}
             docFilePath={selectedFilePath ?? undefined}
           />
         );

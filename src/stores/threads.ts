@@ -6,6 +6,7 @@ interface ThreadsStore {
   threads: Thread[];
   loading: boolean;
   activeDocId: string | null;
+  activeDocContent: string;
   queuedComments: QueuedComment[];
 
   loadThreads: (docId: string, docContent: string) => Promise<void>;
@@ -20,6 +21,7 @@ interface ThreadsStore {
   commitComment: (queuedId: string, docFilePath?: string) => Promise<Thread | Comment>;
   cancelQueuedComment: (id: string) => Promise<void>;
   updateQueuedBody: (id: string, bodyEnhanced: string) => Promise<void>;
+  updateQueuedBlocking: (id: string, blocking: boolean) => Promise<void>;
   toggleQueuedBody: (id: string) => Promise<void>;
   initQueuedOnLaunch: () => Promise<void>;
 }
@@ -28,10 +30,11 @@ export const useThreadsStore = create<ThreadsStore>((set, get) => ({
   threads: [],
   loading: false,
   activeDocId: null,
+  activeDocContent: "",
   queuedComments: [],
 
   async loadThreads(docId, docContent) {
-    set({ loading: true, activeDocId: docId, threads: [] });
+    set({ loading: true, activeDocId: docId, activeDocContent: docContent, threads: [] });
     try {
       const threads = await invoke<Thread[]>("load_threads", {
         docId,
@@ -136,6 +139,18 @@ export const useThreadsStore = create<ThreadsStore>((set, get) => ({
     await invoke("cancel_queued_comment", { id });
     set((s) => ({
       queuedComments: s.queuedComments.filter((q) => q.id !== id),
+    }));
+  },
+
+  async updateQueuedBlocking(id, blocking) {
+    const q = get().queuedComments.find((q) => q.id === id);
+    if (!q) return;
+    const updated = { ...q, blocking };
+    await invoke("queue_comment", { queued: updated });
+    set((s) => ({
+      queuedComments: s.queuedComments.map((q) =>
+        q.id === id ? updated : q,
+      ),
     }));
   },
 

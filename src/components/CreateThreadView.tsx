@@ -54,7 +54,7 @@ export function CreateThreadView({
   const [countdown, setCountdown] = useState(COUNTDOWN_SECONDS);
   const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const { stageComment, commitComment, cancelQueuedComment, toggleQueuedBody } =
+  const { stageComment, commitComment, cancelQueuedComment, toggleQueuedBody, updateQueuedBlocking } =
     useThreadsStore();
 
   const addMessage = (msg: ChatMsg) =>
@@ -314,12 +314,17 @@ export function CreateThreadView({
       {stage === "queued" && (
         <div className="px-3 py-1">
           <button
-            onClick={() => setBlocking((b) => !b)}
+            onClick={() => {
+              const newBlocking = !blocking;
+              setBlocking(newBlocking);
+              if (queuedId) updateQueuedBlocking(queuedId, newBlocking);
+            }}
             className={`flex items-center gap-1 text-[length:var(--font-size-ui-xs)] ${blocking ? "text-(--color-state-danger)" : "text-(--color-text-tertiary)"}`}
           >
             <OctagonX size={12} />
             <span>{blocking ? "Blocking" : "Mark as blocking"}</span>
           </button>
+
         </div>
       )}
 
