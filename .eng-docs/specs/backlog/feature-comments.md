@@ -213,13 +213,13 @@ The panel switches to new thread view. The quoted selection is pinned at the top
 └──────────────────────────────────────────────┘
 ```
 
-The new thread view has no virtual cards. The redirect and deflect responses are regular AI message bubbles. The message order is: sent messages → queued card (at most one). There is no virtual card in this view.
+The new thread view has no virtual cards. The redirect and deflect responses are transient AI responses. The comment order is: sent comments → queued card (at most one). There is no virtual card in this view.
 
-When the countdown expires, the thread is created and the view animates into thread view — the queued card becomes the first message bubble and the status row, virtual card, and reply input appear.
+When the countdown expires, the thread is created and the view animates into thread view — the queued card becomes the first comment bubble and the status row, virtual card, and reply input appear.
 
 **State 2 — processing**
 
-The user's message appears right-aligned with avatar + name + timestamp. AI is scanning the document and related documents.
+The user's comment appears right-aligned with avatar + name + timestamp. AI is scanning the document and related documents.
 
 ```
 │  ╔════════════════════════════════════════╗  │
@@ -258,7 +258,7 @@ AI has found what it believes answers the concern and surfaces the reference. Th
 
 **State 4 — redirect + queued**
 
-AI found a better anchor and moved it proactively — the quoted text block updates and the document scrolls to the new location. The redirect message appears as a regular AI message with an inline `[Go back]` link. The comment is immediately staged as a queued card. The user can revert the anchor at any time before the countdown expires.
+AI found a better anchor and moved it proactively — the quoted text block updates and the document scrolls to the new location. The redirect response appears as a regular AI response with an inline `[Go back]` link. The comment is immediately staged as a queued card. The user can revert the anchor at any time before the countdown expires.
 
 ```
 │  ╔════════════════════════════════════════╗  │
@@ -289,18 +289,18 @@ AI found a better anchor and moved it proactively — the quoted text block upda
 
 ### Thread view
 
-The thread view shows an existing thread. Quoted text is pinned at the top, followed by the status row. All messages show avatar + name + timestamp. Thread view opens scrolled to the bottom. The chat box is always available regardless of thread status.
+The thread view shows an existing thread. Quoted text is pinned at the top, followed by the status row. All comments show avatar + name + timestamp. Thread view opens scrolled to the bottom. The chat box is always available regardless of thread status.
 
-At most one virtual card is visible at any time. The message order is: sent messages → virtual card (if conditions met) → queued card (if staging a reply).
+At most one virtual card is visible at any time. The comment order is: sent comments → virtual card (if conditions met) → queued card (if staging a reply).
 
 Header: `[←]  "[first ~25 chars]..."  [↑] [↓] [×]` — `[←]` returns to threads list, `[↑]`/`[↓]` navigate to previous/next thread by anchor order, `[×]` closes to chat.
 
-#### Queued message
+#### Queued comment
 
-Appears in the message stack when a reply is staged for sending. AI-enhanced version shown by default. The blocking toggle (`octagon-x` icon only) appears below the queued card in both new thread view and thread view — it is more discoverable here and allows quickly marking a thread blocking when an important new reply is added.
+Appears in the comment stack when a reply is staged for sending. AI-enhanced version shown by default. The blocking toggle (`octagon-x` icon only) appears below the queued card in both new thread view and thread view — it is more discoverable here and allows quickly marking a thread blocking when an important new reply is added.
 
 - **Toggle group** (`[✨▌👤]`): Radix `ToggleGroup`. Selected segment has accent background. Switches the displayed text and the version that will be sent.
-- **Countdown pill** (`[× ████░░ 24s]`): tappable — clicking cancels. Progress bar drains to zero, then the message sends and animates into a normal bubble.
+- **Countdown pill** (`[× ████░░ 24s]`): tappable — clicking cancels. Progress bar drains to zero, then the comment sends and animates into a normal bubble.
 
 ```
 │  ┌──────────────────────────────────────┐   │
@@ -349,18 +349,18 @@ Possible states: `open`, `blocking`, `non-blocking`, `resolved`, `re-opened`.
 
 #### Virtual cards
 
-At most one virtual card is visible at a time, appearing between the last message and the chat box. Cards are mutually exclusive — conditions determine which one (if any) shows. Sending a message does not change thread status; only explicit button actions do.
+At most one virtual card is visible at a time, appearing between the last comment and the chat box. Cards are mutually exclusive — conditions determine which one (if any) shows. Sending a comment does not change thread status; only explicit button actions do.
 
-**Suggest card — doc author, status = open, last message from someone other than doc author:**
+**Suggest card — document editor, status = open, last comment from someone other than document editor:**
 
-The doc author is invited to use AI to propose a fix. Clicking `[Suggest a fix]` sends the full thread and document to AI. The AI responds in the message stream with a proposed fix. The doc author can iterate with AI (send more messages) before accepting. When accepted, the fix is applied to the document, a summary message is added to the thread, and the thread is resolved.
+The document editor is invited to use AI to propose a fix. Clicking `[Suggest a fix]` sends the full thread and document to AI. The AI responds with a proposed fix. The document editor can iterate with AI before accepting. When accepted, the fix is applied to the document, a summary comment is added to the thread, and the thread is resolved.
 
 ```
 │  [✨]  Want me to suggest a fix for this thread? │
 │  [Suggest a fix]                                 │
 ```
 
-**Resolve card — doc author, status = open, last message from doc author:**
+**Resolve card — document editor, status = open, last comment from document editor:**
 
 ```
 │  [✨]  Ready to mark this thread as resolved?    │
@@ -381,7 +381,7 @@ After clicking `[Re-open]`, inline confirmation:
 
 #### Thread view mock
 
-Mock shows the thread from Eric's perspective (doc author). The suggest card is visible because the last message is from Raquel (not the doc author).
+Mock shows the thread from Eric's perspective (document editor). The suggest card is visible because the last comment is from Raquel (not the document editor).
 
 ```
 ┌──────────────────────────────────────────────┐
@@ -446,7 +446,48 @@ Currently-open thread has `--color-bg-subtle` background. All rows have a bottom
 
 ## Tech spec
 
-*(Added by tech specs stage)*
+### 1. Introduction and overview
+
+#### Prerequisites and dependencies
+
+- ADR-002: TipTap document editor — ProseMirror/TipTap is the rendering and decoration layer for all inline anchors
+- ADR-003: Zustand — state management for thread and UI state
+- ADR-005: GitHub OAuth — user identity; document editor identification currently approximated from frontmatter
+- ADR-013: Document contents — establishes that comment data lives in external storage, not in the markdown file
+- Feature: AI Chat Assistant — comment views are states of the existing AI panel; the AI fix flow uses the same Claude/Bedrock integration
+
+#### Goals
+
+- Comment threads are stored durably and survive app restarts
+- Anchor positions survive external edits to markdown files via quotedText fallback reconciliation
+- External content for a document lives in a single companion file, co-located with the document (either in the same directory or a shadow structure under `.episteme/`), structured to accommodate future content types beyond comments (reactions, etc.)
+- The AI vetting flow (deflect, redirect, suggest) responds within a reasonable latency for interactive use
+- Queued comments that survive an app close are resolved on next launch
+- TipTap decorations accurately reflect thread state across all anchored passages including overlaps
+
+#### Non-goals
+
+- Real-time multi-user sync
+- Server-side storage — all comment data is local
+- Notification delivery
+- Approval gating enforcement — blocking status is stored and displayed; preventing approval is out of scope
+
+#### Glossary
+
+| Term | Definition |
+|---|---|
+| Thread | Top-level comment entity: anchor + status + blocking + ordered list of comments |
+| Comment | An individual entry in a thread — either the opening comment or a reply. AI responses visible in the panel during the creation flow are transient and not stored as comments. |
+| Anchor | The document position a thread is attached to: `{ from, to, quotedText }` |
+| Status | Thread lifecycle: `open` or `resolved` |
+| Blocking | Boolean on a thread; when true and status = open, signals the thread gates document progression |
+| Queued comment | A staged comment held locally with a countdown before it sends |
+| New thread view | AI panel state for creating a comment |
+| Thread view | AI panel state for viewing/replying to a thread |
+| Threads view | AI panel state listing all threads for the open document |
+| Virtual card | A persistent AI-generated card at the end of the thread comment stream that surfaces status-change actions |
+| Document editor | Any user with write access to the document. Determines who sees the suggest and resolve virtual cards. Approximated from frontmatter for now; intended to accommodate multiple contributors. |
+| AI enhancement | The queued-comment flow where AI rewrites a draft comment before it sends |
 
 ## Task list
 
