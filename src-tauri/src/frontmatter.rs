@@ -33,15 +33,26 @@ pub fn ensure_doc_id(file_path: &str) -> Result<String, String> {
 fn parse_frontmatter(content: &str) -> Option<String> {
     let rest = content.strip_prefix("---")?;
     let rest = rest.strip_prefix('\n').or_else(|| rest.strip_prefix("\r\n"))?;
-    let end = rest.find("\n---").or_else(|| rest.find("\r\n---"))?;
-    Some(rest[..end].to_string())
+    // Accept closing --- followed by newline, \r\n, or end-of-file
+    if let Some(end) = rest.find("\n---").or_else(|| rest.find("\r\n---")) {
+        Some(rest[..end].to_string())
+    } else {
+        None
+    }
 }
 
 fn inject_doc_id(content: &str, id: &str) -> Result<String, String> {
     if content.starts_with("---\n") || content.starts_with("---\r\n") {
+        // Find closing --- (may be followed by newline or end-of-file)
         let close = content
             .find("\n---\n")
             .or_else(|| content.find("\n---\r\n"))
+            .or_else(|| {
+                // closing --- at EOF (no trailing newline)
+                content
+                    .rfind("\n---")
+                    .filter(|&i| content[i + 4..].is_empty())
+            })
             .ok_or("Malformed frontmatter: no closing ---")?;
         let new_line = format!("\ndoc_id: {id}");
         let mut result = content.to_string();
@@ -98,6 +109,17 @@ mod tests {
         let f = write_tmp(content);
         let id = ensure_doc_id(f.path().to_str().unwrap()).unwrap();
         assert!(!id.is_empty());
+        let after = std::fs::read_to_string(f.path()).unwrap();
+        assert!(after.contains(&format!("doc_id: {id}")));
+        assert!(after.contains("title: Test"));
+    }
+
+    #[test]
+    fn ensure_doc_id_handles_frontmatter_ending_at_eof() {
+        // Frontmatter block where closing --- is at end-of-file (no trailing newline)
+        let content = "---\ntitle: Test\n---";
+        let f = write_tmp(content);
+        let id = ensure_doc_id(f.path().to_str().unwrap()).unwrap();
         let after = std::fs::read_to_string(f.path()).unwrap();
         assert!(after.contains(&format!("doc_id: {id}")));
         assert!(after.contains("title: Test"));

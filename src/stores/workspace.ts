@@ -52,7 +52,7 @@ export const useWorkspaceStore = create<WorkspaceStore>((set, get) => ({
         });
         useFileTreeStore.getState().loadTree(path);
         await setupWorkspaceManifests(path, set, get);
-        invoke("init_workspace_db", { workspacePath: path }).catch((e) =>
+        await invoke("init_workspace_db", { workspacePath: path }).catch((e) =>
           console.error("Failed to init workspace DB:", e),
         );
       } else {
@@ -75,7 +75,7 @@ export const useWorkspaceStore = create<WorkspaceStore>((set, get) => ({
       if (prefs.last_opened_folder) {
         useFileTreeStore.getState().loadTree(prefs.last_opened_folder);
         await setupWorkspaceManifests(prefs.last_opened_folder, set, get);
-        invoke("init_workspace_db", {
+        await invoke("init_workspace_db", {
           workspacePath: prefs.last_opened_folder,
         }).catch((e) => console.error("Failed to init workspace DB:", e));
       }
