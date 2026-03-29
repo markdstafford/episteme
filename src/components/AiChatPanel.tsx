@@ -58,6 +58,7 @@ export function AiChatPanel({
     awsProfile,
   } = useAiChatStore();
 
+
   const selectedFilePath = useFileTreeStore((s) => s.selectedFilePath);
   const workspacePath = useWorkspaceStore((s) => s.folderPath) ?? "";
   const [githubLogin, setGithubLogin] = useState<string>("unknown");
@@ -106,27 +107,42 @@ export function AiChatPanel({
 
   const closeToChat = () => setCommentView(null);
 
+  // Re-run auth check, which will set isAuthenticated=false if token expired,
+  // causing the next render to show ConfigurationView.
+  const handleAuthError = () => {
+    checkAuth();
+    setCommentView(null);
+  };
+
   const isConfigurationView = !authChecked || !isAuthenticated;
   if (isConfigurationView) {
     return <ConfigurationView />;
   }
+
+  // ── Panel container — all views share this wrapper for consistent width ───
+
+  const panelClass =
+    "w-[var(--width-ai-panel)] flex flex-col h-full border-l border-(--color-border-subtle) bg-(--color-bg-base)";
 
   // ── Comment views override standard chat/history ──────────────────────────
 
   if (commentView) {
     if (commentView.type === "create-thread") {
       return (
-        <CreateThreadView
-          anchor={commentView.anchor}
-          onClose={closeToChat}
-          onThreadCreated={(thread) => {
-            setCommentView({ type: "thread", threadId: thread.id, fromList: false });
-          }}
-          awsProfile={awsProfile ?? ""}
-          workspacePath={workspacePath}
-          docContent={activeDocContent}
-          docFilePath={selectedFilePath ?? undefined}
-        />
+        <div className={panelClass}>
+          <CreateThreadView
+            anchor={commentView.anchor}
+            onClose={closeToChat}
+            onAuthError={handleAuthError}
+            onThreadCreated={(thread) => {
+              setCommentView({ type: "thread", threadId: thread.id, fromList: false });
+            }}
+            awsProfile={awsProfile ?? ""}
+            workspacePath={workspacePath}
+            docContent={activeDocContent}
+            docFilePath={selectedFilePath ?? undefined}
+          />
+        </div>
       );
     }
 
@@ -136,40 +152,42 @@ export function AiChatPanel({
         const sorted = [...threads].sort((a, b) => a.anchor_from - b.anchor_from);
         const idx = sorted.findIndex((t) => t.id === thread.id);
         return (
-          <ThreadView
-            thread={thread}
-            currentUser={githubLogin}
-            docAuthor={githubLogin}
-            onBack={
-              commentView.fromList
-                ? () => setCommentView({ type: "threads" })
-                : closeToChat
-            }
-            onClose={closeToChat}
-            onNavigatePrev={
-              idx > 0
-                ? () =>
-                    setCommentView({
-                      type: "thread",
-                      threadId: sorted[idx - 1].id,
-                      fromList: commentView.fromList,
-                    })
-                : undefined
-            }
-            onNavigateNext={
-              idx < sorted.length - 1
-                ? () =>
-                    setCommentView({
-                      type: "thread",
-                      threadId: sorted[idx + 1].id,
-                      fromList: commentView.fromList,
-                    })
-                : undefined
-            }
-            awsProfile={awsProfile ?? ""}
-            docContent={activeDocContent}
-            docFilePath={selectedFilePath ?? undefined}
-          />
+          <div className={panelClass}>
+            <ThreadView
+              thread={thread}
+              currentUser={githubLogin}
+              docAuthor={githubLogin}
+              onBack={
+                commentView.fromList
+                  ? () => setCommentView({ type: "threads" })
+                  : closeToChat
+              }
+              onClose={closeToChat}
+              onNavigatePrev={
+                idx > 0
+                  ? () =>
+                      setCommentView({
+                        type: "thread",
+                        threadId: sorted[idx - 1].id,
+                        fromList: commentView.fromList,
+                      })
+                  : undefined
+              }
+              onNavigateNext={
+                idx < sorted.length - 1
+                  ? () =>
+                      setCommentView({
+                        type: "thread",
+                        threadId: sorted[idx + 1].id,
+                        fromList: commentView.fromList,
+                      })
+                  : undefined
+              }
+              awsProfile={awsProfile ?? ""}
+              docContent={activeDocContent}
+              docFilePath={selectedFilePath ?? undefined}
+            />
+          </div>
         );
       }
       // Thread not found — fall through to chat
@@ -181,17 +199,19 @@ export function AiChatPanel({
       commentView.type === "threads-filtered"
     ) {
       return (
-        <ThreadsView
-          onClose={closeToChat}
-          onThreadClick={(id) =>
-            setCommentView({ type: "thread", threadId: id, fromList: true })
-          }
-          filterThreadIds={
-            commentView.type === "threads-filtered"
-              ? commentView.filterIds
-              : undefined
-          }
-        />
+        <div className={panelClass}>
+          <ThreadsView
+            onClose={closeToChat}
+            onThreadClick={(id) =>
+              setCommentView({ type: "thread", threadId: id, fromList: true })
+            }
+            filterThreadIds={
+              commentView.type === "threads-filtered"
+                ? commentView.filterIds
+                : undefined
+            }
+          />
+        </div>
       );
     }
   }

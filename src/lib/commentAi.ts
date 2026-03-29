@@ -1,5 +1,24 @@
 import { invoke } from "@tauri-apps/api/core";
 
+// ── Auth error detection ──────────────────────────────────────────────────────
+
+const AUTH_ERROR_PATTERNS = [
+  "ExpiredToken",
+  "InvalidClientTokenId",
+  "UnauthorizedException",
+  "NotAuthorized",
+  "CredentialsError",
+  "NoCredentialProviders",
+  "is not authorized",
+  "token has expired",
+];
+
+export function isAuthError(message: string): boolean {
+  return AUTH_ERROR_PATTERNS.some((p) =>
+    message.toLowerCase().includes(p.toLowerCase()),
+  );
+}
+
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 export type VetResult =
@@ -22,11 +41,37 @@ async function callAi(
   userMessage: string,
   awsProfile: string,
 ): Promise<string> {
-  return invoke<string>("ai_complete", {
-    systemPrompt,
-    userMessage,
-    awsProfile,
-  });
+  try {
+    return await invoke<string>("ai_complete", {
+      systemPrompt,
+      userMessage,
+      awsProfile,
+    });
+  } catch (e) {
+    const msg = String(e);
+    // Re-throw auth errors so callers can surface them to the user
+    if (isAuthError(msg)) throw new Error(msg);
+    throw e;
+  }
+}
+
+/** Extract JSON from an AI response that may contain markdown fences or prose. */
+function extractJson(response: string): unknown | null {
+  // Try direct JSON first
+  try {
+    return JSON.parse(response.trim());
+  } catch {}
+  // Strip markdown code fences
+  const fenced = response.match(/```(?:json)?\s*([\s\S]*?)```/);
+  if (fenced) {
+    try { return JSON.parse(fenced[1].trim()); } catch {}
+  }
+  // Find first {...} object
+  const match = response.match(/\{[\s\S]*\}/);
+  if (match) {
+    try { return JSON.parse(match[0]); } catch {}
+  }
+  return null;
 }
 
 // ── Vetting service ───────────────────────────────────────────────────────────
@@ -41,34 +86,31 @@ Prioritize deflect > redirect > proceed.
 Respond ONLY with valid JSON matching one of the three shapes above. No markdown fences.`;
 
 export async function vetComment(params: VetParams): Promise<VetResult> {
+  const userMsg = [
+    `Reviewer concern: "${params.concern}"`,
+    `Document:\n${params.docContent}`,
+    params.relatedDocs.length > 0
+      ? `Related documents:\n${params.relatedDocs.join("\n---\n")}`
+      : "",
+  ]
+    .filter(Boolean)
+    .join("\n\n");
+
+  // Auth errors propagate; other errors fall back to proceed
+  let response: string;
   try {
-    const userMsg = [
-      `Reviewer concern: "${params.concern}"`,
-      `Document:\n${params.docContent}`,
-      params.relatedDocs.length > 0
-        ? `Related documents:\n${params.relatedDocs.join("\n---\n")}`
-        : "",
-    ]
-      .filter(Boolean)
-      .join("\n\n");
-
-    const response = await callAi(
-      VET_SYSTEM_PROMPT,
-      userMsg,
-      params.awsProfile,
-    );
-
-    const jsonMatch = response.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) return { type: "proceed" };
-    const parsed = JSON.parse(jsonMatch[0]);
-    if (parsed.type === "deflect" && parsed.answer)
-      return parsed as VetResult;
-    if (parsed.type === "redirect" && parsed.newQuotedText)
-      return parsed as VetResult;
-    return { type: "proceed" };
-  } catch {
+    response = await callAi(VET_SYSTEM_PROMPT, userMsg, params.awsProfile);
+  } catch (e) {
+    if (isAuthError(String(e))) throw e;
     return { type: "proceed" };
   }
+
+  const parsed = extractJson(response);
+  if (!parsed || typeof parsed !== "object") return { type: "proceed" };
+  const p = parsed as Record<string, unknown>;
+  if (p.type === "deflect" && p.answer) return p as unknown as VetResult;
+  if (p.type === "redirect" && p.newQuotedText) return p as unknown as VetResult;
+  return { type: "proceed" };
 }
 
 // ── Comment text suggestion ───────────────────────────────────────────────────

@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { MessageSquarePlus, X, OctagonX } from "lucide-react";
 import { useThreadsStore } from "@/stores/threads";
-import { vetComment, suggestCommentText, enhanceCommentBody } from "@/lib/commentAi";
+import { vetComment, suggestCommentText, enhanceCommentBody, isAuthError } from "@/lib/commentAi";
 import type { Thread } from "@/types/comments";
 
 interface Anchor {
@@ -21,6 +21,7 @@ export interface CreateThreadViewProps {
   anchor: Anchor;
   onClose: () => void;
   onThreadCreated: (thread: Thread) => void;
+  onAuthError?: () => void;
   awsProfile: string;
   workspacePath: string;
   docContent: string;
@@ -35,6 +36,7 @@ export function CreateThreadView({
   anchor: initialAnchor,
   onClose,
   onThreadCreated,
+  onAuthError,
   awsProfile,
   workspacePath,
   docContent,
@@ -73,13 +75,23 @@ export function CreateThreadView({
     setInputValue("");
     setStage("processing");
 
-    const vet = await vetComment({
-      concern,
-      docContent,
-      relatedDocs: [],
-      awsProfile,
-      workspacePath,
-    });
+    let vet: Awaited<ReturnType<typeof vetComment>>;
+    try {
+      vet = await vetComment({
+        concern,
+        docContent,
+        relatedDocs: [],
+        awsProfile,
+        workspacePath,
+      });
+    } catch (e) {
+      const msg = String(e);
+      if (isAuthError(msg)) {
+        onAuthError?.();
+        return;
+      }
+      vet = { type: "proceed" };
+    }
 
     if (vet.type === "deflect") {
       addMessage({ role: "ai", content: vet.answer });
