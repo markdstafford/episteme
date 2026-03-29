@@ -4,16 +4,26 @@ import { open } from "@tauri-apps/plugin-shell";
 import { useFileTreeStore } from "@/stores/fileTree";
 import { useWorkspaceStore } from "@/stores/workspace";
 import { parseDocument, resolveInternalLink } from "@/lib/markdown";
-import { MarkdownRenderer } from "@/components/MarkdownRenderer";
+import { MarkdownRenderer, type CommentTriggerAnchor } from "@/components/MarkdownRenderer";
 import { FrontmatterBar } from "@/components/FrontmatterBar";
 import { Loader2 } from "lucide-react";
 import { computeReadingTime } from "@/lib/readingTime";
 
 interface DocumentViewerProps {
   onReadingTimeChange?: (minutes: number | null) => void;
+  onCommentTrigger?: (anchor: CommentTriggerAnchor) => void;
+  onThreadClick?: (threadId: string) => void;
+  onThreadsFilterClick?: (threadIds: string[]) => void;
+  showResolvedDecorations?: boolean;
 }
 
-export function DocumentViewer({ onReadingTimeChange }: DocumentViewerProps = {}) {
+export function DocumentViewer({
+  onReadingTimeChange,
+  onCommentTrigger,
+  onThreadClick,
+  onThreadsFilterClick,
+  showResolvedDecorations = true,
+}: DocumentViewerProps = {}) {
   const selectedFilePath = useFileTreeStore((s) => s.selectedFilePath);
   const selectFile = useFileTreeStore((s) => s.selectFile);
   const workspacePath = useWorkspaceStore((s) => s.folderPath);
@@ -139,6 +149,11 @@ const [content, setContent] = useState<string | null>(null);
                 content={content}
                 onLinkClick={handleLinkClick}
                 className="prose prose-tiptap dark:prose-invert max-w-none"
+                onCommentTrigger={onCommentTrigger}
+                onThreadClick={onThreadClick}
+                onThreadsFilterClick={onThreadsFilterClick}
+                showResolvedDecorations={showResolvedDecorations}
+                docId={(frontmatter?.doc_id as string) || undefined}
               />
             </div>
           )}

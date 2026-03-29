@@ -7,6 +7,9 @@ export const PreferencesSchema = z.object({
   preview_width: z.string().regex(/^\d+(\.\d+)?%$/).default('50%').catch('50%'),
   preview_height: z.string().regex(/^\d+(\.\d+)?%$/).default('75%').catch('75%'),
   github_login: z.string().nullable().default(null),
+  show_resolved_decorations: z.boolean().default(true),
+  ai_enhancement_enabled: z.boolean().default(true),
+  ai_enhancement_timeout_seconds: z.number().int().min(5).max(120).default(30),
 });
 
 export type Preferences = z.infer<typeof PreferencesSchema>;
@@ -18,6 +21,9 @@ export const DEFAULT_PREFERENCES: Preferences = {
   preview_width: '50%',
   preview_height: '75%',
   github_login: null,
+  show_resolved_decorations: true,
+  ai_enhancement_enabled: true,
+  ai_enhancement_timeout_seconds: 30,
 };
 
 export function parsePreferences(data: unknown): Preferences {

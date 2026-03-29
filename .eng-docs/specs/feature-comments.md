@@ -1080,128 +1080,128 @@ SQLite queries use parameterized statements throughout — no string interpolati
       - [x] Thread_events contain `→ open` (and `→ blocking` if applicable)
     - **Dependencies**: Task: Implement queued comment card in CreateThreadView
 
-- [ ] **Story: ThreadView**
-  - [ ] **Task: Build ThreadView shell and header**
+- [x] **Story: ThreadView**
+  - [x] **Task: Build ThreadView shell and header**
     - **Description**: Base structure of `ThreadView`: header with `[←]`, truncated quoted text title (~25 chars with ellipsis), `[↑]`, `[↓]`, `[×]`; pinned quoted text block below header; scrollable area; chat box at bottom. `[←]` returns to `ThreadsView`. `[×]` closes to chat. View opens scrolled to bottom.
     - **Acceptance criteria**:
-      - [ ] Header renders with `[←]`, quoted text title (truncated at ~25 chars), `[↑]`, `[↓]`, `[×]`
-      - [ ] `[←]` returns to `ThreadsView` (or chat if accessed directly from document click)
-      - [ ] `[×]` closes to chat view
-      - [ ] View opens scrolled to bottom of comment list
-      - [ ] Quoted text block pinned below header throughout
+      - [x] Header renders with `[←]`, quoted text title (truncated at ~25 chars), `[↑]`, `[↓]`, `[×]`
+      - [x] `[←]` returns to `ThreadsView` (or chat if accessed directly from document click)
+      - [x] `[×]` closes to chat view
+      - [x] View opens scrolled to bottom of comment list
+      - [x] Quoted text block pinned below header throughout
     - **Dependencies**: Task: Implement store structure and `loadThreads` action
 
-  - [ ] **Task: Build status row component**
+  - [x] **Task: Build status row component**
     - **Description**: The status row appears below the quoted text block. Icon and background vary by state: open non-blocking (tertiary icon, no bg), open blocking (danger icon, danger-subtle bg), resolved (success bg, non-interactive icon). Clicking the icon toggles blocking when open.
     - **Acceptance criteria**:
-      - [ ] Open non-blocking: tertiary `octagon-x`, no background, `open · name · time` if explicitly set
-      - [ ] Open blocking: danger `octagon-x`, `--color-state-danger-subtle` background, `blocking · name · time`
-      - [ ] Resolved: tertiary `octagon-x` non-interactive, `--color-state-success-subtle` background, `resolved · name · time`
-      - [ ] Icon clickable only when `status = 'open'`; cursor indicates non-interactive when resolved
-      - [ ] Clicking icon calls `toggleBlocking`
-      - [ ] Hovering anywhere on the row shows history popover
+      - [x] Open non-blocking: tertiary `octagon-x`, no background, `open · name · time` if explicitly set
+      - [x] Open blocking: danger `octagon-x`, `--color-state-danger-subtle` background, `blocking · name · time`
+      - [x] Resolved: tertiary `octagon-x` non-interactive, `--color-state-success-subtle` background, `resolved · name · time`
+      - [x] Icon clickable only when `status = 'open'`; cursor indicates non-interactive when resolved
+      - [x] Clicking icon calls `toggleBlocking`
+      - [x] Hovering anywhere on the row shows history popover
     - **Dependencies**: Task: Build ThreadView shell and header, Task: Implement thread mutation actions
 
-  - [ ] **Task: Build history popover**
+  - [x] **Task: Build history popover**
     - **Description**: Shown on hover over the status row. Lists all `thread_events` for the thread in `→ state  name · time` format, chronologically. No row coloration.
     - **Acceptance criteria**:
-      - [ ] Popover appears on status row hover; dismisses on mouse leave
-      - [ ] Each event rendered as `→ [event]  [changed_by] · [relative time]`
-      - [ ] Events in chronological order (`changed_at` ascending)
-      - [ ] All event types displayed: `open`, `blocking`, `non-blocking`, `resolved`, `re-opened`
-      - [ ] No row background coloring in the popover
+      - [x] Popover appears on status row hover; dismisses on mouse leave
+      - [x] Each event rendered as `→ [event]  [changed_by] · [relative time]`
+      - [x] Events in chronological order (`changed_at` ascending)
+      - [x] All event types displayed: `open`, `blocking`, `non-blocking`, `resolved`, `re-opened`
+      - [x] No row background coloring in the popover
     - **Dependencies**: Task: Build status row component
 
-  - [ ] **Task: Build comment list**
+  - [x] **Task: Build comment list**
     - **Description**: Renders thread comments in chronological order. Each comment shows avatar + name + timestamp above the bubble. Current user's comments are right-aligned (accent); all others left-aligned (subtle).
     - **Acceptance criteria**:
-      - [ ] Comments rendered in `created_at` ascending order
-      - [ ] Each comment shows avatar, author name, and relative timestamp above bubble
-      - [ ] Current user's comments: right-aligned, accent background
-      - [ ] Other users' comments: left-aligned, subtle background
-      - [ ] Transient AI responses: left-aligned with `✨` avatar, not persisted
-      - [ ] Empty thread renders gracefully
+      - [x] Comments rendered in `created_at` ascending order
+      - [x] Each comment shows avatar, author name, and relative timestamp above bubble
+      - [x] Current user's comments: right-aligned, accent background
+      - [x] Other users' comments: left-aligned, subtle background
+      - [x] Transient AI responses: left-aligned with `✨` avatar, not persisted
+      - [x] Empty thread renders gracefully
     - **Dependencies**: Task: Build ThreadView shell and header
 
-  - [ ] **Task: Implement virtual cards (suggest, resolve, reopen)**
+  - [x] **Task: Implement virtual cards (suggest, resolve, reopen)**
     - **Description**: Persistent cards at the end of the comment stream, above the chat box. At most one visible at a time. Suggest card: doc editor + open + last comment from non-editor + thread has ≥1 non-editor reply. Resolve card: doc editor + open + last comment from editor. Reopen card: any user + resolved. Reopen requires inline confirmation.
     - **Acceptance criteria**:
-      - [ ] Suggest card conditions met → suggest card shown; clicking `[Suggest a fix]` triggers AI fix flow
-      - [ ] Resolve card conditions met → resolve card shown; `[Mark as resolved]` calls `resolveThread`
-      - [ ] Reopen card shown when `status = 'resolved'` for all users
-      - [ ] No virtual card shown for non-doc-editor with `status = 'open'`
-      - [ ] At most one card visible at a time; cards switch when conditions change (e.g. doc editor posts a reply → suggest → resolve)
-      - [ ] Reopen card: `[Re-open]` shows inline confirmation; `[Confirm]` calls `reopenThread`; `[Cancel]` dismisses
-      - [ ] Sending a comment does not change thread status
+      - [x] Suggest card conditions met → suggest card shown; clicking `[Suggest a fix]` triggers AI fix flow
+      - [x] Resolve card conditions met → resolve card shown; `[Mark as resolved]` calls `resolveThread`
+      - [x] Reopen card shown when `status = 'resolved'` for all users
+      - [x] No virtual card shown for non-doc-editor with `status = 'open'`
+      - [x] At most one card visible at a time; cards switch when conditions change (e.g. doc editor posts a reply → suggest → resolve)
+      - [x] Reopen card: `[Re-open]` shows inline confirmation; `[Confirm]` calls `reopenThread`; `[Cancel]` dismisses
+      - [x] Sending a comment does not change thread status
     - **Dependencies**: Task: Build comment list, Task: Implement thread mutation actions
 
-  - [ ] **Task: Implement queued comment in ThreadView and up/down navigation**
+  - [x] **Task: Implement queued comment in ThreadView and up/down navigation**
     - **Description**: The chat box in `ThreadView` allows replies through the same queued comment flow. The `[↑]` and `[↓]` buttons navigate to the previous/next thread by anchor position.
     - **Acceptance criteria**:
-      - [ ] Sending a reply creates a queued comment with `thread_id` set (not `doc_id`)
-      - [ ] Queued reply card shows toggle group, countdown pill, and `[octagon-x]` blocking toggle below
-      - [ ] On commit, comment appended to thread; no new thread created
-      - [ ] `[↑]` navigates to the thread with the nearest anchor position above current thread
-      - [ ] `[↓]` navigates to the thread with the nearest anchor position below
-      - [ ] `[↑]` disabled when current thread is first; `[↓]` disabled when last
+      - [x] Sending a reply creates a queued comment with `thread_id` set (not `doc_id`)
+      - [x] Queued reply card shows toggle group, countdown pill, and `[octagon-x]` blocking toggle below
+      - [x] On commit, comment appended to thread; no new thread created
+      - [x] `[↑]` navigates to the thread with the nearest anchor position above current thread
+      - [x] `[↓]` navigates to the thread with the nearest anchor position below
+      - [x] `[↑]` disabled when current thread is first; `[↓]` disabled when last
     - **Dependencies**: Task: Implement virtual cards (suggest, resolve, reopen), Task: Implement queued comment state management
 
-- [ ] **Story: ThreadsView**
-  - [ ] **Task: Build ThreadsView shell and thread row component**
+- [x] **Story: ThreadsView**
+  - [x] **Task: Build ThreadsView shell and thread row component**
     - **Description**: `ThreadsView` replaces the AI panel content. Header: `[messages-square] Threads [×]`. Each row follows session history row pattern: 3px state-color border → pin icon → content. Row content: first line has `[octagon-x · danger]` if blocking + anchor snippet; second line has participant avatars + last activity timestamp + `· resolved` if resolved.
     - **Acceptance criteria**:
-      - [ ] Header renders with `messages-square` icon, "Threads" label, `[×]` close button
-      - [ ] `[×]` closes to chat view
-      - [ ] Each thread row has 3px left border matching thread state color
-      - [ ] Blocking threads show `octagon-x · danger` on first line
-      - [ ] Anchor text snippet truncated to single line
-      - [ ] Participant avatars shown (up to ~3, with overflow indicator)
-      - [ ] Last activity shown as relative time; `· resolved` label for resolved threads
-      - [ ] Empty state shown when document has no threads
-      - [ ] Clicking a row opens `ThreadView` for that thread
+      - [x] Header renders with `messages-square` icon, "Threads" label, `[×]` close button
+      - [x] `[×]` closes to chat view
+      - [x] Each thread row has 3px left border matching thread state color
+      - [x] Blocking threads show `octagon-x · danger` on first line
+      - [x] Anchor text snippet truncated to single line
+      - [x] Participant avatars shown (up to ~3, with overflow indicator)
+      - [x] Last activity shown as relative time; `· resolved` label for resolved threads
+      - [x] Empty state shown when document has no threads
+      - [x] Clicking a row opens `ThreadView` for that thread
     - **Dependencies**: Task: Implement store structure and `loadThreads` action
 
-  - [ ] **Task: Implement sort, pin/unpin, and active thread highlighting**
+  - [x] **Task: Implement sort, pin/unpin, and active thread highlighting**
     - **Description**: Threads sorted by `anchor_from` ascending. Pinned threads appear before unpinned, also sorted by `anchor_from`. Currently open thread has `--color-bg-subtle` background. Pin icon visible on hover; always visible when pinned.
     - **Acceptance criteria**:
-      - [ ] Unpinned threads sorted by `anchor_from` ascending
-      - [ ] Pinned threads sorted by `anchor_from` ascending, appearing before all unpinned
-      - [ ] Pin icon: hidden by default, visible on row hover; `PinOff` icon when pinned
-      - [ ] Clicking pin icon calls `togglePinned` and sort updates immediately
-      - [ ] Currently open thread has `--color-bg-subtle` background
+      - [x] Unpinned threads sorted by `anchor_from` ascending
+      - [x] Pinned threads sorted by `anchor_from` ascending, appearing before all unpinned
+      - [x] Pin icon: hidden by default, visible on row hover; `PinOff` icon when pinned
+      - [x] Clicking pin icon calls `togglePinned` and sort updates immediately
+      - [x] Currently open thread has `--color-bg-subtle` background
     - **Dependencies**: Task: Build ThreadsView shell and thread row component, Task: Implement `toggle_pinned`
 
-  - [ ] **Task: Implement filtered ThreadsView for overlapping threads**
+  - [x] **Task: Implement filtered ThreadsView for overlapping threads**
     - **Description**: When a multi-thread overlap is clicked in the document, `ThreadsView` opens in filtered mode showing only threads spanning the clicked position. A label distinguishes filtered from full view.
     - **Acceptance criteria**:
-      - [ ] Filtered view shows only threads spanning the clicked document position
-      - [ ] Label indicates "Showing N threads at this location" (or similar)
-      - [ ] `[×]` in filtered view closes to chat
-      - [ ] Rows in filtered view sorted by anchor position
-      - [ ] Clicking a row in filtered view opens `ThreadView` for that thread
+      - [x] Filtered view shows only threads spanning the clicked document position
+      - [x] Label indicates "Showing N threads at this location" (or similar)
+      - [x] `[×]` in filtered view closes to chat
+      - [x] Rows in filtered view sorted by anchor position
+      - [x] Clicking a row in filtered view opens `ThreadView` for that thread
     - **Dependencies**: Task: Implement click handler for decorated text, Task: Build ThreadsView shell and thread row component
 
-- [ ] **Story: AI panel routing**
-  - [ ] **Task: Implement AI panel view routing**
+- [x] **Story: AI panel routing**
+  - [x] **Task: Implement AI panel view routing**
     - **Description**: Extend `AiChatPanel` to route between `ChatView`, `CreateThreadView`, `ThreadView`, and `ThreadsView`. Manage view state (active view, active thread ID, optional filter set) in the AI panel or a dedicated UI store.
     - **Acceptance criteria**:
-      - [ ] Panel defaults to `ChatView`
-      - [ ] Comment trigger sets active view to `CreateThreadView` with anchor
-      - [ ] Single-thread decoration click sets active view to `ThreadView`
-      - [ ] Multi-thread overlap click sets active view to filtered `ThreadsView`
-      - [ ] `[←]` in `ThreadView` returns to `ThreadsView` if navigated from there; else to `ChatView`
-      - [ ] `[×]` in all comment views returns to `ChatView`
-      - [ ] Navigation state preserved within a session
+      - [x] Panel defaults to `ChatView`
+      - [x] Comment trigger sets active view to `CreateThreadView` with anchor
+      - [x] Single-thread decoration click sets active view to `ThreadView`
+      - [x] Multi-thread overlap click sets active view to filtered `ThreadsView`
+      - [x] `[←]` in `ThreadView` returns to `ThreadsView` if navigated from there; else to `ChatView`
+      - [x] `[×]` in all comment views returns to `ChatView`
+      - [x] Navigation state preserved within a session
     - **Dependencies**: Task: Build CreateThreadView shell and quoted text header, Task: Build ThreadView shell and header, Task: Build ThreadsView shell and thread row component
 
-  - [ ] **Task: Add threads button to footer bar**
+  - [x] **Task: Add threads button to footer bar**
     - **Description**: Add a `messages-square` icon button to the right zone of `FooterBar`, to the left of the existing `Sparkles` button. Only shown when a document is open. Clicking opens the AI panel (if closed) and sets active view to `ThreadsView`. Accent-colored when `ThreadsView` is active.
     - **Acceptance criteria**:
-      - [ ] `messages-square` button appears in footer right zone, left of `Sparkles`
-      - [ ] Button not shown when no document is open
-      - [ ] Clicking opens AI panel (if closed) and sets active view to `ThreadsView`
-      - [ ] Clicking when `ThreadsView` already active closes to `ChatView`
-      - [ ] Button accent-colored when `ThreadsView` is active; tertiary otherwise
+      - [x] `messages-square` button appears in footer right zone, left of `Sparkles`
+      - [x] Button not shown when no document is open
+      - [x] Clicking opens AI panel (if closed) and sets active view to `ThreadsView`
+      - [x] Clicking when `ThreadsView` already active closes to `ChatView`
+      - [x] Button accent-colored when `ThreadsView` is active; tertiary otherwise
     - **Dependencies**: Task: Implement AI panel view routing
 
 - [x] **Story: AI integration**
@@ -1248,26 +1248,26 @@ SQLite queries use parameterized statements throughout — no string interpolati
       - [x] Rejecting dismisses the suggestion without changes
     - **Dependencies**: Task: Implement virtual cards (suggest, resolve, reopen), Task: Implement AI vetting service (deflect and redirect)
 
-- [ ] **Story: Settings**
-  - [ ] **Task: Add "Show resolved decorations" setting**
+- [x] **Story: Settings**
+  - [x] **Task: Add "Show resolved decorations" setting**
     - **Description**: Add a toggle to the Settings panel (reading preferences) to show or hide decorations on resolved threads. Default: on. Changing the setting immediately updates decoration display for the open document.
     - **Acceptance criteria**:
-      - [ ] Toggle appears in Settings panel under reading preferences
-      - [ ] Default value is enabled
-      - [ ] Setting persisted across app restarts
-      - [ ] Toggling off immediately removes success-colored decorations from document
-      - [ ] Toggling on immediately restores success-colored decorations
-      - [ ] Setting read by decoration computation function
+      - [x] Toggle appears in Settings panel under reading preferences
+      - [x] Default value is enabled
+      - [x] Setting persisted across app restarts
+      - [x] Toggling off immediately removes success-colored decorations from document
+      - [x] Toggling on immediately restores success-colored decorations
+      - [x] Setting read by decoration computation function
     - **Dependencies**: Task: Implement decoration computation
 
-  - [ ] **Task: Add AI enhancement settings**
+  - [x] **Task: Add AI enhancement settings**
     - **Description**: Add two settings to the Settings panel: AI enhancement enabled/disabled (default: on) and AI enhancement timeout in seconds (default: 30). These control the body enhancement flow for queued comments.
     - **Acceptance criteria**:
-      - [ ] "AI enhancement" toggle appears in Settings panel
-      - [ ] Default: enabled; timeout input visible when enabled, default 30s
-      - [ ] Both settings persisted across app restarts
-      - [ ] Enhancement disabled: no AI call, `body_enhanced` remains NULL, toggle group not shown
-      - [ ] Enhancement timeout: call abandoned after configured seconds; `body_enhanced` remains NULL
+      - [x] "AI enhancement" toggle appears in Settings panel
+      - [x] Default: enabled; timeout input visible when enabled, default 30s
+      - [x] Both settings persisted across app restarts
+      - [x] Enhancement disabled: no AI call, `body_enhanced` remains NULL, toggle group not shown
+      - [x] Enhancement timeout: call abandoned after configured seconds; `body_enhanced` remains NULL
     - **Dependencies**: Task: Implement AI body enhancement
 
 - [ ] **Story: Tests**

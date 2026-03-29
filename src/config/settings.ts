@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import { FileText, Sparkles } from "lucide-react";
+import { FileText, Sparkles, BookOpen } from "lucide-react";
 
 export interface SettingItem {
   id: string;
@@ -50,6 +50,42 @@ export const settingsConfig: SettingsCategory[] = [
             type: "text",
             order: 2,
             defaultValue: "",
+          },
+          {
+            id: "ai_enhancement_enabled",
+            label: "AI comment enhancement",
+            type: "toggle",
+            order: 10,
+            defaultValue: true,
+          },
+          {
+            id: "ai_enhancement_timeout_seconds",
+            label: "Enhancement timeout (seconds)",
+            type: "text",
+            order: 11,
+            defaultValue: "30",
+          },
+        ],
+      },
+    ],
+  },
+  {
+    id: "reading",
+    label: "Reading",
+    icon: BookOpen,
+    order: 2,
+    sections: [
+      {
+        id: "preferences",
+        label: "Preferences",
+        order: 1,
+        settings: [
+          {
+            id: "show_resolved_decorations",
+            label: "Show resolved comment decorations",
+            type: "toggle",
+            order: 1,
+            defaultValue: true,
           },
         ],
       },

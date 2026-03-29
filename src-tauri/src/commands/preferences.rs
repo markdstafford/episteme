@@ -15,7 +15,16 @@ pub struct Preferences {
     pub preview_height: String,
     #[serde(default)]
     pub github_login: Option<String>,
+    #[serde(default = "default_true")]
+    pub show_resolved_decorations: bool,
+    #[serde(default = "default_true")]
+    pub ai_enhancement_enabled: bool,
+    #[serde(default = "default_enhancement_timeout")]
+    pub ai_enhancement_timeout_seconds: u32,
 }
+
+fn default_true() -> bool { true }
+fn default_enhancement_timeout() -> u32 { 30 }
 
 fn default_preview_width() -> String { "50%".to_string() }
 fn default_preview_height() -> String { "75%".to_string() }
@@ -29,6 +38,9 @@ impl Default for Preferences {
             preview_width: default_preview_width(),
             preview_height: default_preview_height(),
             github_login: None,
+            show_resolved_decorations: true,
+            ai_enhancement_enabled: true,
+            ai_enhancement_timeout_seconds: 30,
         }
     }
 }

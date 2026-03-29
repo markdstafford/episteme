@@ -334,6 +334,9 @@ describe("useAiChatStore", () => {
           preview_width: "50%",
           preview_height: "75%",
           github_login: null,
+          show_resolved_decorations: true,
+          ai_enhancement_enabled: true,
+          ai_enhancement_timeout_seconds: 30,
         },
       });
     });
