@@ -562,13 +562,12 @@ sequenceDiagram
 
 The companion database lives at `.episteme/content.db` relative to the workspace root — one database for all external content across all documents. Future content types (reactions, etc.) are added as new tables.
 
-**Document identity:** when the first thread is created for a document, a UUID v4 is written to the document's frontmatter as `episteme_id`. This is the stable reference used by the database, surviving renames and moves. The `doc_path` column is a cached display value updated opportunistically when the file is accessed under a new path.
+**Document identity:** each document is identified in the database by a `doc_id` UUID v4 stored in the document's frontmatter under the key `doc_id`. When any feature first needs to reference a document in the database, it writes `doc_id` to the frontmatter if absent (it may already exist from a prior feature). This `doc_id` is the stable reference, surviving file renames and moves.
 
 ```sql
 CREATE TABLE threads (
   id           TEXT     PRIMARY KEY,                    -- UUID v4
-  doc_id       TEXT     NOT NULL,                       -- frontmatter episteme_id
-  doc_path     TEXT     NOT NULL,                       -- cached path for display; updated on rename
+  doc_id       TEXT     NOT NULL,                       -- frontmatter doc_id
   anchor_from  INTEGER  NOT NULL,                       -- ProseMirror position (start)
   anchor_to    INTEGER  NOT NULL,                       -- ProseMirror position (end)
   quoted_text  TEXT     NOT NULL,                       -- fallback for anchor reconciliation
@@ -576,7 +575,6 @@ CREATE TABLE threads (
   status       TEXT     NOT NULL DEFAULT 'open',        -- 'open' | 'resolved'
   blocking     BOOLEAN  NOT NULL DEFAULT FALSE,
   pinned       BOOLEAN  NOT NULL DEFAULT FALSE,
-  created_by   TEXT     NOT NULL,                       -- GitHub login
   created_at   TEXT     NOT NULL                        -- ISO 8601
 );
 
@@ -601,36 +599,52 @@ CREATE TABLE queued_comments (
 );
 
 CREATE INDEX idx_threads_doc_id  ON threads(doc_id);
-CREATE INDEX idx_threads_doc_path ON threads(doc_path);
-CREATE INDEX idx_comments_thread  ON comments(thread_id);
-CREATE INDEX idx_events_thread    ON thread_events(thread_id);
+CREATE INDEX idx_comments_thread ON comments(thread_id);
+CREATE INDEX idx_events_thread   ON thread_events(thread_id);
 ```
 
 #### Tauri commands
+
+Current user identity is resolved from the auth session in Rust — not passed as a parameter.
 
 ```
 load_threads(doc_id: str) → Vec<Thread>
   Load all threads for a document. Triggers anchor reconciliation on each.
 
-create_thread(doc_id: str, doc_path: str, anchor: Anchor, body: str,
-              blocking: bool, author: str) → Thread
-  Write episteme_id to frontmatter if absent. Insert thread + first comment
-  + initial thread_event (→ open, or → blocking if blocking = true).
+create_thread(doc_id: str, doc_path: str, anchor: Anchor,
+              body: str, blocking: bool) → Thread
+  Write doc_id to frontmatter if absent. Insert thread + first comment.
+  Always emits two thread_events if blocking: (→ open) then (→ blocking).
+  Emits only (→ open) if not blocking.
 
-add_comment(thread_id: str, body: str, author: str) → Comment
+add_comment(thread_id: str, body: str) → Comment
 
-update_thread_status(thread_id: str, status: str, changed_by: str) → ThreadEvent
+update_thread_status(thread_id: str, status: str) → ThreadEvent
   Set status = 'open' | 'resolved'. Inserts thread_event (→ resolved | → re-opened).
 
-toggle_blocking(thread_id: str, blocking: bool, changed_by: str) → ThreadEvent
-  Only valid when status = 'open'.
+toggle_blocking(thread_id: str) → ThreadEvent
+  Flips blocking flag. Only valid when status = 'open'.
+  Inserts thread_event (→ blocking | → non-blocking).
 
-pin_thread(thread_id: str, pinned: bool) → ()
+toggle_pinned(thread_id: str) → ()
+  Flips pinned flag.
 
-save_queued_comment(queued: QueuedComment) → ()
+stage_comment(queued: QueuedComment) → ()
+  Persist a staged draft to queued_comments (survives app crash before countdown expires).
+
 flush_queued_comment(id: str) → Thread | Comment
+  Commit a queued comment: creates thread or appends comment,
+  deletes the queued row. Called on countdown expiry.
+
 delete_queued_comment(id: str) → ()
+  Cancel a queued comment.
+
 load_expired_queued_comments(doc_id: str) → Vec<QueuedComment>
+  Called on app launch. Returns queued comments whose countdown has expired.
+
+update_thread_anchors(updates: Vec<{thread_id: str, from: int, to: int}>) → ()
+  Update anchor positions after a document content change while threads are loaded.
+  Called by the threads store whenever the TipTap document changes.
 ```
 
 #### Key algorithms
@@ -647,7 +661,7 @@ load_expired_queued_comments(doc_id: str) → Vec<QueuedComment>
 For each character position in the document, collect all threads whose anchor spans it. Apply worst-case color precedence: danger > warning > success. Apply as `Decoration.inline` with a CSS class carrying the appropriate color token. Decoration boundaries transition at thread anchor boundaries.
 
 **Queued comment lifecycle**:
-1. Stage: insert row into `queued_comments`, start countdown in React state
+1. Stage: call `stage_comment` to persist draft, start countdown in React state
 2. Expire: call `flush_queued_comment` → Rust creates thread/comment, deletes queued row → `CreateThreadView` animates to `ThreadView`
 3. App launch: call `load_expired_queued_comments` → flush each immediately
 4. Cancel: call `delete_queued_comment`, clear React state
