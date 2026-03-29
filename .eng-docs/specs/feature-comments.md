@@ -821,104 +821,104 @@ SQLite queries use parameterized statements throughout — no string interpolati
 
 ## Task list
 
-- [ ] **Story: Database and Rust infrastructure**
-  - [ ] **Task: Initialize `.episteme/` directory and SQLite schema**
+- [x] **Story: Database and Rust infrastructure**
+  - [x] **Task: Initialize `.episteme/` directory and SQLite schema**
     - **Description**: On workspace load, ensure `.episteme/` exists at the workspace root and `content.db` is created at `.episteme/content.db` with the full schema. Must be idempotent — safe to run on every app launch against an existing database. Enable WAL mode for crash safety.
     - **Acceptance criteria**:
-      - [ ] `.episteme/` directory created at workspace root if absent
-      - [ ] `content.db` created if absent; existing DB untouched on subsequent launches
-      - [ ] `threads`, `comments`, `thread_events`, `queued_comments` tables created with correct columns, types, defaults, and constraints
-      - [ ] All indexes created (`idx_threads_doc_id`, `idx_comments_thread`, `idx_events_thread`, `idx_queued_expires`)
-      - [ ] `queued_comments` CHECK constraint enforced — inserting a row with both `thread_id` and `doc_id` set returns an error
-      - [ ] WAL mode enabled
-      - [ ] Called automatically on workspace open before any DB command executes
+      - [x] `.episteme/` directory created at workspace root if absent
+      - [x] `content.db` created if absent; existing DB untouched on subsequent launches
+      - [x] `threads`, `comments`, `thread_events`, `queued_comments` tables created with correct columns, types, defaults, and constraints
+      - [x] All indexes created (`idx_threads_doc_id`, `idx_comments_thread`, `idx_events_thread`, `idx_queued_expires`)
+      - [x] `queued_comments` CHECK constraint enforced — inserting a row with both `thread_id` and `doc_id` set returns an error
+      - [x] WAL mode enabled
+      - [x] Called automatically on workspace open before any DB command executes
     - **Dependencies**: None
 
-  - [ ] **Task: Implement `doc_id` frontmatter utilities**
+  - [x] **Task: Implement `doc_id` frontmatter utilities**
     - **Description**: Two Rust helper functions for reading and writing the `doc_id` field in YAML frontmatter. `get_doc_id(doc_path)` returns the existing value or `None`. `ensure_doc_id(doc_path)` returns the existing value, or generates a UUID v4, writes it to frontmatter, and returns it. Preserves all other frontmatter fields unchanged.
     - **Acceptance criteria**:
-      - [ ] `get_doc_id` returns `Some(uuid)` when `doc_id` is present in frontmatter
-      - [ ] `get_doc_id` returns `None` when `doc_id` is absent
-      - [ ] `get_doc_id` returns `None` for documents with no frontmatter block
-      - [ ] `ensure_doc_id` returns the existing value without modifying the file when `doc_id` is already present
-      - [ ] `ensure_doc_id` writes a new UUID v4 and returns it when `doc_id` is absent
-      - [ ] `ensure_doc_id` write preserves all existing frontmatter fields
-      - [ ] `ensure_doc_id` creates a frontmatter block if the document has none
-      - [ ] Unit tests cover all cases above
+      - [x] `get_doc_id` returns `Some(uuid)` when `doc_id` is present in frontmatter
+      - [x] `get_doc_id` returns `None` when `doc_id` is absent
+      - [x] `get_doc_id` returns `None` for documents with no frontmatter block
+      - [x] `ensure_doc_id` returns the existing value without modifying the file when `doc_id` is already present
+      - [x] `ensure_doc_id` writes a new UUID v4 and returns it when `doc_id` is absent
+      - [x] `ensure_doc_id` write preserves all existing frontmatter fields
+      - [x] `ensure_doc_id` creates a frontmatter block if the document has none
+      - [x] Unit tests cover all cases above
     - **Dependencies**: None
 
-  - [ ] **Task: Implement `load_threads`**
+  - [x] **Task: Implement `load_threads`**
     - **Description**: Tauri command that loads all threads for a `doc_id` from SQLite, including nested comments and thread_events ordered by `created_at`/`changed_at`. Performs anchor reconciliation for each thread: checks `[anchor_from, anchor_to]` against current document content, updates positions if text has moved, sets `anchor_stale = TRUE` if `quoted_text` not found. Persists reconciliation results to DB.
     - **Acceptance criteria**:
-      - [ ] Returns all threads for the given `doc_id` with nested comments and thread_events
-      - [ ] Thread anchors with exact position match returned unchanged
-      - [ ] Thread anchors where text has moved but `quoted_text` is found elsewhere have positions updated, `anchor_stale` cleared, and results persisted to DB
-      - [ ] Thread anchors where `quoted_text` is not found have `anchor_stale = TRUE` persisted to DB
-      - [ ] Returns empty array (not error) when no threads exist for the given `doc_id`
-      - [ ] Comments ordered by `created_at` ascending; thread_events ordered by `changed_at` ascending
-      - [ ] Unit tests cover all three reconciliation outcomes
+      - [x] Returns all threads for the given `doc_id` with nested comments and thread_events
+      - [x] Thread anchors with exact position match returned unchanged
+      - [x] Thread anchors where text has moved but `quoted_text` is found elsewhere have positions updated, `anchor_stale` cleared, and results persisted to DB
+      - [x] Thread anchors where `quoted_text` is not found have `anchor_stale = TRUE` persisted to DB
+      - [x] Returns empty array (not error) when no threads exist for the given `doc_id`
+      - [x] Comments ordered by `created_at` ascending; thread_events ordered by `changed_at` ascending
+      - [x] Unit tests cover all three reconciliation outcomes
     - **Dependencies**: Task: Initialize `.episteme/` directory and SQLite schema
 
-  - [ ] **Task: Implement `commit_comment`**
+  - [x] **Task: Implement `commit_comment`**
     - **Description**: Commits a queued comment from `queued_comments`. Two paths: (1) new thread — `doc_id` set, creates thread + first comment + thread_events, calls `ensure_doc_id`; (2) reply — `thread_id` set, appends comment. Deletes the queued row in both cases. All DB operations in a single transaction. Body used is determined by `use_body_enhanced` (uses `body_enhanced` if true and non-NULL, else `body_original`).
     - **Acceptance criteria**:
-      - [ ] New thread path: `threads` row inserted with correct values from queued row
-      - [ ] New thread path: `comments` row inserted with body per `use_body_enhanced`
-      - [ ] New thread path, `blocking = false`: single `→ open` thread_event inserted
-      - [ ] New thread path, `blocking = true`: `→ open` event first, then `→ blocking` event
-      - [ ] Reply path: `comments` row appended to existing thread; thread row unchanged; no thread_events
-      - [ ] Queued row deleted after successful commit in both paths
-      - [ ] `ensure_doc_id` called for new thread path; frontmatter updated if absent
-      - [ ] All inserts wrapped in a single transaction
-      - [ ] Returns created `Thread` (new thread path) or `Comment` (reply path)
-      - [ ] Integration tests cover both paths and transaction atomicity
+      - [x] New thread path: `threads` row inserted with correct values from queued row
+      - [x] New thread path: `comments` row inserted with body per `use_body_enhanced`
+      - [x] New thread path, `blocking = false`: single `→ open` thread_event inserted
+      - [x] New thread path, `blocking = true`: `→ open` event first, then `→ blocking` event
+      - [x] Reply path: `comments` row appended to existing thread; thread row unchanged; no thread_events
+      - [x] Queued row deleted after successful commit in both paths
+      - [x] `ensure_doc_id` called for new thread path; frontmatter updated if absent
+      - [x] All inserts wrapped in a single transaction
+      - [x] Returns created `Thread` (new thread path) or `Comment` (reply path)
+      - [x] Integration tests cover both paths and transaction atomicity
     - **Dependencies**: Task: Implement `doc_id` frontmatter utilities, Task: Initialize `.episteme/` directory and SQLite schema
 
-  - [ ] **Task: Implement `update_thread_status`**
+  - [x] **Task: Implement `update_thread_status`**
     - **Description**: Sets a thread's `status` to `'open'` or `'resolved'`. Inserts the corresponding thread_event. The `blocking` value is preserved unchanged in both directions.
     - **Acceptance criteria**:
-      - [ ] Status set to `'resolved'`: `threads.status` updated, `→ resolved` thread_event inserted, `blocking` unchanged
-      - [ ] Status set to `'open'` (re-open): `threads.status` updated, `→ re-opened` thread_event inserted, `blocking` unchanged
-      - [ ] Returns the inserted `ThreadEvent`
-      - [ ] Returns error for unknown `thread_id`
+      - [x] Status set to `'resolved'`: `threads.status` updated, `→ resolved` thread_event inserted, `blocking` unchanged
+      - [x] Status set to `'open'` (re-open): `threads.status` updated, `→ re-opened` thread_event inserted, `blocking` unchanged
+      - [x] Returns the inserted `ThreadEvent`
+      - [x] Returns error for unknown `thread_id`
     - **Dependencies**: Task: Initialize `.episteme/` directory and SQLite schema
 
-  - [ ] **Task: Implement `toggle_blocking`**
+  - [x] **Task: Implement `toggle_blocking`**
     - **Description**: Flips the `blocking` boolean on a thread and inserts the corresponding thread_event. Only valid when `status = 'open'` — returns an error if called on a resolved thread.
     - **Acceptance criteria**:
-      - [ ] `blocking` false → true: `threads.blocking` updated, `→ blocking` thread_event inserted
-      - [ ] `blocking` true → false: `threads.blocking` updated, `→ non-blocking` thread_event inserted
-      - [ ] Returns error when `status = 'resolved'`; no DB changes made
-      - [ ] Returns the inserted `ThreadEvent`
+      - [x] `blocking` false → true: `threads.blocking` updated, `→ blocking` thread_event inserted
+      - [x] `blocking` true → false: `threads.blocking` updated, `→ non-blocking` thread_event inserted
+      - [x] Returns error when `status = 'resolved'`; no DB changes made
+      - [x] Returns the inserted `ThreadEvent`
     - **Dependencies**: Task: Initialize `.episteme/` directory and SQLite schema
 
-  - [ ] **Task: Implement `toggle_pinned`**
+  - [x] **Task: Implement `toggle_pinned`**
     - **Description**: Flips the `pinned` boolean on a thread. No thread_event is emitted — pinning is a UI preference, not a workflow state change.
     - **Acceptance criteria**:
-      - [ ] `pinned` false → true: `threads.pinned` updated to true
-      - [ ] `pinned` true → false: `threads.pinned` updated to false
-      - [ ] Returns `()`
-      - [ ] Returns error for unknown `thread_id`
+      - [x] `pinned` false → true: `threads.pinned` updated to true
+      - [x] `pinned` true → false: `threads.pinned` updated to false
+      - [x] Returns `()`
+      - [x] Returns error for unknown `thread_id`
     - **Dependencies**: Task: Initialize `.episteme/` directory and SQLite schema
 
-  - [ ] **Task: Implement `queue_comment` and `toggle_queued_body`**
+  - [x] **Task: Implement `queue_comment` and `toggle_queued_body`**
     - **Description**: `queue_comment` is an upsert keyed by `id` — inserts or updates a `queued_comments` row. Used for initial staging and for updating `body_enhanced` when AI enhancement completes. `toggle_queued_body` flips `use_body_enhanced`; no-op if `body_enhanced` is NULL.
     - **Acceptance criteria**:
-      - [ ] `queue_comment` inserts a new row when `id` is absent
-      - [ ] `queue_comment` updates all fields of the existing row when `id` is already present
-      - [ ] `queue_comment` enforces CHECK constraint — error if both `thread_id` and `doc_id` are set
-      - [ ] `toggle_queued_body` flips `use_body_enhanced` true → false and false → true
-      - [ ] `toggle_queued_body` is a no-op (no error, no change) when `body_enhanced` is NULL
+      - [x] `queue_comment` inserts a new row when `id` is absent
+      - [x] `queue_comment` updates all fields of the existing row when `id` is already present
+      - [x] `queue_comment` enforces CHECK constraint — error if both `thread_id` and `doc_id` are set
+      - [x] `toggle_queued_body` flips `use_body_enhanced` true → false and false → true
+      - [x] `toggle_queued_body` is a no-op (no error, no change) when `body_enhanced` is NULL
     - **Dependencies**: Task: Initialize `.episteme/` directory and SQLite schema
 
-  - [ ] **Task: Implement `cancel_queued_comment`, `load_queued_comments`, and `update_thread_anchors`**
+  - [x] **Task: Implement `cancel_queued_comment`, `load_queued_comments`, and `update_thread_anchors`**
     - **Description**: Three utility commands. `cancel_queued_comment(id)` deletes a queued row. `load_queued_comments()` returns all queued rows regardless of expiry. `update_thread_anchors(updates)` batch-updates `anchor_from` and `anchor_to` for multiple threads in a single transaction.
     - **Acceptance criteria**:
-      - [ ] `cancel_queued_comment` deletes the correct row; no-op (no error) if `id` not found
-      - [ ] `load_queued_comments` returns all rows, both expired and unexpired
-      - [ ] `update_thread_anchors` updates all provided `{thread_id, anchor_from, anchor_to}` tuples in a single transaction
-      - [ ] `update_thread_anchors` with empty `updates` array is a no-op (no error)
-      - [ ] `update_thread_anchors` skips unknown `thread_id` values without failing the whole batch
+      - [x] `cancel_queued_comment` deletes the correct row; no-op (no error) if `id` not found
+      - [x] `load_queued_comments` returns all rows, both expired and unexpired
+      - [x] `update_thread_anchors` updates all provided `{thread_id, anchor_from, anchor_to}` tuples in a single transaction
+      - [x] `update_thread_anchors` with empty `updates` array is a no-op (no error)
+      - [x] `update_thread_anchors` skips unknown `thread_id` values without failing the whole batch
     - **Dependencies**: Task: Initialize `.episteme/` directory and SQLite schema
 
 - [ ] **Story: Threads Zustand store**
