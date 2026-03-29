@@ -720,6 +720,62 @@ No runtime metrics infrastructure in this version. Candidate for future addition
 
 Not applicable for a local desktop app.
 
+### 6. Testing plan
+
+**Unit tests**
+
+| Module | Cases |
+|---|---|
+| `threads` Zustand store | Load threads for a document; stage queued comment; cancel queued comment; commit queued comment (new thread path); commit queued comment (reply path); anchor reconciliation — exact match; anchor reconciliation — fuzzy match found, positions updated; anchor reconciliation — fuzzy match not found, `anchor_stale` set; `update_thread_anchors` updates in-memory positions; decoration set computation — single thread per state; decoration set computation — overlapping threads, worst-color precedence; decoration set boundary precision at anchor edges |
+| `CreateThreadView` | Renders with quoted text pinned; deflect path — user accepts, no thread created; deflect path — user rejects ("No, file anyway"), continues to queue; redirect path — anchor moves, quoted text updates; redirect path — "Go back" reverts anchor and quoted text; queued card appears after redirect; queued card appears with no deflect/redirect; countdown expires → thread committed, view transitions to `ThreadView`; cancel → no thread created; AI enhancement disabled → only `body_original` shown; AI enhancement enabled → `body_enhanced` populated, toggle works; `toggle_queued_body` switches displayed text; blocking toggle sets correct initial `blocking` value before commit |
+| `ThreadView` | Opens scrolled to bottom; header shows truncated quoted text; status row — open non-blocking: tertiary icon, no background; status row — open blocking: danger icon, danger-subtle background; status row — resolved: tertiary icon, success-subtle background, non-interactive; blocking toggle rejected when status = resolved; history popover shows all events in chronological order; history popover includes all event types (open, blocking, non-blocking, resolved, re-opened); suggest card shown — doc editor, status open, last comment from non-editor; resolve card shown — doc editor, status open, last comment from editor; reopen card shown — all users, status resolved; no virtual card — non-editor, status open; suggest card transitions to resolve card when doc editor posts reply; resolve card transitions to suggest card when non-editor posts reply; both cards transition to reopen card on resolve; reopen card transitions to suggest/resolve on re-open; at most one virtual card visible; reopen inline confirmation appears; reopen confirmation cancel dismisses without action; chat box available when status = resolved; queued comment blocking toggle sets blocking on commit; queued comment cancel |
+| `ThreadsView` | Rows sorted by anchor position (top to bottom); pinned rows sorted by anchor position but appear before unpinned; border color matches thread state; active thread has subtle background; blocking indicator shown for blocking threads; status label shown for resolved threads; stale anchor shown with stale indicator |
+| Decoration computation | Single open non-blocking thread → warning color; single open blocking thread → danger color; single resolved thread → success color; resolved thread with decoration setting off → no decoration; two threads same span → worst color applied; two threads one nested → inner span gets worst, outer-only span gets its own color; three-way overlap → danger wins over all; decoration updates on thread status change; stale thread → no decoration |
+| Anchor reconciliation | Exact position match; text moved, fuzzy found → positions updated, stale cleared; text deleted, not found → stale set; multiple threads, some stale some not |
+
+**Integration tests**
+
+| Scenario | What to verify |
+|---|---|
+| `commit_comment` — new thread | Thread row, first comment row, thread_events `→ open`; if blocking=true also `→ blocking` immediately after |
+| `commit_comment` — new thread, blocking=false | Only `→ open` event emitted |
+| `commit_comment` — reply | Comment appended; thread row unchanged; no thread_events |
+| `commit_comment` — writes `doc_id` to frontmatter | Written when absent; preserved when already present (from another feature) |
+| `toggle_blocking` — open thread | Flag flips; correct thread_event inserted |
+| `toggle_blocking` — resolved thread | Command rejected; no DB change |
+| `update_thread_status` → resolved | `blocking` value preserved; `→ resolved` event emitted |
+| `update_thread_status` → re-opened | `blocking` value preserved; `→ re-opened` event emitted |
+| `toggle_pinned` | Flips correctly; idempotent on double-call |
+| `queue_comment` upsert | Insert on first call; update body columns on second call with same id |
+| `toggle_queued_body` | Flips `use_body_enhanced`; no-op if `body_enhanced` is NULL |
+| `load_queued_comments` on launch — expired | Returned; `commit_comment` called → thread/comment created, row deleted |
+| `load_queued_comments` on launch — unexpired | Returned; countdown resumed from remaining time, not full timeout |
+| `cancel_queued_comment` | Row deleted; no thread/comment created |
+| `update_thread_anchors` | Positions updated in DB; subsequent `load_threads` returns new positions |
+| `ON DELETE CASCADE` | Deleting thread deletes all associated comments and thread_events |
+| Anchor reconciliation round-trip | Create thread; externally edit file; reload → fuzzy match updates positions |
+| Overlapping thread decoration | Two threads with overlapping anchors; decoration color at each character position is correct worst-case |
+
+**E2E tests**
+
+| Flow | What to verify |
+|---|---|
+| Happy path: file a comment (no deflect/redirect) | Select text → create thread view opens → type concern → AI suggests text → countdown → animates to thread view → thread and comment in DB |
+| Deflect path: accepted | AI answers → user confirms → view closes → no thread in DB |
+| Deflect path: rejected | AI answers → "No, file anyway" → queued card appears → commits normally |
+| Redirect path: accepted | AI moves anchor → quoted text updates → commit at new anchor |
+| Redirect path: reverted | "Go back" → original anchor restored → commit at original anchor |
+| Queued comment survives app close | Stage comment → kill app → relaunch → comment committed → appears in thread view |
+| Unexpired queued comment on relaunch | Stage comment, set long timeout → kill app → relaunch → countdown resumes at remaining time |
+| Toggle body version before commit | Stage → AI enhances → toggle to raw → commit → raw body stored in comment |
+| Blocking thread creation | Mark blocking before commit → thread has blocking=TRUE, `→ open` and `→ blocking` events in DB |
+| Resolve and re-open cycle | Resolve thread → blocking preserved → re-open → blocking still set, `→ re-opened` event |
+| Overlapping threads click | Two overlapping threads → click overlap → filtered threads view shows both; click non-overlap → thread view directly |
+| Stale anchor handling | Thread exists → externally delete quoted text from file → reload → thread shown as stale, no decoration |
+| "Show resolved decorations" off | Resolve thread → no decoration visible in document |
+| Up/down navigation in thread view | Navigate to next/previous thread by anchor order |
+| AI enhancement disabled in settings | Queue comment → no AI enhancement attempted → only raw body available |
+
 ### 4. Security, privacy, and compliance
 
 **Authentication and authorization**
