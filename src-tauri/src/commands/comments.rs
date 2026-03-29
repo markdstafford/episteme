@@ -47,13 +47,20 @@ pub async fn init_workspace_db(
     Ok(())
 }
 
-// ── get_doc_id_for_file ───────────────────────────────────────────────────────
+// ── get_doc_id_for_file / ensure_doc_id_for_file ─────────────────────────────
 
 #[tauri::command]
 pub async fn get_doc_id_for_file(file_path: String) -> Result<Option<String>, String> {
     let content = std::fs::read_to_string(&file_path)
         .map_err(|e| format!("Failed to read file: {e}"))?;
     Ok(crate::frontmatter::get_doc_id(&content))
+}
+
+/// Returns the existing doc_id or writes a new UUID v4 to the file and returns it.
+/// Frontend calls this before queue_comment for new-thread comments.
+#[tauri::command]
+pub async fn ensure_doc_id_for_file(file_path: String) -> Result<String, String> {
+    crate::frontmatter::ensure_doc_id(&file_path)
 }
 
 // ── load_threads ──────────────────────────────────────────────────────────────
@@ -158,7 +165,9 @@ fn reconcile_anchor(
         }
     }
 
-    if let Some(new_from) = doc_content.find(&thread.quoted_text) {
+    if let Some(byte_offset) = doc_content.find(thread.quoted_text.as_str()) {
+        // Convert byte offset to character offset for consistency
+        let new_from = doc_content[..byte_offset].chars().count();
         let new_to = new_from + thread.quoted_text.chars().count();
         thread.anchor_from = new_from as i64;
         thread.anchor_to = new_to as i64;

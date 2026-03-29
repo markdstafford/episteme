@@ -10,7 +10,7 @@ pub fn open_and_init(db_path: &Path) -> SqlResult<Connection> {
 }
 
 fn init_schema(conn: &Connection) -> SqlResult<()> {
-    conn.execute_batch("PRAGMA journal_mode=WAL;")?;
+    conn.execute_batch("PRAGMA journal_mode=WAL; PRAGMA foreign_keys = ON;")?;
     conn.execute_batch(SCHEMA)?;
     Ok(())
 }
