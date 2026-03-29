@@ -482,12 +482,79 @@ Currently-open thread has `--color-bg-subtle` background. All rows have a bottom
 | Status | Thread lifecycle: `open` or `resolved` |
 | Blocking | Boolean on a thread; when true and status = open, signals the thread gates document progression |
 | Queued comment | A staged comment held locally with a countdown before it sends |
-| New thread view | AI panel state for creating a comment |
-| Thread view | AI panel state for viewing/replying to a thread |
-| Threads view | AI panel state listing all threads for the open document |
+| New thread view | AI panel state for creating a comment (`CreateThreadView`) |
+| Thread view | AI panel state for viewing/replying to a thread (`ThreadView`) |
+| Threads view | AI panel state listing all threads for the open document (`ThreadsView`) |
 | Virtual card | A persistent AI-generated card at the end of the thread comment stream that surfaces status-change actions |
 | Document editor | Any user with write access to the document. Determines who sees the suggest and resolve virtual cards. Approximated from frontmatter for now; intended to accommodate multiple contributors. |
 | AI enhancement | The queued-comment flow where AI rewrites a draft comment before it sends |
+
+### 2. System design and architecture
+
+#### High-level architecture
+
+```mermaid
+graph TD
+    subgraph React frontend
+        AP[AI panel\nthread/threads/new thread views]
+        MR[MarkdownRenderer\nTipTap + Decoration.inline]
+        ZS[Zustand\nthreads store]
+        ACS[Zustand\nAI chat store]
+    end
+
+    subgraph Tauri Rust backend
+        FC[file_commands\nread/write companion file]
+        MC[markdown_commands\nread/write doc file]
+    end
+
+    subgraph Local filesystem
+        MD[doc.md]
+        CF[companion file]
+    end
+
+    AP --> ZS
+    MR --> ZS
+    ZS --> FC
+    FC --> CF
+    MC --> MD
+    ACS --> AP
+```
+
+#### Component breakdown
+
+| Component | New / Modified | Description |
+|---|---|---|
+| `threads` Zustand store | New | Owns thread state: load, persist, anchor reconciliation, queued comment lifecycle |
+| `MarkdownRenderer` | Modified | Subscribe to threads store; apply `Decoration.inline` per anchor |
+| `AiChatPanel` | Modified | Route to `CreateThreadView`, `ThreadView`, or `ThreadsView` based on active view state |
+| `CreateThreadView` | New | New thread view — comment creation flow |
+| `ThreadView` | New | Thread view — single thread display, virtual cards, queued comment |
+| `ThreadsView` | New | Threads view — thread list with pin, sort, filter |
+| `file_commands` (Rust) | Modified | Add read/write for companion file |
+| Companion file | New | Single file per document storing all external content |
+
+#### Sequence: creating a comment (happy path — no deflect/redirect)
+
+```mermaid
+sequenceDiagram
+    actor User
+    participant Doc as MarkdownRenderer
+    participant CTV as CreateThreadView
+    participant TS as threads store
+    participant AI as Claude (Bedrock)
+    participant FS as Companion file
+
+    User->>Doc: selects text
+    Doc->>CTV: open with anchor {from, to, quotedText}
+    User->>CTV: types concern, sends
+    CTV->>AI: concern + document + related docs
+    AI->>CTV: suggests comment text
+    CTV->>TS: stage queued comment
+    Note over CTV: countdown begins
+    CTV->>TS: countdown expires → commit thread
+    TS->>FS: write new thread to companion file
+    TS->>Doc: notify → redecorate
+```
 
 ## Task list
 
