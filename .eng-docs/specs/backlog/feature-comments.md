@@ -821,4 +821,513 @@ SQLite queries use parameterized statements throughout — no string interpolati
 
 ## Task list
 
-*(Added by task decomposition stage)*
+- [ ] **Story: Database and Rust infrastructure**
+  - [ ] **Task: Initialize `.episteme/` directory and SQLite schema**
+    - **Description**: On workspace load, ensure `.episteme/` exists at the workspace root and `content.db` is created at `.episteme/content.db` with the full schema. Must be idempotent — safe to run on every app launch against an existing database. Enable WAL mode for crash safety.
+    - **Acceptance criteria**:
+      - [ ] `.episteme/` directory created at workspace root if absent
+      - [ ] `content.db` created if absent; existing DB untouched on subsequent launches
+      - [ ] `threads`, `comments`, `thread_events`, `queued_comments` tables created with correct columns, types, defaults, and constraints
+      - [ ] All indexes created (`idx_threads_doc_id`, `idx_comments_thread`, `idx_events_thread`, `idx_queued_expires`)
+      - [ ] `queued_comments` CHECK constraint enforced — inserting a row with both `thread_id` and `doc_id` set returns an error
+      - [ ] WAL mode enabled
+      - [ ] Called automatically on workspace open before any DB command executes
+    - **Dependencies**: None
+
+  - [ ] **Task: Implement `doc_id` frontmatter utilities**
+    - **Description**: Two Rust helper functions for reading and writing the `doc_id` field in YAML frontmatter. `get_doc_id(doc_path)` returns the existing value or `None`. `ensure_doc_id(doc_path)` returns the existing value, or generates a UUID v4, writes it to frontmatter, and returns it. Preserves all other frontmatter fields unchanged.
+    - **Acceptance criteria**:
+      - [ ] `get_doc_id` returns `Some(uuid)` when `doc_id` is present in frontmatter
+      - [ ] `get_doc_id` returns `None` when `doc_id` is absent
+      - [ ] `get_doc_id` returns `None` for documents with no frontmatter block
+      - [ ] `ensure_doc_id` returns the existing value without modifying the file when `doc_id` is already present
+      - [ ] `ensure_doc_id` writes a new UUID v4 and returns it when `doc_id` is absent
+      - [ ] `ensure_doc_id` write preserves all existing frontmatter fields
+      - [ ] `ensure_doc_id` creates a frontmatter block if the document has none
+      - [ ] Unit tests cover all cases above
+    - **Dependencies**: None
+
+  - [ ] **Task: Implement `load_threads`**
+    - **Description**: Tauri command that loads all threads for a `doc_id` from SQLite, including nested comments and thread_events ordered by `created_at`/`changed_at`. Performs anchor reconciliation for each thread: checks `[anchor_from, anchor_to]` against current document content, updates positions if text has moved, sets `anchor_stale = TRUE` if `quoted_text` not found. Persists reconciliation results to DB.
+    - **Acceptance criteria**:
+      - [ ] Returns all threads for the given `doc_id` with nested comments and thread_events
+      - [ ] Thread anchors with exact position match returned unchanged
+      - [ ] Thread anchors where text has moved but `quoted_text` is found elsewhere have positions updated, `anchor_stale` cleared, and results persisted to DB
+      - [ ] Thread anchors where `quoted_text` is not found have `anchor_stale = TRUE` persisted to DB
+      - [ ] Returns empty array (not error) when no threads exist for the given `doc_id`
+      - [ ] Comments ordered by `created_at` ascending; thread_events ordered by `changed_at` ascending
+      - [ ] Unit tests cover all three reconciliation outcomes
+    - **Dependencies**: Task: Initialize `.episteme/` directory and SQLite schema
+
+  - [ ] **Task: Implement `commit_comment`**
+    - **Description**: Commits a queued comment from `queued_comments`. Two paths: (1) new thread — `doc_id` set, creates thread + first comment + thread_events, calls `ensure_doc_id`; (2) reply — `thread_id` set, appends comment. Deletes the queued row in both cases. All DB operations in a single transaction. Body used is determined by `use_body_enhanced` (uses `body_enhanced` if true and non-NULL, else `body_original`).
+    - **Acceptance criteria**:
+      - [ ] New thread path: `threads` row inserted with correct values from queued row
+      - [ ] New thread path: `comments` row inserted with body per `use_body_enhanced`
+      - [ ] New thread path, `blocking = false`: single `→ open` thread_event inserted
+      - [ ] New thread path, `blocking = true`: `→ open` event first, then `→ blocking` event
+      - [ ] Reply path: `comments` row appended to existing thread; thread row unchanged; no thread_events
+      - [ ] Queued row deleted after successful commit in both paths
+      - [ ] `ensure_doc_id` called for new thread path; frontmatter updated if absent
+      - [ ] All inserts wrapped in a single transaction
+      - [ ] Returns created `Thread` (new thread path) or `Comment` (reply path)
+      - [ ] Integration tests cover both paths and transaction atomicity
+    - **Dependencies**: Task: Implement `doc_id` frontmatter utilities, Task: Initialize `.episteme/` directory and SQLite schema
+
+  - [ ] **Task: Implement `update_thread_status`**
+    - **Description**: Sets a thread's `status` to `'open'` or `'resolved'`. Inserts the corresponding thread_event. The `blocking` value is preserved unchanged in both directions.
+    - **Acceptance criteria**:
+      - [ ] Status set to `'resolved'`: `threads.status` updated, `→ resolved` thread_event inserted, `blocking` unchanged
+      - [ ] Status set to `'open'` (re-open): `threads.status` updated, `→ re-opened` thread_event inserted, `blocking` unchanged
+      - [ ] Returns the inserted `ThreadEvent`
+      - [ ] Returns error for unknown `thread_id`
+    - **Dependencies**: Task: Initialize `.episteme/` directory and SQLite schema
+
+  - [ ] **Task: Implement `toggle_blocking`**
+    - **Description**: Flips the `blocking` boolean on a thread and inserts the corresponding thread_event. Only valid when `status = 'open'` — returns an error if called on a resolved thread.
+    - **Acceptance criteria**:
+      - [ ] `blocking` false → true: `threads.blocking` updated, `→ blocking` thread_event inserted
+      - [ ] `blocking` true → false: `threads.blocking` updated, `→ non-blocking` thread_event inserted
+      - [ ] Returns error when `status = 'resolved'`; no DB changes made
+      - [ ] Returns the inserted `ThreadEvent`
+    - **Dependencies**: Task: Initialize `.episteme/` directory and SQLite schema
+
+  - [ ] **Task: Implement `toggle_pinned`**
+    - **Description**: Flips the `pinned` boolean on a thread. No thread_event is emitted — pinning is a UI preference, not a workflow state change.
+    - **Acceptance criteria**:
+      - [ ] `pinned` false → true: `threads.pinned` updated to true
+      - [ ] `pinned` true → false: `threads.pinned` updated to false
+      - [ ] Returns `()`
+      - [ ] Returns error for unknown `thread_id`
+    - **Dependencies**: Task: Initialize `.episteme/` directory and SQLite schema
+
+  - [ ] **Task: Implement `queue_comment` and `toggle_queued_body`**
+    - **Description**: `queue_comment` is an upsert keyed by `id` — inserts or updates a `queued_comments` row. Used for initial staging and for updating `body_enhanced` when AI enhancement completes. `toggle_queued_body` flips `use_body_enhanced`; no-op if `body_enhanced` is NULL.
+    - **Acceptance criteria**:
+      - [ ] `queue_comment` inserts a new row when `id` is absent
+      - [ ] `queue_comment` updates all fields of the existing row when `id` is already present
+      - [ ] `queue_comment` enforces CHECK constraint — error if both `thread_id` and `doc_id` are set
+      - [ ] `toggle_queued_body` flips `use_body_enhanced` true → false and false → true
+      - [ ] `toggle_queued_body` is a no-op (no error, no change) when `body_enhanced` is NULL
+    - **Dependencies**: Task: Initialize `.episteme/` directory and SQLite schema
+
+  - [ ] **Task: Implement `cancel_queued_comment`, `load_queued_comments`, and `update_thread_anchors`**
+    - **Description**: Three utility commands. `cancel_queued_comment(id)` deletes a queued row. `load_queued_comments()` returns all queued rows regardless of expiry. `update_thread_anchors(updates)` batch-updates `anchor_from` and `anchor_to` for multiple threads in a single transaction.
+    - **Acceptance criteria**:
+      - [ ] `cancel_queued_comment` deletes the correct row; no-op (no error) if `id` not found
+      - [ ] `load_queued_comments` returns all rows, both expired and unexpired
+      - [ ] `update_thread_anchors` updates all provided `{thread_id, anchor_from, anchor_to}` tuples in a single transaction
+      - [ ] `update_thread_anchors` with empty `updates` array is a no-op (no error)
+      - [ ] `update_thread_anchors` skips unknown `thread_id` values without failing the whole batch
+    - **Dependencies**: Task: Initialize `.episteme/` directory and SQLite schema
+
+- [ ] **Story: Threads Zustand store**
+  - [ ] **Task: Define TypeScript types**
+    - **Description**: Define all TypeScript types for comment-related data structures used across the frontend. These mirror the DB schema and Tauri command return types. Exported from a central `src/types/comments.ts`.
+    - **Acceptance criteria**:
+      - [ ] `Anchor` type: `{ from: number, to: number, quotedText: string, stale: boolean }`
+      - [ ] `Thread` type: all `threads` table fields plus `comments: Comment[]` and `events: ThreadEvent[]`
+      - [ ] `Comment`, `ThreadEvent`, `QueuedComment` types match their respective table schemas
+      - [ ] `ThreadStatus` union: `'open' | 'resolved'`
+      - [ ] `ThreadEventType` union: `'open' | 'blocking' | 'non-blocking' | 'resolved' | 're-opened'`
+      - [ ] All types exported from `src/types/comments.ts`
+    - **Dependencies**: None
+
+  - [ ] **Task: Implement store structure and `loadThreads` action**
+    - **Description**: Create the `threads` Zustand store. `loadThreads(docId)` calls the `load_threads` Tauri command, populates store state, and triggers decoration recomputation. Store clears when the active document changes.
+    - **Acceptance criteria**:
+      - [ ] Store holds `threads: Thread[]` for the active document
+      - [ ] `loadThreads` invokes `load_threads` and populates the store
+      - [ ] Store clears threads when the active document changes
+      - [ ] `loadThreads` called automatically when a document is opened
+      - [ ] Loading state exposed for UI
+      - [ ] Unit tests cover load and clear behaviors
+    - **Dependencies**: Task: Define TypeScript types, Task: Implement `load_threads`
+
+  - [ ] **Task: Implement decoration computation**
+    - **Description**: Pure function that takes the current thread list and TipTap document, and returns a `DecorationSet` applying the correct color to each anchored character range. Handles overlapping threads with worst-color precedence (danger > warning > success). Integrated into the store — recomputed whenever threads change.
+    - **Acceptance criteria**:
+      - [ ] Open non-blocking thread → `--color-state-warning` dotted underline
+      - [ ] Open blocking thread → `--color-state-danger` dotted underline
+      - [ ] Resolved thread → `--color-state-success` dotted underline (or none if setting off)
+      - [ ] Stale thread → no decoration
+      - [ ] Overlapping threads: each character gets worst-case color across all spanning threads
+      - [ ] Decoration boundaries precise at anchor endpoints
+      - [ ] Decoration recomputed when any thread status, blocking, or stale flag changes
+      - [ ] Unit tests: single thread per state, two overlapping, three-way overlap, stale, setting off
+    - **Dependencies**: Task: Implement store structure and `loadThreads` action
+
+  - [ ] **Task: Implement thread mutation actions**
+    - **Description**: Store actions wrapping each Tauri mutation command: `resolveThread`, `reopenThread`, `toggleBlocking`, `togglePinned`. Each calls the appropriate Tauri command, updates store state optimistically, and triggers decoration recomputation.
+    - **Acceptance criteria**:
+      - [ ] `resolveThread` calls `update_thread_status`, updates status and appends `→ resolved` event in store
+      - [ ] `reopenThread` calls `update_thread_status`, updates status and appends `→ re-opened` event
+      - [ ] `toggleBlocking` calls `toggle_blocking`, flips blocking in store, appends event; shows error toast if thread is resolved
+      - [ ] `togglePinned` calls `toggle_pinned`, flips pinned in store
+      - [ ] All actions trigger decoration recomputation
+      - [ ] Unit tests for each action
+    - **Dependencies**: Task: Implement store structure and `loadThreads` action, Task: Implement `update_thread_status`, Task: Implement `toggle_blocking`, Task: Implement `toggle_pinned`
+
+  - [ ] **Task: Implement in-session anchor update**
+    - **Description**: When the TipTap document changes, the threads store remaps all in-memory anchor positions using ProseMirror's `tr.mapping.map()`, persists the new positions via `update_thread_anchors`, and triggers decoration recomputation. Anchors whose positions collapse to the same point are marked stale.
+    - **Acceptance criteria**:
+      - [ ] A ProseMirror plugin or TipTap extension listens to every document-changing transaction
+      - [ ] All thread anchors remapped using `tr.mapping.map(from)` and `tr.mapping.map(to)` on each transaction
+      - [ ] Remapped positions written to store and persisted via `update_thread_anchors`
+      - [ ] Decorations recomputed after anchor update
+      - [ ] Anchors where `from` and `to` map to the same point are marked stale
+      - [ ] Unit tests: insert before anchor, insert inside anchor, delete overlapping anchor
+    - **Dependencies**: Task: Implement decoration computation, Task: Implement `cancel_queued_comment`, `load_queued_comments`, and `update_thread_anchors`
+
+  - [ ] **Task: Implement queued comment state management**
+    - **Description**: Store actions for the full queued comment lifecycle: `stageComment`, `commitComment`, `cancelQueuedComment`. `stageComment` persists via `queue_comment` and starts a countdown timer. `commitComment` calls `commit_comment` and transitions the UI. On app launch, `loadQueuedComments` flushes expired rows and resumes countdowns for unexpired ones from remaining time.
+    - **Acceptance criteria**:
+      - [ ] `stageComment` calls `queue_comment` Tauri command and stores queued entry in state
+      - [ ] Countdown timer tracks `expires_at` and fires `commitComment` at expiry
+      - [ ] `commitComment` calls `commit_comment`, adds resulting thread/comment to store, removes queued entry
+      - [ ] `cancelQueuedComment` calls `cancel_queued_comment`, removes queued entry from store
+      - [ ] On app launch, `load_queued_comments` called; expired rows immediately committed; unexpired rows resume countdown from remaining time (not full timeout)
+      - [ ] `updateQueuedBody` calls `queue_comment` upsert with updated body; `toggleQueuedBody` calls `toggle_queued_body`
+      - [ ] Unit tests: stage → commit, stage → cancel, launch with expired, launch with unexpired
+    - **Dependencies**: Task: Implement store structure and `loadThreads` action, Task: Implement `commit_comment`, Task: Implement `queue_comment` and `toggle_queued_body`, Task: Implement `cancel_queued_comment`, `load_queued_comments`, and `update_thread_anchors`
+
+- [ ] **Story: Document decorations and comment trigger**
+  - [ ] **Task: Wire TipTap decoration to threads store**
+    - **Description**: Integrate the `DecorationSet` from the threads store into `MarkdownRenderer`. Decorations update in real-time when thread state changes. CSS classes applied to decorated ranges map to the correct color tokens. Decorations render as dotted underlines.
+    - **Acceptance criteria**:
+      - [ ] `MarkdownRenderer` subscribes to the threads store decoration set
+      - [ ] Decorations update when thread status, blocking, or stale flag changes
+      - [ ] CSS classes map correctly to `--color-state-warning`, `--color-state-danger`, `--color-state-success`
+      - [ ] Decorations render as dotted underlines
+      - [ ] Resolved decorations absent when "show resolved decorations" setting is off
+      - [ ] No decoration for stale threads
+    - **Dependencies**: Task: Implement decoration computation
+
+  - [ ] **Task: Build comment trigger popover**
+    - **Description**: When the user selects text in the document, a small popover anchored to the end of the selection appears containing a `message-square-plus` button. Clicking it opens `CreateThreadView` with the selection quoted. The popover dismisses if the selection is cleared.
+    - **Acceptance criteria**:
+      - [ ] Popover appears at the end of the selection when text is selected
+      - [ ] Popover disappears when selection is cleared or user clicks elsewhere
+      - [ ] `message-square-plus` icon displayed inside the popover
+      - [ ] Clicking opens `CreateThreadView` with `{ from, to, quotedText }` derived from the TipTap selection
+      - [ ] Popover does not appear on cursor-only selection (no text selected)
+    - **Dependencies**: Task: Wire TipTap decoration to threads store
+
+  - [ ] **Task: Implement click handler for decorated text**
+    - **Description**: Clicking decorated text opens the appropriate view. A click spanning exactly one thread opens `ThreadView`. A click spanning multiple threads opens a filtered `ThreadsView` showing only those threads.
+    - **Acceptance criteria**:
+      - [ ] Clicking single-thread decoration opens `ThreadView` for that thread
+      - [ ] Clicking multi-thread overlap opens filtered `ThreadsView` with only spanning threads
+      - [ ] Click detection uses the clicked character position, not the element
+      - [ ] Stale threads (no decoration) not accessible via document click
+      - [ ] Click handler does not interfere with text selection
+    - **Dependencies**: Task: Build comment trigger popover, Task: Implement store structure and `loadThreads` action
+
+- [ ] **Story: CreateThreadView**
+  - [ ] **Task: Build CreateThreadView shell and quoted text header**
+    - **Description**: Base structure of `CreateThreadView`: header (`[message-square-plus] New comment [×]`), pinned quoted text block, and `ChatInputCard` at bottom with placeholder "What's your question or concern?". `[×]` closes to chat. Quoted text block updates if anchor is relocated.
+    - **Acceptance criteria**:
+      - [ ] Panel renders with correct header, quoted text block, and input
+      - [ ] Quoted text displays the `quotedText` from the anchor
+      - [ ] `[×]` returns to chat view
+      - [ ] Input has placeholder "What's your question or concern?"
+      - [ ] Quoted text block updates when anchor is relocated during redirect flow
+      - [ ] View is not a document mode — openable from any mode
+    - **Dependencies**: Task: Implement store structure and `loadThreads` action
+
+  - [ ] **Task: Implement AI vetting — deflect flow**
+    - **Description**: When the user sends a concern, call the AI vetting service with the concern, current document, and related documents. If a deflect result is returned, display it as an AI response bubble. Show `[No, file anyway]` in the `ChatInputCard` left slot. Accepting closes `CreateThreadView`; rejecting proceeds to redirect check. If AI call fails, proceed directly to queue.
+    - **Acceptance criteria**:
+      - [ ] Sending concern triggers AI vetting call with concern + document + related docs
+      - [ ] Loading indicator shown while AI processes
+      - [ ] Deflect response rendered as left-aligned AI bubble with avatar + "AI" + timestamp
+      - [ ] `[No, file anyway]` appears in left slot of input during deflect state
+      - [ ] Accepting answer closes `CreateThreadView`; no thread created
+      - [ ] Rejecting ("No, file anyway" or typed reply) proceeds to redirect check
+      - [ ] AI call failure proceeds directly to queued state without error
+    - **Dependencies**: Task: Build CreateThreadView shell and quoted text header, Task: Implement AI vetting service (deflect and redirect)
+
+  - [ ] **Task: Implement AI vetting — redirect flow**
+    - **Description**: After a non-deflected concern, if the AI vetting service returns a redirect result, move the anchor proactively: update the quoted text block, scroll the document to the new passage, and display the redirect response with an inline `[Go back]` link. If the user clicks `[Go back]`, revert the anchor and scroll back. Proceed immediately to queued state (no additional user input required for either path).
+    - **Acceptance criteria**:
+      - [ ] Redirect response rendered as AI bubble with inline `[Go back]` link
+      - [ ] Anchor updated to new position; quoted text block updated; document scrolled to new location
+      - [ ] `[Go back]` reverts anchor to original position; quoted text block updated; document scrolled back
+      - [ ] Redirect proceeds immediately to queued state (queued card appears below redirect message)
+      - [ ] If no redirect, proceed directly to queued state
+    - **Dependencies**: Task: Implement AI vetting — deflect flow
+
+  - [ ] **Task: Implement queued comment card in CreateThreadView**
+    - **Description**: After vetting, the AI suggests comment text and the queued card appears in the message stream. The card shows the current body (AI-enhanced by default when available), a `[✨▌👤]` Radix `ToggleGroup`, and a countdown pill `[× ████░░ Xs]`. A simple `[octagon-x]` blocking toggle appears below the card. The queued comment is persisted via `stageComment`.
+    - **Acceptance criteria**:
+      - [ ] Queued card appears with AI-suggested text as `body_original`; `body_enhanced` populated when AI enhancement completes
+      - [ ] AI-enhanced version shown by default when available; toggle group active once both versions exist
+      - [ ] Toggle group switches displayed text between `body_original` and `body_enhanced`; calls `toggleQueuedBody`
+      - [ ] Countdown pill shows progress bar draining to zero
+      - [ ] Clicking countdown pill calls `cancelQueuedComment` and dismisses the card
+      - [ ] `[octagon-x]` blocking toggle below card defaults to non-blocking; clicking toggles via `updateQueuedBody`
+      - [ ] `stageComment` called when card appears; persists to DB
+    - **Dependencies**: Task: Implement AI vetting — redirect flow, Task: Implement queued comment state management
+
+  - [ ] **Task: Implement countdown expiry and transition to ThreadView**
+    - **Description**: When the countdown reaches zero, call `commitComment`. On success, animate `CreateThreadView` transitioning into `ThreadView` for the newly created thread. The queued card animates into the first comment bubble as part of the transition.
+    - **Acceptance criteria**:
+      - [ ] `commitComment` fires when `expires_at` is reached
+      - [ ] `ThreadView` appears after commit with the new thread loaded and scrolled to bottom
+      - [ ] Transition is animated — queued card becomes first comment bubble
+      - [ ] Committed body matches the version selected (`body_enhanced` or `body_original`) at expiry
+      - [ ] Thread has correct `status = 'open'`, `blocking` matches pre-expiry toggle state
+      - [ ] Thread_events contain `→ open` (and `→ blocking` if applicable)
+    - **Dependencies**: Task: Implement queued comment card in CreateThreadView
+
+- [ ] **Story: ThreadView**
+  - [ ] **Task: Build ThreadView shell and header**
+    - **Description**: Base structure of `ThreadView`: header with `[←]`, truncated quoted text title (~25 chars with ellipsis), `[↑]`, `[↓]`, `[×]`; pinned quoted text block below header; scrollable area; chat box at bottom. `[←]` returns to `ThreadsView`. `[×]` closes to chat. View opens scrolled to bottom.
+    - **Acceptance criteria**:
+      - [ ] Header renders with `[←]`, quoted text title (truncated at ~25 chars), `[↑]`, `[↓]`, `[×]`
+      - [ ] `[←]` returns to `ThreadsView` (or chat if accessed directly from document click)
+      - [ ] `[×]` closes to chat view
+      - [ ] View opens scrolled to bottom of comment list
+      - [ ] Quoted text block pinned below header throughout
+    - **Dependencies**: Task: Implement store structure and `loadThreads` action
+
+  - [ ] **Task: Build status row component**
+    - **Description**: The status row appears below the quoted text block. Icon and background vary by state: open non-blocking (tertiary icon, no bg), open blocking (danger icon, danger-subtle bg), resolved (success bg, non-interactive icon). Clicking the icon toggles blocking when open.
+    - **Acceptance criteria**:
+      - [ ] Open non-blocking: tertiary `octagon-x`, no background, `open · name · time` if explicitly set
+      - [ ] Open blocking: danger `octagon-x`, `--color-state-danger-subtle` background, `blocking · name · time`
+      - [ ] Resolved: tertiary `octagon-x` non-interactive, `--color-state-success-subtle` background, `resolved · name · time`
+      - [ ] Icon clickable only when `status = 'open'`; cursor indicates non-interactive when resolved
+      - [ ] Clicking icon calls `toggleBlocking`
+      - [ ] Hovering anywhere on the row shows history popover
+    - **Dependencies**: Task: Build ThreadView shell and header, Task: Implement thread mutation actions
+
+  - [ ] **Task: Build history popover**
+    - **Description**: Shown on hover over the status row. Lists all `thread_events` for the thread in `→ state  name · time` format, chronologically. No row coloration.
+    - **Acceptance criteria**:
+      - [ ] Popover appears on status row hover; dismisses on mouse leave
+      - [ ] Each event rendered as `→ [event]  [changed_by] · [relative time]`
+      - [ ] Events in chronological order (`changed_at` ascending)
+      - [ ] All event types displayed: `open`, `blocking`, `non-blocking`, `resolved`, `re-opened`
+      - [ ] No row background coloring in the popover
+    - **Dependencies**: Task: Build status row component
+
+  - [ ] **Task: Build comment list**
+    - **Description**: Renders thread comments in chronological order. Each comment shows avatar + name + timestamp above the bubble. Current user's comments are right-aligned (accent); all others left-aligned (subtle).
+    - **Acceptance criteria**:
+      - [ ] Comments rendered in `created_at` ascending order
+      - [ ] Each comment shows avatar, author name, and relative timestamp above bubble
+      - [ ] Current user's comments: right-aligned, accent background
+      - [ ] Other users' comments: left-aligned, subtle background
+      - [ ] Transient AI responses: left-aligned with `✨` avatar, not persisted
+      - [ ] Empty thread renders gracefully
+    - **Dependencies**: Task: Build ThreadView shell and header
+
+  - [ ] **Task: Implement virtual cards (suggest, resolve, reopen)**
+    - **Description**: Persistent cards at the end of the comment stream, above the chat box. At most one visible at a time. Suggest card: doc editor + open + last comment from non-editor + thread has ≥1 non-editor reply. Resolve card: doc editor + open + last comment from editor. Reopen card: any user + resolved. Reopen requires inline confirmation.
+    - **Acceptance criteria**:
+      - [ ] Suggest card conditions met → suggest card shown; clicking `[Suggest a fix]` triggers AI fix flow
+      - [ ] Resolve card conditions met → resolve card shown; `[Mark as resolved]` calls `resolveThread`
+      - [ ] Reopen card shown when `status = 'resolved'` for all users
+      - [ ] No virtual card shown for non-doc-editor with `status = 'open'`
+      - [ ] At most one card visible at a time; cards switch when conditions change (e.g. doc editor posts a reply → suggest → resolve)
+      - [ ] Reopen card: `[Re-open]` shows inline confirmation; `[Confirm]` calls `reopenThread`; `[Cancel]` dismisses
+      - [ ] Sending a comment does not change thread status
+    - **Dependencies**: Task: Build comment list, Task: Implement thread mutation actions
+
+  - [ ] **Task: Implement queued comment in ThreadView and up/down navigation**
+    - **Description**: The chat box in `ThreadView` allows replies through the same queued comment flow. The `[↑]` and `[↓]` buttons navigate to the previous/next thread by anchor position.
+    - **Acceptance criteria**:
+      - [ ] Sending a reply creates a queued comment with `thread_id` set (not `doc_id`)
+      - [ ] Queued reply card shows toggle group, countdown pill, and `[octagon-x]` blocking toggle below
+      - [ ] On commit, comment appended to thread; no new thread created
+      - [ ] `[↑]` navigates to the thread with the nearest anchor position above current thread
+      - [ ] `[↓]` navigates to the thread with the nearest anchor position below
+      - [ ] `[↑]` disabled when current thread is first; `[↓]` disabled when last
+    - **Dependencies**: Task: Implement virtual cards (suggest, resolve, reopen), Task: Implement queued comment state management
+
+- [ ] **Story: ThreadsView**
+  - [ ] **Task: Build ThreadsView shell and thread row component**
+    - **Description**: `ThreadsView` replaces the AI panel content. Header: `[messages-square] Threads [×]`. Each row follows session history row pattern: 3px state-color border → pin icon → content. Row content: first line has `[octagon-x · danger]` if blocking + anchor snippet; second line has participant avatars + last activity timestamp + `· resolved` if resolved.
+    - **Acceptance criteria**:
+      - [ ] Header renders with `messages-square` icon, "Threads" label, `[×]` close button
+      - [ ] `[×]` closes to chat view
+      - [ ] Each thread row has 3px left border matching thread state color
+      - [ ] Blocking threads show `octagon-x · danger` on first line
+      - [ ] Anchor text snippet truncated to single line
+      - [ ] Participant avatars shown (up to ~3, with overflow indicator)
+      - [ ] Last activity shown as relative time; `· resolved` label for resolved threads
+      - [ ] Empty state shown when document has no threads
+      - [ ] Clicking a row opens `ThreadView` for that thread
+    - **Dependencies**: Task: Implement store structure and `loadThreads` action
+
+  - [ ] **Task: Implement sort, pin/unpin, and active thread highlighting**
+    - **Description**: Threads sorted by `anchor_from` ascending. Pinned threads appear before unpinned, also sorted by `anchor_from`. Currently open thread has `--color-bg-subtle` background. Pin icon visible on hover; always visible when pinned.
+    - **Acceptance criteria**:
+      - [ ] Unpinned threads sorted by `anchor_from` ascending
+      - [ ] Pinned threads sorted by `anchor_from` ascending, appearing before all unpinned
+      - [ ] Pin icon: hidden by default, visible on row hover; `PinOff` icon when pinned
+      - [ ] Clicking pin icon calls `togglePinned` and sort updates immediately
+      - [ ] Currently open thread has `--color-bg-subtle` background
+    - **Dependencies**: Task: Build ThreadsView shell and thread row component, Task: Implement `toggle_pinned`
+
+  - [ ] **Task: Implement filtered ThreadsView for overlapping threads**
+    - **Description**: When a multi-thread overlap is clicked in the document, `ThreadsView` opens in filtered mode showing only threads spanning the clicked position. A label distinguishes filtered from full view.
+    - **Acceptance criteria**:
+      - [ ] Filtered view shows only threads spanning the clicked document position
+      - [ ] Label indicates "Showing N threads at this location" (or similar)
+      - [ ] `[×]` in filtered view closes to chat
+      - [ ] Rows in filtered view sorted by anchor position
+      - [ ] Clicking a row in filtered view opens `ThreadView` for that thread
+    - **Dependencies**: Task: Implement click handler for decorated text, Task: Build ThreadsView shell and thread row component
+
+- [ ] **Story: AI panel routing**
+  - [ ] **Task: Implement AI panel view routing**
+    - **Description**: Extend `AiChatPanel` to route between `ChatView`, `CreateThreadView`, `ThreadView`, and `ThreadsView`. Manage view state (active view, active thread ID, optional filter set) in the AI panel or a dedicated UI store.
+    - **Acceptance criteria**:
+      - [ ] Panel defaults to `ChatView`
+      - [ ] Comment trigger sets active view to `CreateThreadView` with anchor
+      - [ ] Single-thread decoration click sets active view to `ThreadView`
+      - [ ] Multi-thread overlap click sets active view to filtered `ThreadsView`
+      - [ ] `[←]` in `ThreadView` returns to `ThreadsView` if navigated from there; else to `ChatView`
+      - [ ] `[×]` in all comment views returns to `ChatView`
+      - [ ] Navigation state preserved within a session
+    - **Dependencies**: Task: Build CreateThreadView shell and quoted text header, Task: Build ThreadView shell and header, Task: Build ThreadsView shell and thread row component
+
+  - [ ] **Task: Add threads button to footer bar**
+    - **Description**: Add a `messages-square` icon button to the right zone of `FooterBar`, to the left of the existing `Sparkles` button. Only shown when a document is open. Clicking opens the AI panel (if closed) and sets active view to `ThreadsView`. Accent-colored when `ThreadsView` is active.
+    - **Acceptance criteria**:
+      - [ ] `messages-square` button appears in footer right zone, left of `Sparkles`
+      - [ ] Button not shown when no document is open
+      - [ ] Clicking opens AI panel (if closed) and sets active view to `ThreadsView`
+      - [ ] Clicking when `ThreadsView` already active closes to `ChatView`
+      - [ ] Button accent-colored when `ThreadsView` is active; tertiary otherwise
+    - **Dependencies**: Task: Implement AI panel view routing
+
+- [ ] **Story: AI integration**
+  - [ ] **Task: Implement AI vetting service (deflect and redirect)**
+    - **Description**: Service function called during comment creation. Sends concern, document content, and related document contents to Claude. Returns `{ type: 'deflect', answer: string } | { type: 'redirect', newAnchor: Anchor } | { type: 'proceed' }`. Returns `proceed` silently on failure or timeout.
+    - **Acceptance criteria**:
+      - [ ] Sends concern + current document + related document contents to Claude
+      - [ ] Returns `deflect` with answer text when Claude identifies an existing answer
+      - [ ] Returns `redirect` with new anchor when Claude identifies a better location
+      - [ ] Returns `proceed` when neither applies
+      - [ ] Returns `proceed` silently on AI call failure or timeout — does not block comment creation
+      - [ ] Prompt instructs Claude to prioritize deflect over redirect over proceed
+    - **Dependencies**: None
+
+  - [ ] **Task: Implement AI comment text suggestion**
+    - **Description**: After vetting, call Claude to suggest polished comment text based on the user's raw concern and anchor context. Returns suggested text used as `body_original`. Falls back to raw user input on failure.
+    - **Acceptance criteria**:
+      - [ ] Claude called with user concern + quoted text + surrounding document context
+      - [ ] Suggested text returned and used as `body_original` in queued card
+      - [ ] Falls back to raw user input if call fails
+      - [ ] Suggestion is concise and preserves the user's intent
+    - **Dependencies**: Task: Implement AI vetting service (deflect and redirect)
+
+  - [ ] **Task: Implement AI body enhancement**
+    - **Description**: When a comment is staged and AI enhancement is enabled, send `body_original` to Claude for grammar/clarity improvement. Update queued comment with `body_enhanced` via `queue_comment` upsert. If disabled or timed out, `body_enhanced` remains NULL. Enhancement runs concurrently with the countdown.
+    - **Acceptance criteria**:
+      - [ ] AI enhancement only runs when enabled in settings
+      - [ ] Enhancement call fires after `stageComment` (non-blocking — countdown runs concurrently)
+      - [ ] `body_enhanced` populated in DB and store via `queue_comment` upsert when call completes
+      - [ ] Toggle group becomes active in queued card once `body_enhanced` is populated
+      - [ ] Enhancement respects configured timeout; `body_enhanced` remains NULL on timeout
+      - [ ] If `expires_at` reached before enhancement completes, commits with `body_original`
+    - **Dependencies**: Task: Implement queued comment card in CreateThreadView
+
+  - [ ] **Task: Implement AI suggest fix flow**
+    - **Description**: When the doc editor clicks `[Suggest a fix]`, send the full thread and document to Claude. Claude responds in the `ThreadView` message stream. The doc editor can iterate. Accepting the fix applies the document edit, queues a summary comment with `expires_at = now()`, immediately calls `commitComment`, then calls `resolveThread`.
+    - **Acceptance criteria**:
+      - [ ] Clicking `[Suggest a fix]` sends thread comments + document to Claude
+      - [ ] Claude's proposed fix rendered as AI response in the thread comment stream
+      - [ ] Doc editor can send follow-up comments to refine the fix
+      - [ ] Accepting applies the document edit via TipTap
+      - [ ] Summary comment queued with `expires_at = now()` and immediately committed
+      - [ ] `resolveThread` called after commit — thread status becomes resolved
+      - [ ] Rejecting dismisses the suggestion without changes
+    - **Dependencies**: Task: Implement virtual cards (suggest, resolve, reopen), Task: Implement AI vetting service (deflect and redirect)
+
+- [ ] **Story: Settings**
+  - [ ] **Task: Add "Show resolved decorations" setting**
+    - **Description**: Add a toggle to the Settings panel (reading preferences) to show or hide decorations on resolved threads. Default: on. Changing the setting immediately updates decoration display for the open document.
+    - **Acceptance criteria**:
+      - [ ] Toggle appears in Settings panel under reading preferences
+      - [ ] Default value is enabled
+      - [ ] Setting persisted across app restarts
+      - [ ] Toggling off immediately removes success-colored decorations from document
+      - [ ] Toggling on immediately restores success-colored decorations
+      - [ ] Setting read by decoration computation function
+    - **Dependencies**: Task: Implement decoration computation
+
+  - [ ] **Task: Add AI enhancement settings**
+    - **Description**: Add two settings to the Settings panel: AI enhancement enabled/disabled (default: on) and AI enhancement timeout in seconds (default: 30). These control the body enhancement flow for queued comments.
+    - **Acceptance criteria**:
+      - [ ] "AI enhancement" toggle appears in Settings panel
+      - [ ] Default: enabled; timeout input visible when enabled, default 30s
+      - [ ] Both settings persisted across app restarts
+      - [ ] Enhancement disabled: no AI call, `body_enhanced` remains NULL, toggle group not shown
+      - [ ] Enhancement timeout: call abandoned after configured seconds; `body_enhanced` remains NULL
+    - **Dependencies**: Task: Implement AI body enhancement
+
+- [ ] **Story: Tests**
+  - [ ] **Task: Unit tests — threads store and decoration computation**
+    - **Description**: Unit tests for the `threads` Zustand store and the decoration computation function.
+    - **Acceptance criteria**:
+      - [ ] Load threads: populates store, clears on document change
+      - [ ] Decoration: single thread per state (warning/danger/success/none)
+      - [ ] Decoration: "show resolved decorations" off → no success decoration
+      - [ ] Decoration: overlapping threads worst-color at each position; three-way overlap; boundaries precise
+      - [ ] Decoration: stale thread → no decoration
+      - [ ] Anchor reconciliation: exact match; fuzzy found (positions updated, stale cleared); not found (stale set); multiple threads mixed
+      - [ ] In-session anchor update: insert before, inside, delete overlapping anchor
+      - [ ] Queued comment lifecycle: stage → commit; stage → cancel; launch with expired; launch with unexpired (countdown from remaining time)
+    - **Dependencies**: Task: Implement decoration computation, Task: Implement queued comment state management
+
+  - [ ] **Task: Unit tests — component state machines**
+    - **Description**: Unit tests for `CreateThreadView` state transitions, `ThreadView` virtual card logic, and `ThreadsView` sort/filter.
+    - **Acceptance criteria**:
+      - [ ] `CreateThreadView`: deflect accepted; deflect rejected; redirect accepted; redirect reverted; no deflect/redirect; AI failure falls through to queue
+      - [ ] `CreateThreadView`: toggle AI/raw; blocking toggle; countdown expiry; cancel
+      - [ ] `ThreadView`: all suggest card conditions (doc-editor × last-comment-author × status permutations)
+      - [ ] `ThreadView`: resolve card conditions; reopen card conditions; card transitions when last comment changes; at most one card
+      - [ ] `ThreadsView`: anchor-position sort; pinned-first sort; filtered mode shows only spanning threads
+    - **Dependencies**: Task: Implement countdown expiry and transition to ThreadView, Task: Implement virtual cards (suggest, resolve, reopen), Task: Implement sort, pin/unpin, and active thread highlighting
+
+  - [ ] **Task: Integration tests — Tauri commands**
+    - **Description**: Integration tests that exercise all Tauri commands against a real SQLite database.
+    - **Acceptance criteria**:
+      - [ ] `commit_comment` new thread: correct rows, `→ open` only or `→ open` + `→ blocking`
+      - [ ] `commit_comment` reply: comment appended, no thread_events
+      - [ ] `commit_comment` writes `doc_id` to frontmatter when absent; preserves when present
+      - [ ] `toggle_blocking` open: flips, event inserted; resolved: rejected, no change
+      - [ ] `update_thread_status` → resolved and → re-open: correct events, blocking preserved
+      - [ ] `toggle_pinned`: flips; idempotent
+      - [ ] `queue_comment` upsert: insert then update same id
+      - [ ] `toggle_queued_body`: flips; no-op when `body_enhanced` NULL
+      - [ ] `load_queued_comments`: returns all rows (expired + unexpired)
+      - [ ] `cancel_queued_comment`: row deleted; no-op for unknown id
+      - [ ] `update_thread_anchors`: batch update in single transaction; empty array no-op
+      - [ ] `ON DELETE CASCADE`: deleting thread removes comments and events
+      - [ ] Anchor reconciliation round-trip: create thread, modify file externally, reload → positions updated
+    - **Dependencies**: All Rust command tasks
+
+  - [ ] **Task: E2E tests**
+    - **Description**: Playwright end-to-end tests covering all flows from the testing plan.
+    - **Acceptance criteria**:
+      - [ ] Happy path: select text → create thread view → concern → AI suggests → countdown → thread view with comment in DB
+      - [ ] Deflect accepted: view closes, no thread in DB
+      - [ ] Deflect rejected: "No, file anyway" → queued card → commits normally
+      - [ ] Redirect accepted: AI moves anchor → commit at new anchor
+      - [ ] Redirect reverted: "Go back" → commit at original anchor
+      - [ ] Queued comment survives app close: stage → kill → relaunch → committed
+      - [ ] Unexpired queued comment on relaunch: countdown resumes at remaining time
+      - [ ] Toggle body before commit: AI enhances → toggle to raw → raw body committed
+      - [ ] Blocking thread: correct events in DB
+      - [ ] Resolve and re-open cycle: blocking preserved, correct events
+      - [ ] Overlapping threads click: filtered ThreadsView shown
+      - [ ] Stale anchor: externally delete text → reload → stale, no decoration
+      - [ ] "Show resolved decorations" off: no decoration after resolve
+      - [ ] Up/down navigation: navigates in anchor order
+      - [ ] AI enhancement disabled: raw body only
+    - **Dependencies**: All other stories complete
