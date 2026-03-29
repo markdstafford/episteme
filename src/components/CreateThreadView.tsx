@@ -50,6 +50,7 @@ export function CreateThreadView({
 }: CreateThreadViewProps) {
   const [anchor, setAnchor] = useState(initialAnchor);
   const [stage, setStage] = useState<FlowStage>("input");
+  const [isClosing, setIsClosing] = useState(false);
   const [messages, setMessages] = useState<ChatMsg[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [blocking, setBlocking] = useState(false);
@@ -62,6 +63,11 @@ export function CreateThreadView({
 
   const { stageComment, commitComment, cancelQueuedComment, toggleQueuedBody, updateQueuedBlocking } =
     useThreadsStore();
+
+  function closeWithAnimation() {
+    setIsClosing(true);
+    setTimeout(() => onClose(), 250);
+  }
 
   const addMessage = (msg: ChatMsg) =>
     setMessages((prev) => [...prev, msg]);
@@ -242,7 +248,7 @@ export function CreateThreadView({
   const displayBody = useEnhanced && bodyEnhanced ? bodyEnhanced : bodyOriginal;
 
   return (
-    <div className="flex flex-col h-full">
+    <div className={`flex flex-col h-full transition-opacity duration-250 ${isClosing ? "opacity-0" : "opacity-100"}`}>
       {/* Header */}
       <div className="flex items-center gap-2 px-3 py-2 border-b border-(--color-border-subtle)">
         <MessageSquarePlus size={14} className="text-(--color-text-secondary)" />
@@ -352,12 +358,20 @@ export function CreateThreadView({
           <div className="text-(--color-text-secondary) mb-2">
             ✨ Does that answer your concern?
           </div>
-          <button
-            onClick={handleNoFileAnyway}
-            className="text-[length:var(--font-size-ui-xs)] px-2 py-1 border border-(--color-border-subtle) rounded-(--radius-sm) text-(--color-text-secondary) hover:text-(--color-text-primary)"
-          >
-            No, file anyway
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleNoFileAnyway}
+              className="text-[length:var(--font-size-ui-xs)] px-2 py-1 border border-(--color-border-subtle) rounded-(--radius-sm) text-(--color-text-secondary) hover:text-(--color-text-primary)"
+            >
+              No, file anyway
+            </button>
+            <button
+              onClick={closeWithAnimation}
+              className="text-[length:var(--font-size-ui-xs)] px-2 py-1 bg-(--color-accent) text-(--color-text-on-accent) rounded-(--radius-sm)"
+            >
+              Yes, thanks
+            </button>
+          </div>
         </div>
       )}
 
