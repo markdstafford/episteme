@@ -8,7 +8,7 @@ import { TaskList } from "@tiptap/extension-task-list";
 import { TaskItem } from "@tiptap/extension-task-item";
 import { Link } from "@tiptap/extension-link";
 import { Markdown } from "tiptap-markdown";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { CodeBlock } from "@/components/markdown/CodeBlock";
 import { createDecorationPlugin } from "@/lib/decorationPlugin";
 import { computeDecorationRanges } from "@/lib/threadDecorations";
@@ -29,6 +29,12 @@ interface MarkdownRendererProps {
   onThreadClick?: (threadId: string) => void;
   onThreadsFilterClick?: (threadIds: string[]) => void;
   showResolvedDecorations?: boolean;
+  /**
+   * When provided, MarkdownRenderer will call loadThreads after the editor
+   * renders content, using the TipTap plain text (not raw markdown) so that
+   * ProseMirror positions and quoted_text are consistent with what's stored.
+   */
+  docId?: string;
 }
 
 export function MarkdownRenderer({
@@ -39,6 +45,7 @@ export function MarkdownRenderer({
   onThreadClick,
   onThreadsFilterClick,
   showResolvedDecorations = true,
+  docId,
 }: MarkdownRendererProps) {
   const threads = useThreadsStore((s) => s.threads);
   const [selectionPopover, setSelectionPopover] = useState<{
@@ -46,6 +53,13 @@ export function MarkdownRenderer({
     y: number;
     anchor: CommentTriggerAnchor;
   } | null>(null);
+
+  // Stable ref so the decoration plugin always reads the latest value,
+  // even though the plugin closure is created only once at editor init.
+  const showResolvedRef = useRef(showResolvedDecorations);
+  useEffect(() => {
+    showResolvedRef.current = showResolvedDecorations;
+  }, [showResolvedDecorations]);
 
   const editor = useEditor({
     editable: false,
@@ -62,7 +76,7 @@ export function MarkdownRenderer({
         openOnClick: false,
       }),
       Markdown,
-      // Thread decoration plugin
+      // Thread decoration plugin — reads from the ref on every transaction
       Extension.create({
         name: "threadDecorations",
         addProseMirrorPlugins() {
@@ -71,7 +85,7 @@ export function MarkdownRenderer({
               const { threads: currentThreads } = useThreadsStore.getState();
               return computeDecorationRanges(
                 currentThreads,
-                showResolvedDecorations,
+                showResolvedRef.current,
               );
             }),
           ];
@@ -87,6 +101,18 @@ export function MarkdownRenderer({
       editor.commands.setContent(content);
     }
   }, [content, editor]);
+
+  // When content or docId changes and the editor is ready, reload threads using
+  // the rendered plain text (not raw markdown) so ProseMirror positions match.
+  useEffect(() => {
+    if (!editor || !docId) return;
+    // Defer one tick to ensure TipTap has finished parsing
+    const id = setTimeout(() => {
+      const renderedText = editor.state.doc.textContent;
+      useThreadsStore.getState().loadThreads(docId, renderedText);
+    }, 0);
+    return () => clearTimeout(id);
+  }, [editor, content, docId]);
 
   // Recompute decorations when threads or showResolvedDecorations changes
   useEffect(() => {
@@ -139,7 +165,11 @@ export function MarkdownRenderer({
       }
       try {
         const coords = editor.view.coordsAtPos(to);
-        setSelectionPopover({ x: coords.left, y: coords.top, anchor: { from, to, quotedText } });
+        setSelectionPopover({
+          x: coords.left,
+          y: coords.top,
+          anchor: { from, to, quotedText },
+        });
       } catch {
         setSelectionPopover(null);
       }
@@ -157,7 +187,9 @@ export function MarkdownRenderer({
   // Click handler for decorated text
   const handleEditorClick = (event: React.MouseEvent<HTMLDivElement>) => {
     const target = event.target as HTMLElement;
-    const decorated = target.closest(".thread-decoration") as HTMLElement | null;
+    const decorated = target.closest(
+      ".thread-decoration",
+    ) as HTMLElement | null;
     if (!decorated) return;
 
     const idsAttr = decorated.getAttribute("data-thread-ids");
@@ -191,7 +223,7 @@ export function MarkdownRenderer({
           <button
             className="p-1 rounded-(--radius-sm) hover:bg-(--color-bg-subtle) text-(--color-text-secondary)"
             onMouseDown={(e) => {
-              // Use mousedown to fire before blur clears the popover
+              // mousedown fires before blur, preventing popover from clearing
               e.preventDefault();
               onCommentTrigger(selectionPopover.anchor);
               setSelectionPopover(null);

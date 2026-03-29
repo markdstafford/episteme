@@ -1204,48 +1204,48 @@ SQLite queries use parameterized statements throughout — no string interpolati
       - [ ] Button accent-colored when `ThreadsView` is active; tertiary otherwise
     - **Dependencies**: Task: Implement AI panel view routing
 
-- [ ] **Story: AI integration**
-  - [ ] **Task: Implement AI vetting service (deflect and redirect)**
+- [x] **Story: AI integration**
+  - [x] **Task: Implement AI vetting service (deflect and redirect)**
     - **Description**: Service function called during comment creation. Sends concern, document content, and related document contents to Claude. Returns `{ type: 'deflect', answer: string } | { type: 'redirect', newAnchor: Anchor } | { type: 'proceed' }`. Returns `proceed` silently on failure or timeout.
     - **Acceptance criteria**:
-      - [ ] Sends concern + current document + related document contents to Claude
-      - [ ] Returns `deflect` with answer text when Claude identifies an existing answer
-      - [ ] Returns `redirect` with new anchor when Claude identifies a better location
-      - [ ] Returns `proceed` when neither applies
-      - [ ] Returns `proceed` silently on AI call failure or timeout — does not block comment creation
-      - [ ] Prompt instructs Claude to prioritize deflect over redirect over proceed
+      - [x] Sends concern + current document + related document contents to Claude
+      - [x] Returns `deflect` with answer text when Claude identifies an existing answer
+      - [x] Returns `redirect` with new anchor when Claude identifies a better location
+      - [x] Returns `proceed` when neither applies
+      - [x] Returns `proceed` silently on AI call failure or timeout — does not block comment creation
+      - [x] Prompt instructs Claude to prioritize deflect over redirect over proceed
     - **Dependencies**: None
 
-  - [ ] **Task: Implement AI comment text suggestion**
+  - [x] **Task: Implement AI comment text suggestion**
     - **Description**: After vetting, call Claude to suggest polished comment text based on the user's raw concern and anchor context. Returns suggested text used as `body_original`. Falls back to raw user input on failure.
     - **Acceptance criteria**:
-      - [ ] Claude called with user concern + quoted text + surrounding document context
-      - [ ] Suggested text returned and used as `body_original` in queued card
-      - [ ] Falls back to raw user input if call fails
-      - [ ] Suggestion is concise and preserves the user's intent
+      - [x] Claude called with user concern + quoted text + surrounding document context
+      - [x] Suggested text returned and used as `body_original` in queued card
+      - [x] Falls back to raw user input if call fails
+      - [x] Suggestion is concise and preserves the user's intent
     - **Dependencies**: Task: Implement AI vetting service (deflect and redirect)
 
-  - [ ] **Task: Implement AI body enhancement**
+  - [x] **Task: Implement AI body enhancement**
     - **Description**: When a comment is staged and AI enhancement is enabled, send `body_original` to Claude for grammar/clarity improvement. Update queued comment with `body_enhanced` via `queue_comment` upsert. If disabled or timed out, `body_enhanced` remains NULL. Enhancement runs concurrently with the countdown.
     - **Acceptance criteria**:
-      - [ ] AI enhancement only runs when enabled in settings
-      - [ ] Enhancement call fires after `stageComment` (non-blocking — countdown runs concurrently)
-      - [ ] `body_enhanced` populated in DB and store via `queue_comment` upsert when call completes
-      - [ ] Toggle group becomes active in queued card once `body_enhanced` is populated
-      - [ ] Enhancement respects configured timeout; `body_enhanced` remains NULL on timeout
-      - [ ] If `expires_at` reached before enhancement completes, commits with `body_original`
+      - [x] AI enhancement only runs when enabled in settings
+      - [x] Enhancement call fires after `stageComment` (non-blocking — countdown runs concurrently)
+      - [x] `body_enhanced` populated in DB and store via `queue_comment` upsert when call completes
+      - [x] Toggle group becomes active in queued card once `body_enhanced` is populated
+      - [x] Enhancement respects configured timeout; `body_enhanced` remains NULL on timeout
+      - [x] If `expires_at` reached before enhancement completes, commits with `body_original`
     - **Dependencies**: Task: Implement queued comment card in CreateThreadView
 
-  - [ ] **Task: Implement AI suggest fix flow**
+  - [x] **Task: Implement AI suggest fix flow**
     - **Description**: When the doc editor clicks `[Suggest a fix]`, send the full thread and document to Claude. Claude responds in the `ThreadView` message stream. The doc editor can iterate. Accepting the fix applies the document edit, queues a summary comment with `expires_at = now()`, immediately calls `commitComment`, then calls `resolveThread`.
     - **Acceptance criteria**:
-      - [ ] Clicking `[Suggest a fix]` sends thread comments + document to Claude
-      - [ ] Claude's proposed fix rendered as AI response in the thread comment stream
-      - [ ] Doc editor can send follow-up comments to refine the fix
-      - [ ] Accepting applies the document edit via TipTap
-      - [ ] Summary comment queued with `expires_at = now()` and immediately committed
-      - [ ] `resolveThread` called after commit — thread status becomes resolved
-      - [ ] Rejecting dismisses the suggestion without changes
+      - [x] Clicking `[Suggest a fix]` sends thread comments + document to Claude
+      - [x] Claude's proposed fix rendered as AI response in the thread comment stream
+      - [x] Doc editor can send follow-up comments to refine the fix
+      - [x] Accepting applies the document edit via TipTap
+      - [x] Summary comment queued with `expires_at = now()` and immediately committed
+      - [x] `resolveThread` called after commit — thread status becomes resolved
+      - [x] Rejecting dismisses the suggestion without changes
     - **Dependencies**: Task: Implement virtual cards (suggest, resolve, reopen), Task: Implement AI vetting service (deflect and redirect)
 
 - [ ] **Story: Settings**

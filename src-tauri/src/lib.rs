@@ -32,6 +32,7 @@ pub fn run() {
       commands::ai::ai_check_auth,
       commands::ai::ai_chat,
       commands::ai::ai_suggest_session_name,
+      commands::ai::ai_complete,
       commands::skills::count_documents_by_type,
       commands::manifests::load_manifests,
       commands::updater::check_for_update,
