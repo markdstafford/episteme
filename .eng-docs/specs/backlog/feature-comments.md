@@ -120,7 +120,7 @@ Success takes precedence over danger once resolved — a thread that was blockin
 
 TipTap `Decoration.inline` applies a dotted underline to anchored text using the color from the thread state table above. Resolved decorations are hidden if "show resolved decorations" is off (Settings panel, reading preferences, default: on).
 
-**Comment trigger:** when the user selects text, a small popover appears anchored to the end of the selection containing a `message-square-plus` button. Clicking it opens the new thread view in the AI panel with the selection quoted.
+**Comment trigger:** when the user selects text, a small popover appears anchored to the end of the selection containing a `message-square-plus` button. Clicking it opens the create thread view in the AI panel with the selection quoted.
 
 ```
   ...the throughput target is set to 1,000 req/s▌
@@ -146,29 +146,29 @@ Three views handle comments in the AI panel. Each replaces whatever is currently
 
 | View | Header | Trigger |
 |---|---|---|
-| New thread view | `[message-square-plus]  New comment  [×]` | Comment trigger popover in document |
+| Create thread view | `[message-square-plus]  New comment  [×]` | Comment trigger popover in document |
 | Thread view | `[←]  "[first ~25 chars of quoted text]..."  [↑] [↓] [×]` | Clicking a decoration or threads view row |
 | Threads view | `[messages-square]  Threads  [×]` | `messages-square` icon in AI panel header |
 
 All three `[×]` buttons return the user to chat view. `[↑]` and `[↓]` in thread view navigate to the previous/next thread in anchor order.
 
-### New thread view
+### Create thread view
 
-The new thread view guides the user through creating a comment. It is not a document mode — it can be opened from any mode. The quoted selection is pinned at the top throughout and updates if the anchor is relocated.
+The create thread view guides the user through creating a comment. It is not a document mode — it can be opened from any mode. The quoted selection is pinned at the top throughout and updates if the anchor is relocated.
 
 #### Comment creation flow
 
 ```mermaid
 flowchart TD
     A[User selects text] --> B[Clicks trigger popover]
-    B --> C[New thread view opens\nquoted text pinned]
+    B --> C[Create thread view opens\nquoted text pinned]
     C --> D[User types concern and sends]
     D --> E[AI checks document\nand related documents]
 
     E --> F{Answer found?}
     F -->|Yes| G[AI surfaces the answer\ndeflection attempt]
     G --> H{User}
-    H -->|Acceptable| I[Deflect: new thread view closes]
+    H -->|Acceptable| I[Deflect: create thread view closes]
     H -->|No| J
 
     F -->|No| J
@@ -194,7 +194,7 @@ flowchart TD
 
 **State 1 — just opened**
 
-The panel switches to new thread view. The quoted selection is pinned at the top as a persistent reference. The input awaits the user's question or concern.
+The panel switches to create thread view. The quoted selection is pinned at the top as a persistent reference. The input awaits the user's question or concern.
 
 ```
 ┌──────────────────────────────────────────────┐
@@ -213,7 +213,7 @@ The panel switches to new thread view. The quoted selection is pinned at the top
 └──────────────────────────────────────────────┘
 ```
 
-The new thread view has no virtual cards. The redirect and deflect responses are transient AI responses. The comment order is: sent comments → queued card (at most one). There is no virtual card in this view.
+The create thread view has no virtual cards. The redirect and deflect responses are transient AI responses. The comment order is: sent comments → queued card (at most one). There is no virtual card in this view.
 
 When the countdown expires, the thread is created and the view animates into thread view — the queued card becomes the first comment bubble and the status row, virtual card, and reply input appear.
 
@@ -297,7 +297,7 @@ Header: `[←]  "[first ~25 chars]..."  [↑] [↓] [×]` — `[←]` returns to
 
 #### Queued comment
 
-Appears in the comment stack when a reply is staged for sending. AI-enhanced version shown by default. The blocking toggle (`octagon-x` icon only) appears below the queued card in both new thread view and thread view — it is more discoverable here and allows quickly marking a thread blocking when an important new reply is added.
+Appears in the comment stack when a reply is staged for sending. AI-enhanced version shown by default. The blocking toggle (`octagon-x` icon only) appears below the queued card in both create thread view and thread view — it is more discoverable here and allows quickly marking a thread blocking when an important new reply is added.
 
 - **Toggle group** (`[✨▌👤]`): Radix `ToggleGroup`. Selected segment has accent background. Switches the displayed text and the version that will be sent.
 - **Countdown pill** (`[× ████░░ 24s]`): tappable — clicking cancels. Progress bar drains to zero, then the comment sends and animates into a normal bubble.
@@ -482,7 +482,7 @@ Currently-open thread has `--color-bg-subtle` background. All rows have a bottom
 | Status | Thread lifecycle: `open` or `resolved` |
 | Blocking | Boolean on a thread; when true and status = open, signals the thread gates document progression |
 | Queued comment | A staged comment held locally with a countdown before it sends |
-| New thread view | AI panel state for creating a comment (`CreateThreadView`) |
+| Create thread view | AI panel state for creating a comment (`CreateThreadView`) |
 | Thread view | AI panel state for viewing/replying to a thread (`ThreadView`) |
 | Threads view | AI panel state listing all threads for the open document (`ThreadsView`) |
 | Virtual card | A persistent AI-generated card at the end of the thread comment stream that surfaces status-change actions |
@@ -496,7 +496,7 @@ Currently-open thread has `--color-bg-subtle` background. All rows have a bottom
 ```mermaid
 graph TD
     subgraph React frontend
-        AP[AI panel\nthread/threads/new thread views]
+        AP[AI panel\nthread/threads/create thread views]
         MR[MarkdownRenderer\nTipTap + Decoration.inline]
         ZS[Zustand\nthreads store]
         ACS[Zustand\nAI chat store]
@@ -527,7 +527,7 @@ graph TD
 | `threads` Zustand store | New | Owns thread state: load, persist, anchor reconciliation, queued comment lifecycle |
 | `MarkdownRenderer` | Modified | Subscribe to threads store; apply `Decoration.inline` per anchor |
 | `AiChatPanel` | Modified | Route to `CreateThreadView`, `ThreadView`, or `ThreadsView` based on active view state |
-| `CreateThreadView` | New | New thread view — comment creation flow |
+| `CreateThreadView` | New | Create thread view — comment creation flow |
 | `ThreadView` | New | Thread view — single thread display, virtual cards, queued comment |
 | `ThreadsView` | New | Threads view — thread list with pin, sort, filter |
 | `file_commands` (Rust) | Modified | Add read/write for companion file |
