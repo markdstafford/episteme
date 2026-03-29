@@ -309,4 +309,20 @@ html, body {
     outline: 2px solid var(--color-accent);
     outline-offset: 2px;
   }
+
+  /* Thread decorations */
+  .thread-decoration {
+    text-decoration: underline dotted;
+    text-underline-offset: 2px;
+    cursor: pointer;
+  }
+  .thread-decoration-warning {
+    text-decoration-color: var(--color-state-warning);
+  }
+  .thread-decoration-danger {
+    text-decoration-color: var(--color-state-danger);
+  }
+  .thread-decoration-success {
+    text-decoration-color: var(--color-state-success);
+  }
 }

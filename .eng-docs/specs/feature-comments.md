@@ -991,36 +991,36 @@ SQLite queries use parameterized statements throughout — no string interpolati
       - [x] Unit tests: stage → commit, stage → cancel, launch with expired, launch with unexpired
     - **Dependencies**: Task: Implement store structure and `loadThreads` action, Task: Implement `commit_comment`, Task: Implement `queue_comment` and `toggle_queued_body`, Task: Implement `cancel_queued_comment`, `load_queued_comments`, and `update_thread_anchors`
 
-- [ ] **Story: Document decorations and comment trigger**
-  - [ ] **Task: Wire TipTap decoration to threads store**
+- [x] **Story: Document decorations and comment trigger**
+  - [x] **Task: Wire TipTap decoration to threads store**
     - **Description**: Integrate the `DecorationSet` from the threads store into `MarkdownRenderer`. Decorations update in real-time when thread state changes. CSS classes applied to decorated ranges map to the correct color tokens. Decorations render as dotted underlines.
     - **Acceptance criteria**:
-      - [ ] `MarkdownRenderer` subscribes to the threads store decoration set
-      - [ ] Decorations update when thread status, blocking, or stale flag changes
-      - [ ] CSS classes map correctly to `--color-state-warning`, `--color-state-danger`, `--color-state-success`
-      - [ ] Decorations render as dotted underlines
-      - [ ] Resolved decorations absent when "show resolved decorations" setting is off
-      - [ ] No decoration for stale threads
+      - [x] `MarkdownRenderer` subscribes to the threads store decoration set
+      - [x] Decorations update when thread status, blocking, or stale flag changes
+      - [x] CSS classes map correctly to `--color-state-warning`, `--color-state-danger`, `--color-state-success`
+      - [x] Decorations render as dotted underlines
+      - [x] Resolved decorations absent when "show resolved decorations" setting is off
+      - [x] No decoration for stale threads
     - **Dependencies**: Task: Implement decoration computation
 
-  - [ ] **Task: Build comment trigger popover**
+  - [x] **Task: Build comment trigger popover**
     - **Description**: When the user selects text in the document, a small popover anchored to the end of the selection appears containing a `message-square-plus` button. Clicking it opens `CreateThreadView` with the selection quoted. The popover dismisses if the selection is cleared.
     - **Acceptance criteria**:
-      - [ ] Popover appears at the end of the selection when text is selected
-      - [ ] Popover disappears when selection is cleared or user clicks elsewhere
-      - [ ] `message-square-plus` icon displayed inside the popover
-      - [ ] Clicking opens `CreateThreadView` with `{ from, to, quotedText }` derived from the TipTap selection
-      - [ ] Popover does not appear on cursor-only selection (no text selected)
+      - [x] Popover appears at the end of the selection when text is selected
+      - [x] Popover disappears when selection is cleared or user clicks elsewhere
+      - [x] `message-square-plus` icon displayed inside the popover
+      - [x] Clicking opens `CreateThreadView` with `{ from, to, quotedText }` derived from the TipTap selection
+      - [x] Popover does not appear on cursor-only selection (no text selected)
     - **Dependencies**: Task: Wire TipTap decoration to threads store
 
-  - [ ] **Task: Implement click handler for decorated text**
+  - [x] **Task: Implement click handler for decorated text**
     - **Description**: Clicking decorated text opens the appropriate view. A click spanning exactly one thread opens `ThreadView`. A click spanning multiple threads opens a filtered `ThreadsView` showing only those threads.
     - **Acceptance criteria**:
-      - [ ] Clicking single-thread decoration opens `ThreadView` for that thread
-      - [ ] Clicking multi-thread overlap opens filtered `ThreadsView` with only spanning threads
-      - [ ] Click detection uses the clicked character position, not the element
-      - [ ] Stale threads (no decoration) not accessible via document click
-      - [ ] Click handler does not interfere with text selection
+      - [x] Clicking single-thread decoration opens `ThreadView` for that thread
+      - [x] Clicking multi-thread overlap opens filtered `ThreadsView` with only spanning threads
+      - [x] Click detection uses the clicked character position, not the element
+      - [x] Stale threads (no decoration) not accessible via document click
+      - [x] Click handler does not interfere with text selection
     - **Dependencies**: Task: Build comment trigger popover, Task: Implement store structure and `loadThreads` action
 
 - [ ] **Story: CreateThreadView**
