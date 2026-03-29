@@ -55,6 +55,8 @@ export function ThreadView({
   const [reopenConfirm, setReopenConfirm] = useState(false);
   const [fixInProgress, setFixInProgress] = useState(false);
   const [fixMessages, setFixMessages] = useState<string[]>([]);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const { resolveThread, reopenThread, toggleBlocking, stageComment, commitComment } =
     useThreadsStore();
@@ -89,6 +91,15 @@ export function ThreadView({
         : "open";
 
   const lastEvent = thread.events[thread.events.length - 1];
+
+  function handleHistoryMouseEnter() {
+    if (closeTimer.current) clearTimeout(closeTimer.current);
+    setHistoryOpen(true);
+  }
+
+  function handleHistoryMouseLeave() {
+    closeTimer.current = setTimeout(() => setHistoryOpen(false), 80);
+  }
 
   async function handleSuggestFix() {
     setFixInProgress(true);
@@ -160,10 +171,12 @@ export function ThreadView({
       </div>
 
       {/* Status row */}
-      <Popover.Root>
+      <Popover.Root open={historyOpen}>
         <Popover.Trigger asChild>
           <div
             data-testid="status-row"
+            onMouseEnter={handleHistoryMouseEnter}
+            onMouseLeave={handleHistoryMouseLeave}
             className={`flex items-center gap-2 mx-3 mt-0.5 px-2 py-1 rounded-(--radius-sm) cursor-default text-[length:var(--font-size-ui-xs)] ${statusRowClass}`}
           >
             <button
@@ -181,6 +194,8 @@ export function ThreadView({
         </Popover.Trigger>
         <Popover.Portal>
           <Popover.Content
+            onMouseEnter={handleHistoryMouseEnter}
+            onMouseLeave={handleHistoryMouseLeave}
             side="bottom"
             align="start"
             className="bg-(--color-bg-elevated) border border-(--color-border-subtle) rounded-(--radius-base) p-2 shadow-md z-50"

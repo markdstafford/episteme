@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent, act } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ThreadView } from "@/components/ThreadView";
 import type { Thread } from "@/types/comments";
@@ -14,12 +14,21 @@ vi.mock("@/stores/threads", () => ({
   })),
 }));
 vi.mock("@/lib/commentAiFix", () => ({ suggestFix: vi.fn() }));
-vi.mock("@radix-ui/react-popover", () => ({
-  Root: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-  Trigger: ({ children }: { children: React.ReactNode; asChild?: boolean }) => <>{children}</>,
-  Portal: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-  Content: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-}));
+vi.mock("@radix-ui/react-popover", async () => {
+  const { createContext, useContext } = await import("react");
+  const OpenCtx = createContext(true);
+  return {
+    Root: ({ children, open = true }: { children: React.ReactNode; open?: boolean }) => (
+      <OpenCtx.Provider value={open}>{children}</OpenCtx.Provider>
+    ),
+    Trigger: ({ children }: { children: React.ReactNode; asChild?: boolean }) => <>{children}</>,
+    Portal: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+    Content: ({ children }: { children: React.ReactNode }) => {
+      const open = useContext(OpenCtx);
+      return open ? <div>{children}</div> : null;
+    },
+  };
+});
 
 import React from "react";
 
@@ -161,5 +170,28 @@ describe("ThreadView", () => {
     // Only suggest card for this state
     expect(screen.queryByText("Mark as resolved")).toBeNull();
     expect(screen.queryByText("Re-open")).toBeNull();
+  });
+
+  it("history events are not visible before hovering the status row", () => {
+    render(<ThreadView {...defaultProps} />);
+    expect(screen.queryByText(/→ open/)).toBeNull();
+  });
+
+  it("history events appear when the status row is hovered", () => {
+    render(<ThreadView {...defaultProps} />);
+    const statusRow = screen.getByTestId("status-row");
+    fireEvent.mouseEnter(statusRow);
+    expect(screen.getByText(/→ open/)).toBeInTheDocument();
+  });
+
+  it("history events disappear when mouse leaves the status row", () => {
+    vi.useFakeTimers();
+    render(<ThreadView {...defaultProps} />);
+    const statusRow = screen.getByTestId("status-row");
+    fireEvent.mouseEnter(statusRow);
+    fireEvent.mouseLeave(statusRow);
+    act(() => { vi.advanceTimersByTime(100); });
+    expect(screen.queryByText(/→ open/)).toBeNull();
+    vi.useRealTimers();
   });
 });
