@@ -150,6 +150,12 @@ describe("ThreadView", () => {
     expect(queryByText("Mark as resolved")).toBeNull();
   });
 
+  it("status row has mt-0.5 class (tight gap below pinned quote)", () => {
+    const { container } = render(<ThreadView {...defaultProps} />);
+    const statusRow = container.querySelector("[data-testid='status-row']");
+    expect(statusRow?.className).toContain("mt-0.5");
+  });
+
   it("at most one card visible", () => {
     render(<ThreadView {...defaultProps} />);
     // Only suggest card for this state

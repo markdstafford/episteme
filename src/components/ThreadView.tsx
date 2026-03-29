@@ -164,7 +164,7 @@ export function ThreadView({
         <Popover.Trigger asChild>
           <div
             data-testid="status-row"
-            className={`flex items-center gap-2 mx-3 mt-2 px-2 py-1 rounded-(--radius-sm) cursor-default text-[length:var(--font-size-ui-xs)] ${statusRowClass}`}
+            className={`flex items-center gap-2 mx-3 mt-0.5 px-2 py-1 rounded-(--radius-sm) cursor-default text-[length:var(--font-size-ui-xs)] ${statusRowClass}`}
           >
             <button
               onClick={() => thread.status === "open" && toggleBlocking(thread.id)}
