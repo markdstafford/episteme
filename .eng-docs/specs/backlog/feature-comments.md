@@ -566,16 +566,16 @@ The companion database lives at `.episteme/content.db` relative to the workspace
 
 ```sql
 CREATE TABLE threads (
-  id           TEXT     PRIMARY KEY,                    -- UUID v4
-  doc_id       TEXT     NOT NULL,                       -- frontmatter doc_id
-  anchor_from  INTEGER  NOT NULL,                       -- ProseMirror position (start)
-  anchor_to    INTEGER  NOT NULL,                       -- ProseMirror position (end)
-  quoted_text  TEXT     NOT NULL,                       -- fallback for anchor reconciliation
-  anchor_stale BOOLEAN  NOT NULL DEFAULT FALSE,
-  status       TEXT     NOT NULL DEFAULT 'open',        -- 'open' | 'resolved'
-  blocking     BOOLEAN  NOT NULL DEFAULT FALSE,
-  pinned       BOOLEAN  NOT NULL DEFAULT FALSE,
-  created_at   TEXT     NOT NULL                        -- ISO 8601
+  id           TEXT    PRIMARY KEY,                     -- UUID v4
+  doc_id       TEXT    NOT NULL,                        -- frontmatter doc_id
+  quoted_text  TEXT    NOT NULL,                        -- fallback for anchor reconciliation
+  anchor_from  INTEGER NOT NULL,                        -- ProseMirror position (start)
+  anchor_to    INTEGER NOT NULL,                        -- ProseMirror position (end)
+  anchor_stale BOOLEAN NOT NULL DEFAULT FALSE,
+  status       TEXT    NOT NULL DEFAULT 'open',         -- 'open' | 'resolved'
+  blocking     BOOLEAN NOT NULL DEFAULT FALSE,
+  pinned       BOOLEAN NOT NULL DEFAULT FALSE,
+  created_at   TEXT    NOT NULL                         -- ISO 8601
 );
 
 CREATE TABLE comments (
@@ -594,30 +594,49 @@ CREATE TABLE thread_events (
   changed_at TEXT    NOT NULL                           -- ISO 8601
 );
 
+-- A queued_comment is either a new thread (doc_id + anchor columns set, thread_id NULL)
+-- or a reply to an existing thread (thread_id set, anchor columns NULL).
+-- The CHECK constraint enforces exactly one case.
 CREATE TABLE queued_comments (
-  -- pending review: see discussion
+  id            TEXT    PRIMARY KEY,                    -- UUID v4
+  doc_id        TEXT,                                   -- NULL for replies
+  thread_id     TEXT,                                   -- NULL for new threads
+  quoted_text   TEXT,                                   -- NULL for replies
+  anchor_from   INTEGER,                                -- NULL for replies
+  anchor_to     INTEGER,                                -- NULL for replies
+  blocking      BOOLEAN NOT NULL DEFAULT FALSE,         -- initial blocking state for new threads
+  body_raw      TEXT    NOT NULL,
+  body_enhanced TEXT,                                   -- NULL until AI enhancement completes
+  use_enhanced  BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at    TEXT    NOT NULL,                       -- ISO 8601
+  expires_at    TEXT    NOT NULL,                       -- ISO 8601
+  CHECK (
+    (thread_id IS NOT NULL AND doc_id IS NULL
+      AND quoted_text IS NULL AND anchor_from IS NULL AND anchor_to IS NULL)
+    OR
+    (thread_id IS NULL AND doc_id IS NOT NULL
+      AND quoted_text IS NOT NULL AND anchor_from IS NOT NULL AND anchor_to IS NOT NULL)
+  )
 );
 
-CREATE INDEX idx_threads_doc_id  ON threads(doc_id);
-CREATE INDEX idx_comments_thread ON comments(thread_id);
-CREATE INDEX idx_events_thread   ON thread_events(thread_id);
+CREATE INDEX idx_threads_doc_id     ON threads(doc_id);
+CREATE INDEX idx_comments_thread    ON comments(thread_id);
+CREATE INDEX idx_events_thread      ON thread_events(thread_id);
+CREATE INDEX idx_queued_expires     ON queued_comments(expires_at);
 ```
 
 #### Tauri commands
 
-Current user identity is resolved from the auth session in Rust — not passed as a parameter.
+Current user identity is resolved from the auth session in Rust — not passed as a parameter. Parameter order follows schema column order where applicable.
 
 ```
 load_threads(doc_id: str) → Vec<Thread>
   Load all threads for a document. Triggers anchor reconciliation on each.
 
-create_thread(doc_id: str, doc_path: str, anchor: Anchor,
-              body: str, blocking: bool) → Thread
+create_thread(doc_id: str, doc_path: str, quoted_text: str,
+              anchor_from: int, anchor_to: int, body: str, blocking: bool) → Thread
   Write doc_id to frontmatter if absent. Insert thread + first comment.
-  Always emits two thread_events if blocking: (→ open) then (→ blocking).
-  Emits only (→ open) if not blocking.
-
-add_comment(thread_id: str, body: str) → Comment
+  Emits (→ open). If blocking = true, immediately emits (→ blocking).
 
 update_thread_status(thread_id: str, status: str) → ThreadEvent
   Set status = 'open' | 'resolved'. Inserts thread_event (→ resolved | → re-opened).
@@ -629,23 +648,31 @@ toggle_blocking(thread_id: str) → ThreadEvent
 toggle_pinned(thread_id: str) → ()
   Flips pinned flag.
 
-stage_comment(queued: QueuedComment) → ()
-  Persist a staged draft to queued_comments (survives app crash before countdown expires).
+queue_comment(doc_id: str | null, thread_id: str | null,
+              quoted_text: str | null, anchor_from: int | null, anchor_to: int | null,
+              blocking: bool, body_raw: str, body_enhanced: str | null,
+              use_enhanced: bool, expires_at: str) → ()
+  Persist a staged draft to queued_comments so it survives an app crash
+  before the countdown expires.
 
-flush_queued_comment(id: str) → Thread | Comment
-  Commit a queued comment: creates thread or appends comment,
-  deletes the queued row. Called on countdown expiry.
+commit_comment(id: str) → Thread | Comment
+  Commit a queued comment: creates a new thread (if doc_id set) or appends
+  a comment to an existing thread (if thread_id set). Deletes the queued row.
+  Called on countdown expiry. Also called on app launch for expired rows.
 
-delete_queued_comment(id: str) → ()
-  Cancel a queued comment.
+cancel_queued_comment(id: str) → ()
+  Discard a queued comment.
 
-load_expired_queued_comments(doc_id: str) → Vec<QueuedComment>
-  Called on app launch. Returns queued comments whose countdown has expired.
+load_queued_comments() → Vec<QueuedComment>
+  Called on app launch. Returns all queued comments regardless of expiry —
+  the caller determines whether to commit or surface them to the user.
 
-update_thread_anchors(updates: Vec<{thread_id: str, from: int, to: int}>) → ()
+update_thread_anchors(updates: Vec<{thread_id: str, anchor_from: int, anchor_to: int}>) → ()
   Update anchor positions after a document content change while threads are loaded.
   Called by the threads store whenever the TipTap document changes.
 ```
+
+**Open question:** the AI fix acceptance flow adds a summary comment to the thread immediately (no countdown) and then resolves the thread. This likely warrants a dedicated atomic command (e.g. `accept_ai_fix(thread_id, doc_path, diff, summary)`) rather than reintroducing `add_comment` as a general-purpose backdoor. To be resolved in a subsequent pass.
 
 #### Key algorithms
 
