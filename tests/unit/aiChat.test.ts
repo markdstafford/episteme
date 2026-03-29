@@ -333,6 +333,7 @@ describe("useAiChatStore", () => {
           recently_used_skill_types: [],
           preview_width: "50%",
           preview_height: "75%",
+          github_login: null,
         },
       });
     });
