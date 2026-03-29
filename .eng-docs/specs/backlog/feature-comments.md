@@ -556,6 +556,102 @@ sequenceDiagram
     TS->>Doc: notify → redecorate
 ```
 
+### 3. Detailed design
+
+#### Data model
+
+The companion database lives at `.episteme/content.db` relative to the workspace root — one database for all external content across all documents. Future content types (reactions, etc.) are added as new tables.
+
+**Document identity:** when the first thread is created for a document, a UUID v4 is written to the document's frontmatter as `episteme_id`. This is the stable reference used by the database, surviving renames and moves. The `doc_path` column is a cached display value updated opportunistically when the file is accessed under a new path.
+
+```sql
+CREATE TABLE threads (
+  id           TEXT     PRIMARY KEY,                    -- UUID v4
+  doc_id       TEXT     NOT NULL,                       -- frontmatter episteme_id
+  doc_path     TEXT     NOT NULL,                       -- cached path for display; updated on rename
+  anchor_from  INTEGER  NOT NULL,                       -- ProseMirror position (start)
+  anchor_to    INTEGER  NOT NULL,                       -- ProseMirror position (end)
+  quoted_text  TEXT     NOT NULL,                       -- fallback for anchor reconciliation
+  anchor_stale BOOLEAN  NOT NULL DEFAULT FALSE,
+  status       TEXT     NOT NULL DEFAULT 'open',        -- 'open' | 'resolved'
+  blocking     BOOLEAN  NOT NULL DEFAULT FALSE,
+  pinned       BOOLEAN  NOT NULL DEFAULT FALSE,
+  created_by   TEXT     NOT NULL,                       -- GitHub login
+  created_at   TEXT     NOT NULL                        -- ISO 8601
+);
+
+CREATE TABLE comments (
+  id         TEXT    PRIMARY KEY,                       -- UUID v4
+  thread_id  TEXT    NOT NULL REFERENCES threads(id) ON DELETE CASCADE,
+  body       TEXT    NOT NULL,
+  author     TEXT    NOT NULL,                          -- GitHub login
+  created_at TEXT    NOT NULL                           -- ISO 8601
+);
+
+CREATE TABLE thread_events (
+  id         TEXT    PRIMARY KEY,                       -- UUID v4
+  thread_id  TEXT    NOT NULL REFERENCES threads(id) ON DELETE CASCADE,
+  event      TEXT    NOT NULL,                          -- 'open' | 'blocking' | 'non-blocking' | 'resolved' | 're-opened'
+  changed_by TEXT    NOT NULL,
+  changed_at TEXT    NOT NULL                           -- ISO 8601
+);
+
+CREATE TABLE queued_comments (
+  -- pending review: see discussion
+);
+
+CREATE INDEX idx_threads_doc_id  ON threads(doc_id);
+CREATE INDEX idx_threads_doc_path ON threads(doc_path);
+CREATE INDEX idx_comments_thread  ON comments(thread_id);
+CREATE INDEX idx_events_thread    ON thread_events(thread_id);
+```
+
+#### Tauri commands
+
+```
+load_threads(doc_id: str) → Vec<Thread>
+  Load all threads for a document. Triggers anchor reconciliation on each.
+
+create_thread(doc_id: str, doc_path: str, anchor: Anchor, body: str,
+              blocking: bool, author: str) → Thread
+  Write episteme_id to frontmatter if absent. Insert thread + first comment
+  + initial thread_event (→ open, or → blocking if blocking = true).
+
+add_comment(thread_id: str, body: str, author: str) → Comment
+
+update_thread_status(thread_id: str, status: str, changed_by: str) → ThreadEvent
+  Set status = 'open' | 'resolved'. Inserts thread_event (→ resolved | → re-opened).
+
+toggle_blocking(thread_id: str, blocking: bool, changed_by: str) → ThreadEvent
+  Only valid when status = 'open'.
+
+pin_thread(thread_id: str, pinned: bool) → ()
+
+save_queued_comment(queued: QueuedComment) → ()
+flush_queued_comment(id: str) → Thread | Comment
+delete_queued_comment(id: str) → ()
+load_expired_queued_comments(doc_id: str) → Vec<QueuedComment>
+```
+
+#### Key algorithms
+
+**Anchor reconciliation** (run on `load_threads`):
+1. For each thread, check if the text at `[anchor_from, anchor_to]` in the current TipTap doc matches `quoted_text`
+2. If match: anchor valid, use positions as-is
+3. If no match: fuzzy-search document content for `quoted_text`
+   - Found: update `anchor_from`/`anchor_to`, clear `anchor_stale`
+   - Not found: set `anchor_stale = TRUE` — thread renders without highlight, shown as stale in threads view
+
+**Decoration computation** (run whenever threads store updates):
+
+For each character position in the document, collect all threads whose anchor spans it. Apply worst-case color precedence: danger > warning > success. Apply as `Decoration.inline` with a CSS class carrying the appropriate color token. Decoration boundaries transition at thread anchor boundaries.
+
+**Queued comment lifecycle**:
+1. Stage: insert row into `queued_comments`, start countdown in React state
+2. Expire: call `flush_queued_comment` → Rust creates thread/comment, deletes queued row → `CreateThreadView` animates to `ThreadView`
+3. App launch: call `load_expired_queued_comments` → flush each immediately
+4. Cancel: call `delete_queued_comment`, clear React state
+
 ## Task list
 
 *(Added by task decomposition stage)*
