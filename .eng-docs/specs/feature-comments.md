@@ -1,10 +1,10 @@
 ---
 created: 2026-03-28
-last_updated: 2026-03-28
-status: draft
-issue: null
+last_updated: 2026-03-29
+status: implementing
+issue: 122
 specced_by: markdstafford
-implemented_by: null
+implemented_by: markdstafford
 superseded_by: null
 ---
 
