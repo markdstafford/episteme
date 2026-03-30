@@ -71,4 +71,9 @@ describe("QueuedCommentCard", () => {
     render(<QueuedCommentCard {...baseProps} processing />);
     expect(screen.queryByText("my comment")).toBeNull();
   });
+
+  it("does not show blocking toggle when processing", () => {
+    render(<QueuedCommentCard {...baseProps} processing />);
+    expect(screen.queryByText("Mark as blocking")).toBeNull();
+  });
 });

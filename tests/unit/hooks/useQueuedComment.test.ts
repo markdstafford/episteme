@@ -169,9 +169,38 @@ describe("useQueuedComment", () => {
     // Simulate thread switch
     act(() => { result.current.reset(); });
     expect(result.current.queuedId).toBeNull();
-    // Interval still running — commit should still fire
+    // Commit timer still running — commit should still fire
     await act(async () => { vi.advanceTimersByTime(31000); });
     expect(deps.commitComment).toHaveBeenCalledWith("q1", "/ws/doc.md");
+    vi.useRealTimers();
+  });
+
+  it("background commit fires after a new startQueued (P1 fix)", async () => {
+    vi.useFakeTimers();
+    const commitComment = vi.fn().mockResolvedValue({});
+    const cancelQueuedComment = vi.fn().mockResolvedValue(undefined);
+    const deps = makeDeps({ commitComment, cancelQueuedComment });
+    const { result } = renderHook(() => useQueuedComment(deps));
+
+    // Start first queued comment
+    await act(async () => {
+      result.current.startQueued({ id: "q1", bodyOriginal: "first", bodyEnhanced: null });
+    });
+
+    // Simulate thread switch — reset clears UI but preserves commit
+    act(() => { result.current.reset(); });
+
+    // Start second queued comment BEFORE first commits
+    await act(async () => {
+      result.current.startQueued({ id: "q2", bodyOriginal: "second", bodyEnhanced: null });
+    });
+
+    // Advance time past 30 seconds
+    await act(async () => { vi.advanceTimersByTime(35000); });
+
+    // BOTH comments should have been committed
+    expect(commitComment).toHaveBeenCalledWith("q1", "/ws/doc.md");
+    expect(commitComment).toHaveBeenCalledWith("q2", "/ws/doc.md");
     vi.useRealTimers();
   });
 });

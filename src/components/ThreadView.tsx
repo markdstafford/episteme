@@ -6,6 +6,8 @@ import { suggestFix } from "@/lib/commentAiFix";
 import { enhanceCommentBody } from "@/lib/commentAi";
 import type { Thread } from "@/types/comments";
 import { relativeTime } from "@/lib/relativeTime";
+import { useQueuedComment, COUNTDOWN_SECONDS } from "@/hooks/useQueuedComment";
+import { QueuedCommentCard } from "@/components/QueuedCommentCard";
 
 export interface ThreadViewProps {
   thread: Thread;
@@ -63,20 +65,19 @@ export function ThreadView({
   const [historyOpen, setHistoryOpen] = useState(false);
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [replyProcessing, setReplyProcessing] = useState(false);
-  const [queuedReplyId, setQueuedReplyId] = useState<string | null>(null);
-  const [replyBodyOriginal, setReplyBodyOriginal] = useState("");
-  const [replyBodyEnhanced, setReplyBodyEnhanced] = useState<string | null>(null);
-  const [replyUseEnhanced, setReplyUseEnhanced] = useState(true);
-  const [replyBlocking, setReplyBlocking] = useState(false);
-  const [replyCountdown, setReplyCountdown] = useState(30);
-  const [replyCommitError, setReplyCommitError] = useState<string | null>(null);
-  const replyCommitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const replyCountdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const REPLY_COMMIT_ERROR_MSG = "Failed to send — click Retry";
 
   const { resolveThread, reopenThread, toggleBlocking, stageComment, commitComment,
           cancelQueuedComment, updateQueuedBlocking, toggleQueuedBody } =
     useThreadsStore();
+
+  const queued = useQueuedComment({
+    stageComment,
+    commitComment,
+    cancelQueuedComment,
+    updateQueuedBlocking,
+    toggleQueuedBody,
+    docFilePath,
+  });
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -85,51 +86,9 @@ export function ThreadView({
   }, [thread.comments, fixMessages]);
 
   useEffect(() => {
-    return () => {
-      if (replyCountdownRef.current) clearInterval(replyCountdownRef.current);
-    };
-  }, []);
-
-  useEffect(() => {
     // Reset queued card UI when switching to a different thread
-    setReplyProcessing(false);
-    setQueuedReplyId(null);
-    setReplyCommitError(null);
-    setReplyBodyOriginal("");
-    setReplyBodyEnhanced(null);
-    setReplyUseEnhanced(true);
-    setReplyBlocking(false);
-    if (replyCountdownRef.current) {
-      clearInterval(replyCountdownRef.current);
-      replyCountdownRef.current = null;
-    }
-    // Also clear the commit timer so we don't leak timers across thread switches
-    // Note: the commit was already staged — the backend will handle it on next load
-    if (replyCommitTimerRef.current) {
-      clearTimeout(replyCommitTimerRef.current);
-      replyCommitTimerRef.current = null;
-    }
-  }, [thread.id]);
-
-  useEffect(() => {
-    if (queuedReplyId) {
-      setReplyCountdown(30);
-      replyCountdownRef.current = setInterval(() => {
-        setReplyCountdown((c) => {
-          if (c <= 1) {
-            clearInterval(replyCountdownRef.current!);
-            return 0;
-          }
-          return c - 1;
-        });
-      }, 1000);
-    } else {
-      if (replyCountdownRef.current) clearInterval(replyCountdownRef.current);
-    }
-    return () => {
-      if (replyCountdownRef.current) clearInterval(replyCountdownRef.current);
-    };
-  }, [queuedReplyId]);
+    queued.reset();
+  }, [thread.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const virtualCard = deriveVirtualCard(thread, currentUser, docAuthor);
 
@@ -156,8 +115,6 @@ export function ThreadView({
 
   const lastEvent = thread.events[thread.events.length - 1];
 
-  const displayReplyBody = replyUseEnhanced && replyBodyEnhanced ? replyBodyEnhanced : replyBodyOriginal;
-
   function handleHistoryMouseEnter() {
     if (closeTimer.current) clearTimeout(closeTimer.current);
     setHistoryOpen(true);
@@ -180,12 +137,7 @@ export function ThreadView({
     if (!inputValue.trim()) return;
     const body = inputValue;
     setInputValue("");
-    setReplyBodyOriginal(body);
-    setReplyBodyEnhanced(null);
-    setReplyUseEnhanced(true);
-    setReplyBlocking(false);
 
-    // Run AI enhancement first — queued card and countdown only appear after
     setReplyProcessing(true);
     let enhanced: string | null = null;
     if (aiEnhancementEnabled) {
@@ -198,12 +150,12 @@ export function ThreadView({
         timeoutMs: aiEnhancementTimeoutMs,
       });
     }
-    setReplyBodyEnhanced(enhanced);
     setReplyProcessing(false);
 
     const id = crypto.randomUUID();
     const now = new Date();
-    const expires = new Date(now.getTime() + 30000);
+    const expires = new Date(now.getTime() + COUNTDOWN_SECONDS * 1000);
+
     await stageComment({
       id,
       thread_id: thread.id,
@@ -214,34 +166,12 @@ export function ThreadView({
       body_original: body,
       body_enhanced: enhanced,
       use_body_enhanced: true,
-      blocking: false,
+      blocking: queued.blocking,
       created_at: now.toISOString(),
       expires_at: expires.toISOString(),
     });
-    setQueuedReplyId(id);
-    replyCommitTimerRef.current = setTimeout(async () => {
-      try {
-        await commitComment(id, docFilePath);
-        setQueuedReplyId(null);
-      } catch (e) {
-        setReplyCommitError(REPLY_COMMIT_ERROR_MSG);
-        console.error("Failed to commit reply:", e);
-      }
-    }, 30000);
-  }
 
-  async function handleCancelQueuedReply() {
-    if (!queuedReplyId) return;
-    if (replyCommitTimerRef.current) clearTimeout(replyCommitTimerRef.current);
-    if (replyCountdownRef.current) clearInterval(replyCountdownRef.current);
-    await cancelQueuedComment(queuedReplyId);
-    setQueuedReplyId(null);
-  }
-
-  function handleToggleReplyBody() {
-    if (!replyBodyEnhanced) return;
-    setReplyUseEnhanced((v) => !v);
-    if (queuedReplyId) toggleQueuedBody(queuedReplyId);
+    queued.startQueued({ id, bodyOriginal: body, bodyEnhanced: enhanced });
   }
 
   return (
@@ -421,98 +351,23 @@ export function ThreadView({
         )}
       </div>
 
-      {/* Reply processing indicator */}
-      {replyProcessing && (
-        <div className="mx-3 mb-2 px-3 py-2 rounded-(--radius-base) bg-(--color-bg-subtle) text-(--color-text-tertiary) text-[length:var(--font-size-ui-sm)]">
-          ✨ Enhancing…
-        </div>
-      )}
-
-      {/* Queued reply card */}
-      {queuedReplyId && (
-        <div
-          data-testid="queued-reply-card"
-          className="border border-(--color-border-subtle) rounded-(--radius-base) mx-3 mb-2 p-3 space-y-2"
-        >
-          <div className="text-[length:var(--font-size-ui-sm)]">
-            {displayReplyBody}
-          </div>
-          {replyCommitError && (
-            <div className="text-[length:var(--font-size-ui-xs)] text-(--color-state-danger) flex items-center justify-between gap-2">
-              <span>{replyCommitError}</span>
-              <button
-                onClick={() => {
-                  setReplyCommitError(null);
-                  if (queuedReplyId) {
-                    const id = queuedReplyId;
-                    replyCommitTimerRef.current = setTimeout(async () => {
-                      try {
-                        await commitComment(id, docFilePath);
-                        setQueuedReplyId(null);
-                      } catch (e) {
-                        setReplyCommitError(REPLY_COMMIT_ERROR_MSG);
-                        console.error("Failed to commit reply:", e);
-                      }
-                    }, 0);
-                  }
-                }}
-                className="underline shrink-0"
-              >
-                Retry
-              </button>
-            </div>
-          )}
-          <div className="flex items-center justify-between">
-            {/* AI/Raw toggle — only shown when enhanced is available */}
-            {replyBodyEnhanced && (
-              <div className="flex rounded-(--radius-sm) border border-(--color-border-subtle) overflow-hidden text-[length:var(--font-size-ui-xs)]">
-                <button
-                  onClick={() => { if (replyUseEnhanced) return; handleToggleReplyBody(); }}
-                  className={`px-2 py-1 ${replyUseEnhanced ? "bg-(--color-accent) text-(--color-text-on-accent)" : ""}`}
-                >
-                  ✨
-                </button>
-                <button
-                  onClick={() => { if (!replyUseEnhanced) return; handleToggleReplyBody(); }}
-                  className={`px-2 py-1 ${!replyUseEnhanced ? "bg-(--color-accent) text-(--color-text-on-accent)" : ""}`}
-                >
-                  👤
-                </button>
-              </div>
-            )}
-            {/* Countdown pill */}
-            <button
-              onClick={handleCancelQueuedReply}
-              className="flex items-center gap-1 px-2 py-1 rounded-(--radius-sm) border border-(--color-border-subtle) text-[length:var(--font-size-ui-xs)] text-(--color-text-tertiary)"
-            >
-              <X size={10} />
-              <div className="w-16 h-1 bg-(--color-bg-subtle) rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-(--color-accent) transition-all duration-1000"
-                  style={{ width: `${(replyCountdown / 30) * 100}%` }}
-                />
-              </div>
-              <span>{replyCountdown}s</span>
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Blocking toggle (shown below queued reply card per spec) */}
-      {queuedReplyId && (
-        <div className="px-3 py-1">
-          <button
-            onClick={() => {
-              const newBlocking = !replyBlocking;
-              setReplyBlocking(newBlocking);
-              if (queuedReplyId) updateQueuedBlocking(queuedReplyId, newBlocking);
-            }}
-            className={`flex items-center gap-1 text-[length:var(--font-size-ui-xs)] ${replyBlocking ? "text-(--color-state-danger)" : "text-(--color-text-tertiary)"}`}
-          >
-            <OctagonX size={12} />
-            <span>{replyBlocking ? "Blocking" : "Mark as blocking"}</span>
-          </button>
-        </div>
+      {(replyProcessing || !!queued.queuedId) && (
+        <QueuedCommentCard
+          displayBody={queued.displayBody}
+          bodyEnhanced={queued.bodyEnhanced}
+          useEnhanced={queued.useEnhanced}
+          blocking={queued.blocking}
+          countdown={queued.countdown}
+          countdownSeconds={COUNTDOWN_SECONDS}
+          processing={replyProcessing}
+          error={queued.commitError}
+          onToggleBody={queued.toggleBody}
+          onCancel={queued.cancel}
+          onSetBlocking={queued.setBlocking}
+          onRetry={queued.retryCommit}
+          testId="queued-reply-card"
+          className="mx-3 mb-2"
+        />
       )}
 
       {/* Reply input */}
@@ -528,12 +383,12 @@ export function ThreadView({
           }}
           placeholder="Reply…"
           rows={2}
-          disabled={!!queuedReplyId || replyProcessing}
+          disabled={!!queued.queuedId || replyProcessing}
           className="w-full resize-none bg-transparent text-[length:var(--font-size-ui-sm)] outline-none"
         />
         <div className="flex justify-end">
           <button
-            disabled={!inputValue.trim() || !!queuedReplyId || replyProcessing}
+            disabled={!inputValue.trim() || !!queued.queuedId || replyProcessing}
             onClick={handleSendReply}
             className="text-[length:var(--font-size-ui-xs)] px-2 py-1 bg-(--color-accent) text-(--color-text-on-accent) rounded-(--radius-sm) disabled:opacity-40"
           >

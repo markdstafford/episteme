@@ -39,6 +39,8 @@ export function useQueuedComment(deps: UseQueuedCommentDeps): QueuedCommentState
   const [commitError, setCommitError] = useState<string | null>(null);
 
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const commitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const backgroundCommitRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isMountedRef = useRef(true);
   const currentIdRef = useRef<string | null>(null);
@@ -48,7 +50,11 @@ export function useQueuedComment(deps: UseQueuedCommentDeps): QueuedCommentState
 
   useEffect(() => {
     isMountedRef.current = true;
-    return () => { isMountedRef.current = false; };
+    return () => {
+      isMountedRef.current = false;
+      if (intervalRef.current) clearInterval(intervalRef.current);
+      // commitTimerRef and backgroundCommitRef intentionally NOT cleared on unmount
+    };
   }, []);
 
   const doCommit = useCallback(async (id: string) => {
@@ -69,6 +75,17 @@ export function useQueuedComment(deps: UseQueuedCommentDeps): QueuedCommentState
   const startQueued = useCallback(({ id, bodyOriginal: bo, bodyEnhanced: be }: {
     id: string; bodyOriginal: string; bodyEnhanced: string | null;
   }) => {
+    // Clear display interval (safe — only UI)
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    intervalRef.current = null;
+
+    // Cancel active commit only if there's an active non-reset queued comment
+    // backgroundCommitRef is intentionally NOT cancelled — let it fire
+    if (commitTimerRef.current && currentIdRef.current !== null) {
+      clearTimeout(commitTimerRef.current);
+      commitTimerRef.current = null;
+    }
+
     currentIdRef.current = id;
     countdownRef.current = COUNTDOWN_SECONDS;
     setQueuedId(id);
@@ -79,30 +96,37 @@ export function useQueuedComment(deps: UseQueuedCommentDeps): QueuedCommentState
     setCountdown(COUNTDOWN_SECONDS);
     setCommitError(null);
 
-    if (intervalRef.current) clearInterval(intervalRef.current);
+    // Display-only countdown interval
     intervalRef.current = setInterval(() => {
-      if (!isMountedRef.current) {
-        clearInterval(intervalRef.current!);
-        intervalRef.current = null;
-        doCommit(id);
-        return;
-      }
+      if (!isMountedRef.current) return; // skip state updates after unmount
       countdownRef.current -= 1;
       if (countdownRef.current <= 0) {
         clearInterval(intervalRef.current!);
         intervalRef.current = null;
-        doCommit(id);
+        setCountdown(0);
+        return;
       }
       setCountdown(countdownRef.current);
     }, 1000);
+
+    // Separate commit timer — fires commit independently of display
+    commitTimerRef.current = setTimeout(() => {
+      commitTimerRef.current = null;
+      doCommit(id);
+    }, COUNTDOWN_SECONDS * 1000);
   }, [doCommit]);
 
   const cancel = useCallback(async () => {
     const id = currentIdRef.current;
     if (!id) return;
     if (intervalRef.current) clearInterval(intervalRef.current);
+    intervalRef.current = null;
+    if (commitTimerRef.current) clearTimeout(commitTimerRef.current);
+    commitTimerRef.current = null;
     if (retryTimerRef.current) clearTimeout(retryTimerRef.current);
     retryTimerRef.current = null;
+    // Note: backgroundCommitRef is intentionally NOT cancelled — a background commit
+    // from a different thread's reset comment should still fire
     currentIdRef.current = null;
     await depsRef.current.cancelQueuedComment(id);
     if (isMountedRef.current) {
@@ -111,9 +135,17 @@ export function useQueuedComment(deps: UseQueuedCommentDeps): QueuedCommentState
     }
   }, []);
 
-  // reset: clears UI state for thread-switch. Does NOT cancel the queued comment
-  // or clear the interval — the commit fires in the background even after navigation.
+  // reset: clears UI state for thread-switch. Does NOT cancel the queued comment —
+  // the commit timer fires in the background even after navigation.
   const reset = useCallback(() => {
+    // Preserve the commit timer so startQueued doesn't cancel it
+    backgroundCommitRef.current = commitTimerRef.current;
+    commitTimerRef.current = null;
+
+    // Clear display interval only
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    intervalRef.current = null;
+
     currentIdRef.current = null;
     if (isMountedRef.current) {
       setQueuedId(null);

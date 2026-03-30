@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { MessageSquarePlus, X } from "lucide-react";
 import { useThreadsStore } from "@/stores/threads";
-import { vetComment, suggestCommentText, enhanceCommentBody, isAuthError } from "@/lib/commentAi";
+import { vetComment, suggestCommentText, isAuthError } from "@/lib/commentAi";
 import type { Thread } from "@/types/comments";
 import type { CommentTriggerAnchor } from "@/components/MarkdownRenderer";
 import { useQueuedComment, COUNTDOWN_SECONDS } from "@/hooks/useQueuedComment";
@@ -23,8 +23,6 @@ export interface CreateThreadViewProps {
   workspacePath: string;
   docContent: string;
   docFilePath?: string;
-  aiEnhancementEnabled?: boolean;
-  aiEnhancementTimeoutMs?: number;
   deflectInstruction?: string;
   redirectInstruction?: string;
 }
@@ -38,8 +36,6 @@ export function CreateThreadView({
   workspacePath,
   docContent,
   docFilePath,
-  aiEnhancementEnabled = true,
-  aiEnhancementTimeoutMs = 30000,
   deflectInstruction,
   redirectInstruction,
 }: CreateThreadViewProps) {
@@ -197,21 +193,6 @@ export function CreateThreadView({
     });
 
     queued.startQueued({ id, bodyOriginal: bodyOriginalText, bodyEnhanced: preEnhancedText ?? null });
-
-    // AI enhancement runs concurrently (non-blocking) — skip if pre-enhanced text was provided
-    if (!preEnhancedText && aiEnhancementEnabled) {
-      enhanceCommentBody({
-        body: bodyOriginalText,
-        quotedText: currentAnchor.quotedText,
-        docContent,
-        awsProfile,
-        timeoutMs: aiEnhancementTimeoutMs,
-      }).then((enhanced) => {
-        if (enhanced) {
-          useThreadsStore.getState().updateQueuedBody(id, enhanced);
-        }
-      });
-    }
   }
 
   return (

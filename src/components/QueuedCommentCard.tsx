@@ -97,15 +97,17 @@ export function QueuedCommentCard({
       )}
 
       {/* Blocking toggle (below the bordered card) */}
-      <div className="px-3 py-1">
-        <button
-          onClick={() => onSetBlocking(!blocking)}
-          className={`flex items-center gap-1 text-[length:var(--font-size-ui-xs)] ${blocking ? "text-(--color-state-danger)" : "text-(--color-text-tertiary)"}`}
-        >
-          <OctagonX size={12} />
-          <span>{blocking ? "Blocking" : "Mark as blocking"}</span>
-        </button>
-      </div>
+      {!processing && (
+        <div className="px-3 py-1">
+          <button
+            onClick={() => onSetBlocking(!blocking)}
+            className={`flex items-center gap-1 text-[length:var(--font-size-ui-xs)] ${blocking ? "text-(--color-state-danger)" : "text-(--color-text-tertiary)"}`}
+          >
+            <OctagonX size={12} />
+            <span>{blocking ? "Blocking" : "Mark as blocking"}</span>
+          </button>
+        </div>
+      )}
     </>
   );
 }
