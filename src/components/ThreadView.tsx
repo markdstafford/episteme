@@ -3,6 +3,7 @@ import { ArrowLeft, ArrowUp, ArrowDown, X, OctagonX } from "lucide-react";
 import * as Popover from "@radix-ui/react-popover";
 import { useThreadsStore } from "@/stores/threads";
 import { suggestFix } from "@/lib/commentAiFix";
+import { enhanceCommentBody } from "@/lib/commentAi";
 import type { Thread } from "@/types/comments";
 import { relativeTime } from "@/lib/relativeTime";
 
@@ -17,6 +18,8 @@ export interface ThreadViewProps {
   awsProfile: string;
   docContent: string;
   docFilePath?: string;
+  aiEnhancementEnabled?: boolean;
+  aiEnhancementTimeoutMs?: number;
 }
 
 type VirtualCard = "suggest" | "resolve" | "reopen" | null;
@@ -49,6 +52,8 @@ export function ThreadView({
   awsProfile,
   docContent,
   docFilePath,
+  aiEnhancementEnabled = true,
+  aiEnhancementTimeoutMs = 30000,
 }: ThreadViewProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [inputValue, setInputValue] = useState("");
@@ -57,8 +62,17 @@ export function ThreadView({
   const [fixMessages, setFixMessages] = useState<string[]>([]);
   const [historyOpen, setHistoryOpen] = useState(false);
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [queuedReplyId, setQueuedReplyId] = useState<string | null>(null);
+  const [replyBodyOriginal, setReplyBodyOriginal] = useState("");
+  const [replyBodyEnhanced, setReplyBodyEnhanced] = useState<string | null>(null);
+  const [replyUseEnhanced, setReplyUseEnhanced] = useState(true);
+  const [replyBlocking, setReplyBlocking] = useState(false);
+  const [replyCountdown, setReplyCountdown] = useState(30);
+  const replyCommitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const replyCountdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const { resolveThread, reopenThread, toggleBlocking, stageComment, commitComment } =
+  const { resolveThread, reopenThread, toggleBlocking, stageComment, commitComment,
+          cancelQueuedComment, updateQueuedBlocking, updateQueuedBody, toggleQueuedBody } =
     useThreadsStore();
 
   useEffect(() => {
@@ -66,6 +80,51 @@ export function ThreadView({
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [thread.comments, fixMessages]);
+
+  useEffect(() => {
+    return () => {
+      if (replyCountdownRef.current) clearInterval(replyCountdownRef.current);
+    };
+  }, []);
+
+  useEffect(() => {
+    // Reset queued card UI when switching to a different thread
+    setQueuedReplyId(null);
+    setReplyBodyOriginal("");
+    setReplyBodyEnhanced(null);
+    setReplyUseEnhanced(true);
+    setReplyBlocking(false);
+    if (replyCountdownRef.current) {
+      clearInterval(replyCountdownRef.current);
+      replyCountdownRef.current = null;
+    }
+    // Also clear the commit timer so we don't leak timers across thread switches
+    // Note: the commit was already staged — the backend will handle it on next load
+    if (replyCommitTimerRef.current) {
+      clearTimeout(replyCommitTimerRef.current);
+      replyCommitTimerRef.current = null;
+    }
+  }, [thread.id]);
+
+  useEffect(() => {
+    if (queuedReplyId) {
+      setReplyCountdown(30);
+      replyCountdownRef.current = setInterval(() => {
+        setReplyCountdown((c) => {
+          if (c <= 1) {
+            clearInterval(replyCountdownRef.current!);
+            return 0;
+          }
+          return c - 1;
+        });
+      }, 1000);
+    } else {
+      if (replyCountdownRef.current) clearInterval(replyCountdownRef.current);
+    }
+    return () => {
+      if (replyCountdownRef.current) clearInterval(replyCountdownRef.current);
+    };
+  }, [queuedReplyId]);
 
   const virtualCard = deriveVirtualCard(thread, currentUser, docAuthor);
 
@@ -92,6 +151,8 @@ export function ThreadView({
 
   const lastEvent = thread.events[thread.events.length - 1];
 
+  const displayReplyBody = replyUseEnhanced && replyBodyEnhanced ? replyBodyEnhanced : replyBodyOriginal;
+
   function handleHistoryMouseEnter() {
     if (closeTimer.current) clearTimeout(closeTimer.current);
     setHistoryOpen(true);
@@ -112,10 +173,15 @@ export function ThreadView({
 
   async function handleSendReply() {
     if (!inputValue.trim()) return;
+    const body = inputValue;
     const id = crypto.randomUUID();
     const now = new Date();
     const expires = new Date(now.getTime() + 30000);
     setInputValue("");
+    setReplyBodyOriginal(body);
+    setReplyBodyEnhanced(null);
+    setReplyUseEnhanced(true);
+    setReplyBlocking(false);
     await stageComment({
       id,
       thread_id: thread.id,
@@ -123,14 +189,50 @@ export function ThreadView({
       quoted_text: null,
       anchor_from: null,
       anchor_to: null,
-      body_original: inputValue,
+      body_original: body,
       body_enhanced: null,
-      use_body_enhanced: false,
+      use_body_enhanced: aiEnhancementEnabled,
       blocking: false,
       created_at: now.toISOString(),
       expires_at: expires.toISOString(),
     });
-    setTimeout(() => commitComment(id, docFilePath).catch(() => {}), 30000);
+    setQueuedReplyId(id);
+    replyCommitTimerRef.current = setTimeout(async () => {
+      await commitComment(id, docFilePath).catch(() => {});
+      setQueuedReplyId(null);
+    }, 30000);
+    // AI enhancement runs concurrently
+    if (aiEnhancementEnabled) {
+      const capturedId = id;
+      enhanceCommentBody({
+        body,
+        awsProfile,
+        timeoutMs: aiEnhancementTimeoutMs,
+      }).then((enhanced) => {
+        if (!enhanced) return;
+        setQueuedReplyId((currentId) => {
+          if (currentId === capturedId) {
+            setReplyBodyEnhanced(enhanced);
+            updateQueuedBody(capturedId, enhanced);
+          }
+          return currentId;
+        });
+      });
+    }
+  }
+
+  async function handleCancelQueuedReply() {
+    if (!queuedReplyId) return;
+    if (replyCommitTimerRef.current) clearTimeout(replyCommitTimerRef.current);
+    if (replyCountdownRef.current) clearInterval(replyCountdownRef.current);
+    await cancelQueuedComment(queuedReplyId);
+    setQueuedReplyId(null);
+  }
+
+  function handleToggleReplyBody() {
+    if (!replyBodyEnhanced) return;
+    setReplyUseEnhanced((v) => !v);
+    if (queuedReplyId) toggleQueuedBody(queuedReplyId);
   }
 
   return (
@@ -310,6 +412,68 @@ export function ThreadView({
         )}
       </div>
 
+      {/* Queued reply card */}
+      {queuedReplyId && (
+        <div
+          data-testid="queued-reply-card"
+          className="border border-(--color-border-subtle) rounded-(--radius-base) mx-3 mb-2 p-3 space-y-2"
+        >
+          <div className="text-[length:var(--font-size-ui-sm)]">
+            {displayReplyBody}
+          </div>
+          <div className="flex items-center justify-between">
+            {/* AI/Raw toggle — only shown when enhanced is available */}
+            {replyBodyEnhanced && (
+              <div className="flex rounded-(--radius-sm) border border-(--color-border-subtle) overflow-hidden text-[length:var(--font-size-ui-xs)]">
+                <button
+                  onClick={() => { if (replyUseEnhanced) return; handleToggleReplyBody(); }}
+                  className={`px-2 py-1 ${replyUseEnhanced ? "bg-(--color-accent) text-(--color-text-on-accent)" : ""}`}
+                >
+                  ✨
+                </button>
+                <button
+                  onClick={() => { if (!replyUseEnhanced) return; handleToggleReplyBody(); }}
+                  className={`px-2 py-1 ${!replyUseEnhanced ? "bg-(--color-accent) text-(--color-text-on-accent)" : ""}`}
+                >
+                  👤
+                </button>
+              </div>
+            )}
+            {/* Countdown pill */}
+            <button
+              onClick={handleCancelQueuedReply}
+              className="flex items-center gap-1 px-2 py-1 rounded-(--radius-sm) border border-(--color-border-subtle) text-[length:var(--font-size-ui-xs)] text-(--color-text-tertiary)"
+            >
+              <X size={10} />
+              <div className="w-16 h-1 bg-(--color-bg-subtle) rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-(--color-accent) transition-all duration-1000"
+                  style={{ width: `${(replyCountdown / 30) * 100}%` }}
+                />
+              </div>
+              <span>{replyCountdown}s</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Blocking toggle (shown below queued reply card per spec) */}
+      {queuedReplyId && (
+        <div className="px-3 py-1">
+          <button
+            onClick={() => {
+              const newBlocking = !replyBlocking;
+              setReplyBlocking(newBlocking);
+              if (queuedReplyId) updateQueuedBlocking(queuedReplyId, newBlocking);
+            }}
+            className={`flex items-center gap-1 text-[length:var(--font-size-ui-xs)] ${replyBlocking ? "text-(--color-state-danger)" : "text-(--color-text-tertiary)"}`}
+          >
+            <OctagonX size={12} />
+            <span>{replyBlocking ? "Blocking" : "Mark as blocking"}</span>
+          </button>
+        </div>
+      )}
+
       {/* Reply input */}
       <div className="border-t border-(--color-border-subtle) p-2">
         <textarea
@@ -323,11 +487,12 @@ export function ThreadView({
           }}
           placeholder="Reply…"
           rows={2}
+          disabled={!!queuedReplyId}
           className="w-full resize-none bg-transparent text-[length:var(--font-size-ui-sm)] outline-none"
         />
         <div className="flex justify-end">
           <button
-            disabled={!inputValue.trim()}
+            disabled={!inputValue.trim() || !!queuedReplyId}
             onClick={handleSendReply}
             className="text-[length:var(--font-size-ui-xs)] px-2 py-1 bg-(--color-accent) text-(--color-text-on-accent) rounded-(--radius-sm) disabled:opacity-40"
           >

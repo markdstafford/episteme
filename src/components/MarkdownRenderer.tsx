@@ -35,6 +35,7 @@ interface MarkdownRendererProps {
    * ProseMirror positions and quoted_text are consistent with what's stored.
    */
   docId?: string;
+  scrollToThread?: { threadId: string; seq: number } | null;
 }
 
 export function MarkdownRenderer({
@@ -46,6 +47,7 @@ export function MarkdownRenderer({
   onThreadsFilterClick,
   showResolvedDecorations = true,
   docId,
+  scrollToThread,
 }: MarkdownRendererProps) {
   const threads = useThreadsStore((s) => s.threads);
   const [selectionPopover, setSelectionPopover] = useState<{
@@ -184,6 +186,19 @@ export function MarkdownRenderer({
       editor.off("blur", blur);
     };
   }, [editor, onCommentTrigger]);
+
+  // Scroll to thread anchor when scrollToThread changes
+  useEffect(() => {
+    if (!scrollToThread || !editor) return;
+    const elements = editor.view.dom.querySelectorAll("[data-thread-ids]");
+    const el = Array.from(elements).find((el) =>
+      el.getAttribute("data-thread-ids")?.split(",").includes(scrollToThread.threadId)
+    );
+    (el as HTMLElement | undefined)?.scrollIntoView({
+      behavior: "smooth",
+      block: "center",
+    });
+  }, [scrollToThread, editor]);
 
   // Click handler for decorated text
   const handleEditorClick = (event: React.MouseEvent<HTMLDivElement>) => {

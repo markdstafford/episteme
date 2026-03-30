@@ -143,8 +143,9 @@ export function CreateThreadView({
     const lastUserMsg = [...messages].reverse().find((m) => m.role === "user");
     if (!lastUserMsg) return;
     setStage("processing");
+    const originalText = lastUserMsg.content;
     const suggested = await suggestCommentText({
-      concern: lastUserMsg.content,
+      concern: originalText,
       quotedText: anchor.quotedText,
       surroundingContext: docContent.slice(
         Math.max(0, anchor.from - 100),
@@ -152,17 +153,17 @@ export function CreateThreadView({
       ),
       awsProfile,
     });
-    await startQueued(suggested, anchor);
+    await startQueued(originalText, anchor, suggested);
   }
 
-  async function startQueued(suggestedText: string, currentAnchor: Anchor) {
+  async function startQueued(bodyOriginalText: string, currentAnchor: Anchor, preEnhancedText?: string) {
     const id = crypto.randomUUID();
     const now = new Date();
     const expires = new Date(now.getTime() + COUNTDOWN_SECONDS * 1000);
 
     setQueuedId(id);
-    setBodyOriginal(suggestedText);
-    setBodyEnhanced(null);
+    setBodyOriginal(bodyOriginalText);
+    setBodyEnhanced(preEnhancedText ?? null);
     setUseEnhanced(true);
     setStage("queued");
     setCountdown(COUNTDOWN_SECONDS);
@@ -187,8 +188,8 @@ export function CreateThreadView({
       quoted_text: currentAnchor.quotedText,
       anchor_from: currentAnchor.from,
       anchor_to: currentAnchor.to,
-      body_original: suggestedText,
-      body_enhanced: null,
+      body_original: bodyOriginalText,
+      body_enhanced: preEnhancedText ?? null,
       use_body_enhanced: true,
       blocking,
       created_at: now.toISOString(),
@@ -207,10 +208,10 @@ export function CreateThreadView({
       });
     }, 1000);
 
-    // AI enhancement runs concurrently (non-blocking)
-    if (aiEnhancementEnabled) {
+    // AI enhancement runs concurrently (non-blocking) — skip if pre-enhanced text was provided
+    if (!preEnhancedText && aiEnhancementEnabled) {
       enhanceCommentBody({
-        body: suggestedText,
+        body: bodyOriginalText,
         awsProfile,
         timeoutMs: aiEnhancementTimeoutMs,
       }).then((enhanced) => {

@@ -29,6 +29,7 @@ function App() {
   const [readingTime, setReadingTime] = useState<number | null>(null);
   const [commentTrigger, setCommentTrigger] = useState<AiChatPanelCommentTrigger | null>(null);
   const [threadsViewActive, setThreadsViewActive] = useState(false);
+  const [scrollTo, setScrollTo] = useState<{ threadId: string; seq: number } | null>(null);
   const selectedFilePath = useFileTreeStore((s) => s.selectedFilePath);
   const folderPath = useWorkspaceStore((s) => s.folderPath);
   const initQueuedOnLaunch = useThreadsStore((s) => s.initQueuedOnLaunch);
@@ -267,11 +268,13 @@ function App() {
                 onThreadClick={(threadId) => {
                   setAiPanelOpen(true);
                   setCommentTrigger({ type: "thread", threadId });
+                  setScrollTo((prev) => ({ threadId, seq: (prev?.seq ?? 0) + 1 }));
                 }}
                 onThreadsFilterClick={(filterIds) => {
                   setAiPanelOpen(true);
                   setCommentTrigger({ type: "threads-filtered", filterIds });
                 }}
+                scrollToThread={scrollTo}
               />
             </div>
             {aiPanelOpen && (
@@ -282,6 +285,9 @@ function App() {
                   // Store callback reference for footer button — call when button clicked
                   (window as any).__openThreadsView = fn;
                 }}
+                onThreadActivated={(threadId) =>
+                  setScrollTo((prev) => ({ threadId, seq: (prev?.seq ?? 0) + 1 }))
+                }
               />
             )}
           </div>

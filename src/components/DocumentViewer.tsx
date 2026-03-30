@@ -15,6 +15,7 @@ interface DocumentViewerProps {
   onThreadClick?: (threadId: string) => void;
   onThreadsFilterClick?: (threadIds: string[]) => void;
   showResolvedDecorations?: boolean;
+  scrollToThread?: { threadId: string; seq: number } | null;
 }
 
 export function DocumentViewer({
@@ -23,6 +24,7 @@ export function DocumentViewer({
   onThreadClick,
   onThreadsFilterClick,
   showResolvedDecorations = true,
+  scrollToThread,
 }: DocumentViewerProps = {}) {
   const selectedFilePath = useFileTreeStore((s) => s.selectedFilePath);
   const selectFile = useFileTreeStore((s) => s.selectFile);
@@ -155,6 +157,7 @@ export function DocumentViewer({
                 onThreadsFilterClick={onThreadsFilterClick}
                 showResolvedDecorations={showResolvedDecorations}
                 docId={docId ?? undefined}
+                scrollToThread={scrollToThread}
               />
             </div>
           )}

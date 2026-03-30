@@ -101,4 +101,41 @@ describe("CreateThreadView", () => {
     fireEvent.keyDown(textarea, { key: "Enter" });
     await waitFor(() => screen.getByText("Mark as blocking"));
   });
+
+  it("stores user's original text as body_original after 'No, file anyway'", async () => {
+    // Mock vet to return deflect
+    mockVet.mockResolvedValue({ type: "deflect", answer: "The doc already says X." });
+    mockSuggest.mockResolvedValue("AI polished version");
+
+    // Capture stageComment calls
+    const { useThreadsStore } = await import("@/stores/threads");
+    const stageComment = vi.fn().mockResolvedValue(undefined);
+    vi.mocked(useThreadsStore).mockReturnValue({
+      stageComment,
+      commitComment: vi.fn().mockResolvedValue({} as any),
+      cancelQueuedComment: vi.fn(),
+      updateQueuedBody: vi.fn(),
+      toggleQueuedBody: vi.fn(),
+    } as any);
+
+    render(<CreateThreadView {...defaultProps} onAuthError={vi.fn()} />);
+
+    // Type concern and send
+    const input = screen.getByPlaceholderText("What's your question or concern?");
+    fireEvent.change(input, { target: { value: "reduce the time commitment" } });
+    fireEvent.keyDown(input, { key: "Enter" });
+
+    // Wait for deflect card
+    await waitFor(() => expect(screen.getByText("No, file anyway")).toBeInTheDocument());
+
+    // Click "No, file anyway"
+    fireEvent.click(screen.getByText("No, file anyway"));
+
+    // Wait for stageComment
+    await waitFor(() => expect(stageComment).toHaveBeenCalled());
+
+    const call = stageComment.mock.calls[0][0];
+    expect(call.body_original).toBe("reduce the time commitment");
+    expect(call.body_enhanced).toBe("AI polished version");
+  });
 });
