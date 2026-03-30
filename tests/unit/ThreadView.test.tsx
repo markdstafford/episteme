@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, act } from "@testing-library/react";
+import { render, screen, fireEvent, act, waitFor } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ThreadView } from "@/components/ThreadView";
 import type { Thread } from "@/types/comments";
@@ -9,9 +9,16 @@ vi.mock("@/stores/threads", () => ({
     resolveThread: vi.fn(),
     reopenThread: vi.fn(),
     toggleBlocking: vi.fn(),
-    stageComment: vi.fn(),
-    commitComment: vi.fn(),
+    stageComment: vi.fn().mockResolvedValue(undefined),
+    commitComment: vi.fn().mockResolvedValue({}),
+    cancelQueuedComment: vi.fn().mockResolvedValue(undefined),
+    updateQueuedBlocking: vi.fn().mockResolvedValue(undefined),
+    updateQueuedBody: vi.fn().mockResolvedValue(undefined),
+    toggleQueuedBody: vi.fn().mockResolvedValue(undefined),
   })),
+}));
+vi.mock("@/lib/commentAi", () => ({
+  enhanceCommentBody: vi.fn().mockResolvedValue(null),
 }));
 vi.mock("@/lib/commentAiFix", () => ({ suggestFix: vi.fn() }));
 vi.mock("@radix-ui/react-popover", async () => {
@@ -200,5 +207,74 @@ describe("ThreadView", () => {
     act(() => { vi.advanceTimersByTime(100); });
     expect(screen.queryByText(/→ open/)).toBeNull();
     vi.useRealTimers();
+  });
+
+  it("shows a queued card after a reply is sent", async () => {
+    render(<ThreadView {...defaultProps} />);
+    const textarea = screen.getByPlaceholderText("Reply…");
+    fireEvent.change(textarea, { target: { value: "my reply" } });
+    fireEvent.click(screen.getByRole("button", { name: "↑" }));
+    await waitFor(() =>
+      expect(screen.getByTestId("queued-reply-card")).toBeInTheDocument()
+    );
+    expect(screen.getByText("my reply")).toBeInTheDocument();
+  });
+
+  it("removes queued card and calls cancelQueuedComment when cancel is clicked", async () => {
+    const { useThreadsStore } = await import("@/stores/threads");
+    const cancelQueuedComment = vi.fn().mockResolvedValue(undefined);
+    vi.mocked(useThreadsStore).mockReturnValue({
+      resolveThread: vi.fn(),
+      reopenThread: vi.fn(),
+      toggleBlocking: vi.fn(),
+      stageComment: vi.fn().mockResolvedValue(undefined),
+      commitComment: vi.fn().mockResolvedValue({}),
+      cancelQueuedComment,
+      updateQueuedBlocking: vi.fn().mockResolvedValue(undefined),
+      updateQueuedBody: vi.fn().mockResolvedValue(undefined),
+      toggleQueuedBody: vi.fn().mockResolvedValue(undefined),
+    } as any);
+
+    render(<ThreadView {...defaultProps} />);
+    const textarea = screen.getByPlaceholderText("Reply…");
+    fireEvent.change(textarea, { target: { value: "my reply" } });
+    fireEvent.click(screen.getByRole("button", { name: "↑" }));
+    await waitFor(() =>
+      expect(screen.getByTestId("queued-reply-card")).toBeInTheDocument()
+    );
+    // Click the countdown pill button (first button inside the queued card)
+    const card = screen.getByTestId("queued-reply-card");
+    const cancelBtn = card.querySelector("button");
+    fireEvent.click(cancelBtn!);
+    await waitFor(() =>
+      expect(screen.queryByTestId("queued-reply-card")).not.toBeInTheDocument()
+    );
+    expect(cancelQueuedComment).toHaveBeenCalled();
+  });
+
+  it("clears the queued card when the thread prop changes", async () => {
+    const { rerender } = render(<ThreadView {...defaultProps} />);
+    const textarea = screen.getByPlaceholderText("Reply…");
+    fireEvent.change(textarea, { target: { value: "my reply" } });
+    fireEvent.click(screen.getByRole("button", { name: "↑" }));
+    await waitFor(() =>
+      expect(screen.getByTestId("queued-reply-card")).toBeInTheDocument()
+    );
+    // Swap to a different thread
+    const otherThread = { ...defaultProps.thread, id: "t2" };
+    rerender(<ThreadView {...defaultProps} thread={otherThread} />);
+    expect(screen.queryByTestId("queued-reply-card")).not.toBeInTheDocument();
+  });
+
+  it("disables the reply input and send button while a reply is queued", async () => {
+    render(<ThreadView {...defaultProps} />);
+    const textarea = screen.getByPlaceholderText("Reply…");
+    fireEvent.change(textarea, { target: { value: "my reply" } });
+    fireEvent.click(screen.getByRole("button", { name: "↑" }));
+    await waitFor(() =>
+      expect(screen.getByTestId("queued-reply-card")).toBeInTheDocument()
+    );
+    expect(textarea).toBeDisabled();
+    expect(screen.getByRole("button", { name: "↑" })).toBeDisabled();
   });
 });
