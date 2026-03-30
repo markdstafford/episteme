@@ -136,7 +136,7 @@ export function CreateThreadView({
       awsProfile,
     });
 
-    await startQueued(suggested, finalAnchor);
+    await startQueued(concern, finalAnchor, suggested);
   }
 
   async function handleNoFileAnyway() {
