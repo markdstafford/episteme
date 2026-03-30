@@ -167,8 +167,8 @@ export function MarkdownRenderer({
       try {
         const coords = editor.view.coordsAtPos(to);
         setSelectionPopover({
-          x: coords.left,
-          y: coords.top,
+          x: coords.left + 6,
+          y: (coords.top + coords.bottom) / 2,
           anchor: { from, to, quotedText },
         });
       } catch {
@@ -216,7 +216,7 @@ export function MarkdownRenderer({
           style={{
             position: "fixed",
             left: selectionPopover.x,
-            top: selectionPopover.y - 36,
+            top: selectionPopover.y - 12,
             zIndex: 50,
           }}
         >
