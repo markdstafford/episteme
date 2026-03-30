@@ -13,6 +13,10 @@ import { CodeBlock } from "@/components/markdown/CodeBlock";
 import { createDecorationPlugin } from "@/lib/decorationPlugin";
 import { computeDecorationRanges } from "@/lib/threadDecorations";
 import { useThreadsStore } from "@/stores/threads";
+import {
+  pmPosToMarkdownOffset,
+  markdownOffsetToPmPos,
+} from "@/lib/anchorCoordinates";
 import { MessageSquarePlus } from "lucide-react";
 
 export interface CommentTriggerAnchor {
@@ -31,8 +35,8 @@ interface MarkdownRendererProps {
   showResolvedDecorations?: boolean;
   /**
    * When provided, MarkdownRenderer will call loadThreads after the editor
-   * renders content, using the TipTap plain text (not raw markdown) so that
-   * ProseMirror positions and quoted_text are consistent with what's stored.
+   * renders content, passing the raw markdown so that reconcile_anchor()
+   * validates anchor offsets in markdown character space.
    */
   docId?: string;
   scrollToThread?: { threadId: string; seq: number } | null;
@@ -63,6 +67,9 @@ export function MarkdownRenderer({
     showResolvedRef.current = showResolvedDecorations;
   }, [showResolvedDecorations]);
 
+  const contentRef = useRef(content);
+  contentRef.current = content; // keep in sync on every render — no effect needed
+
   const editor = useEditor({
     editable: false,
     extensions: [
@@ -83,12 +90,28 @@ export function MarkdownRenderer({
         name: "threadDecorations",
         addProseMirrorPlugins() {
           return [
-            createDecorationPlugin(() => {
-              const { threads: currentThreads } = useThreadsStore.getState();
-              return computeDecorationRanges(
-                currentThreads,
-                showResolvedRef.current,
-              );
+            createDecorationPlugin((editorState) => {
+              const { threads } = useThreadsStore.getState();
+              const currentThreads = Array.isArray(threads) ? threads : [];
+              const markdown = contentRef.current;
+              if (!markdown)
+                return computeDecorationRanges([], showResolvedRef.current);
+              const doc = editorState.doc;
+              const pmThreads = currentThreads.map((t) => {
+                if (t.anchor_stale) return t;
+                try {
+                  const { from, to } = markdownOffsetToPmPos(
+                    t.anchor_from,
+                    doc,
+                    markdown,
+                    t.quoted_text,
+                  );
+                  return { ...t, anchor_from: from, anchor_to: to };
+                } catch {
+                  return { ...t, anchor_stale: true };
+                }
+              });
+              return computeDecorationRanges(pmThreads, showResolvedRef.current);
             }),
           ];
         },
@@ -104,15 +127,12 @@ export function MarkdownRenderer({
     }
   }, [content, editor]);
 
-  // When content or docId changes and the editor is ready, load threads using
-  // the rendered plain text (not raw markdown) so ProseMirror positions match
-  // what's stored in the DB. docId is always provided (DocumentViewer calls
-  // ensure_doc_id_for_file on every file open).
+  // When content or docId changes, load threads passing the raw markdown so
+  // reconcile_anchor() validates anchor offsets in markdown character space.
   useEffect(() => {
     if (!editor || !docId) return;
     const id = setTimeout(() => {
-      const renderedText = editor.state.doc.textContent;
-      useThreadsStore.getState().loadThreads(docId, renderedText);
+      useThreadsStore.getState().loadThreads(docId, content);
     }, 0);
     return () => clearTimeout(id);
   }, [editor, content, docId]);
@@ -168,11 +188,22 @@ export function MarkdownRenderer({
       }
       try {
         const coords = editor.view.coordsAtPos(to);
-        setSelectionPopover({
-          x: coords.left + 6,
-          y: (coords.top + coords.bottom) / 2,
-          anchor: { from, to, quotedText },
-        });
+        try {
+          const { from: mdFrom, to: mdTo } = pmPosToMarkdownOffset(
+            from,
+            editor.state.doc,
+            contentRef.current,
+            quotedText,
+          );
+          setSelectionPopover({
+            x: coords.left + 6,
+            y: (coords.top + coords.bottom) / 2,
+            anchor: { from: mdFrom, to: mdTo, quotedText },
+          });
+        } catch {
+          // Cannot map selection to markdown offset — do not show trigger
+          setSelectionPopover(null);
+        }
       } catch {
         setSelectionPopover(null);
       }
