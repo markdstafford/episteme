@@ -184,6 +184,13 @@ describe("ThreadView", () => {
     expect(screen.getByText(/→ open/)).toBeInTheDocument();
   });
 
+  it("history events appear when the status row is clicked", () => {
+    render(<ThreadView {...defaultProps} />);
+    const statusRow = screen.getByTestId("status-row");
+    fireEvent.click(statusRow);
+    expect(screen.getByText(/→ open/)).toBeInTheDocument();
+  });
+
   it("history events disappear when mouse leaves the status row", () => {
     vi.useFakeTimers();
     render(<ThreadView {...defaultProps} />);

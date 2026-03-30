@@ -177,6 +177,7 @@ export function ThreadView({
             data-testid="status-row"
             onMouseEnter={handleHistoryMouseEnter}
             onMouseLeave={handleHistoryMouseLeave}
+            onClick={() => setHistoryOpen(v => !v)}
             className={`flex items-center gap-2 mx-3 mt-0.5 px-2 py-1 rounded-(--radius-sm) cursor-default text-[length:var(--font-size-ui-xs)] ${statusRowClass}`}
           >
             <button
