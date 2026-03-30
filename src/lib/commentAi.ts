@@ -144,17 +144,24 @@ export async function vetComment(params: VetParams): Promise<VetResult> {
 
 const SUGGEST_SYSTEM_PROMPT = `You are helping a reviewer write a clear, concise document comment.
 Given the reviewer's raw concern and the quoted text they selected, propose polished comment text.
-Return ONLY the suggested comment text — no preamble, no explanation.
+Return ONLY the suggested comment text — no preamble, no explanation, no clarifying questions.
 Keep it concise (1–3 sentences). Preserve the reviewer's intent exactly.`;
 
 export async function suggestCommentText(params: {
   concern: string;
   quotedText: string;
   surroundingContext: string;
+  docContent: string;
   awsProfile: string;
 }): Promise<string> {
   try {
-    const userMsg = `Quoted text: "${params.quotedText}"\nContext: ${params.surroundingContext}\nReviewer concern: "${params.concern}"`;
+    const parts = [
+      `Quoted text: "${params.quotedText}"`,
+      params.surroundingContext ? `Context: ${params.surroundingContext}` : null,
+      params.docContent ? `Document:\n${params.docContent}` : null,
+      `Reviewer concern: "${params.concern}"`,
+    ].filter(Boolean);
+    const userMsg = parts.join("\n\n");
     const result = await callAi(
       SUGGEST_SYSTEM_PROMPT,
       userMsg,
@@ -169,7 +176,7 @@ export async function suggestCommentText(params: {
 // ── Body enhancement ──────────────────────────────────────────────────────────
 
 const ENHANCE_SYSTEM_PROMPT = `You are improving a document comment for clarity and grammar.
-Return ONLY the improved text — no preamble, no explanation.
+Return ONLY the improved text — no preamble, no explanation, no clarifying questions.
 Preserve the author's intent exactly. Keep it concise.`;
 
 export async function enhanceCommentBody(params: {

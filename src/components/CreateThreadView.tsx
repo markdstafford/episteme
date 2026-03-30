@@ -133,6 +133,7 @@ export function CreateThreadView({
         Math.max(0, finalAnchor.from - 100),
         finalAnchor.to + 100,
       ),
+      docContent,
       awsProfile,
     });
 
@@ -151,6 +152,7 @@ export function CreateThreadView({
         Math.max(0, anchor.from - 100),
         anchor.to + 100,
       ),
+      docContent,
       awsProfile,
     });
     await startQueued(originalText, anchor, suggested);
