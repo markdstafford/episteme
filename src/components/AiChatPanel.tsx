@@ -33,12 +33,14 @@ interface AiChatPanelProps {
   commentTrigger?: AiChatPanelCommentTrigger | null;
   onCommentTriggerConsumed?: () => void;
   onOpenThreadsView?: (open: () => void) => void;
+  onThreadActivated?: (threadId: string) => void;
 }
 
 export function AiChatPanel({
   commentTrigger,
   onCommentTriggerConsumed,
   onOpenThreadsView,
+  onThreadActivated,
 }: AiChatPanelProps) {
   const [view, setView] = useState<"chat" | "history">("chat");
   const [commentView, setCommentView] = useState<CommentView | null>(null);
@@ -209,9 +211,10 @@ export function AiChatPanel({
         <div className={panelClass}>
           <ThreadsView
             onClose={closeToChat}
-            onThreadClick={(id) =>
-              setCommentView({ type: "thread", threadId: id, fromList: true })
-            }
+            onThreadClick={(id) => {
+              onThreadActivated?.(id);
+              setCommentView({ type: "thread", threadId: id, fromList: true });
+            }}
             filterThreadIds={
               commentView.type === "threads-filtered"
                 ? commentView.filterIds
