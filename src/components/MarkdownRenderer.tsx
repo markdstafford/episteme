@@ -267,7 +267,7 @@ export function MarkdownRenderer({
           }}
         >
           <button
-            className="p-1 rounded-(--radius-sm) hover:bg-(--color-bg-subtle) text-(--color-text-secondary)"
+            className="p-1 rounded-(--radius-sm) bg-(--color-bg-elevated) hover:bg-(--color-bg-subtle) text-(--color-text-secondary) shadow-sm"
             onMouseDown={(e) => {
               // mousedown fires before blur, preventing popover from clearing
               e.preventDefault();

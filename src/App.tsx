@@ -95,7 +95,7 @@ function App() {
       label: "Open settings",
       binding: "Meta+Comma",
       category: "Global",
-      ignoresActionRestrictions: false,
+      ignoresActionRestrictions: true,
       callback: () => {
         useSettingsStore.getState().openSettings();
         pushOverlay("settings");

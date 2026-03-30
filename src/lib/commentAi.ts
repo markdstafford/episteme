@@ -81,20 +81,30 @@ function extractJson(response: string): unknown | null {
 // ── Vetting service ───────────────────────────────────────────────────────────
 
 export const DEFAULT_DEFLECT_INSTRUCTION =
-  "The concern is a question or request for clarification that is directly and explicitly answered in the document. Do NOT deflect if the concern is an opinion, assertion, disagreement, or challenge to the document content — even if the document addresses the topic.";
+  "the reviewer appears to be seeking information or clarification that is already explicitly present in the document — even if not phrased as a question (e.g. \"needs an estimate\" where the estimate is in the document)";
 
 export const DEFAULT_REDIRECT_INSTRUCTION =
-  "The concern would be better anchored to a different passage — for example the user selected a summary but the actual definition or constraint is stated elsewhere in the document.";
+  "the concern would be better anchored to a different passage — for example the user selected a summary but the actual definition or constraint is stated elsewhere in the document.";
 
 function buildVetPrompt(deflect: string, redirect: string): string {
-  return `You are an AI assistant reviewing a document comment before it is filed.
-Given a reviewer's concern and the document content, determine:
-1. If ${deflect} → {"type":"deflect","answer":"<explanation>"}
-2. If ${redirect} → {"type":"redirect","newFrom":<int>,"newTo":<int>,"newQuotedText":"<text>"}
-3. Otherwise → {"type":"proceed"}
+  return `You are reviewing a document comment before it is filed.
 
-Prioritize deflect > redirect > proceed.
-Respond ONLY with valid JSON matching one of the three shapes above. No markdown fences.`;
+DEFLECT if ${deflect}
+
+Do NOT deflect if:
+- The concern is in imperative form — a request or instruction to change something (e.g. "reduce X", "add Y", "this needs more detail", "make this shorter") — regardless of whether the document addresses the topic
+- The concern expresses disagreement or pushback (e.g. "this seems wrong", "I disagree with...", "I don't think...")
+- The concern identifies information that is genuinely missing from the document
+- When in doubt, do not deflect
+
+REDIRECT if ${redirect}
+
+Otherwise, PROCEED.
+
+Respond ONLY with valid JSON, one of:
+{"type":"proceed"}
+{"type":"deflect","answer":"<quote or paraphrase from the document>"}
+{"type":"redirect","newFrom":<int>,"newTo":<int>,"newQuotedText":"<text>"}`;
 }
 
 export async function vetComment(params: VetParams): Promise<VetResult> {
@@ -134,17 +144,24 @@ export async function vetComment(params: VetParams): Promise<VetResult> {
 
 const SUGGEST_SYSTEM_PROMPT = `You are helping a reviewer write a clear, concise document comment.
 Given the reviewer's raw concern and the quoted text they selected, propose polished comment text.
-Return ONLY the suggested comment text — no preamble, no explanation.
+Return ONLY the suggested comment text — no preamble, no explanation, no clarifying questions.
 Keep it concise (1–3 sentences). Preserve the reviewer's intent exactly.`;
 
 export async function suggestCommentText(params: {
   concern: string;
   quotedText: string;
   surroundingContext: string;
+  docContent: string;
   awsProfile: string;
 }): Promise<string> {
   try {
-    const userMsg = `Quoted text: "${params.quotedText}"\nContext: ${params.surroundingContext}\nReviewer concern: "${params.concern}"`;
+    const parts = [
+      `Quoted text: "${params.quotedText}"`,
+      params.surroundingContext ? `Context: ${params.surroundingContext}` : null,
+      params.docContent ? `Document:\n${params.docContent}` : null,
+      `Reviewer concern: "${params.concern}"`,
+    ].filter(Boolean);
+    const userMsg = parts.join("\n\n");
     const result = await callAi(
       SUGGEST_SYSTEM_PROMPT,
       userMsg,
@@ -159,7 +176,7 @@ export async function suggestCommentText(params: {
 // ── Body enhancement ──────────────────────────────────────────────────────────
 
 const ENHANCE_SYSTEM_PROMPT = `You are improving a document comment for clarity and grammar.
-Return ONLY the improved text — no preamble, no explanation.
+Return ONLY the improved text — no preamble, no explanation, no clarifying questions.
 Preserve the author's intent exactly. Keep it concise.`;
 
 export async function enhanceCommentBody(params: {

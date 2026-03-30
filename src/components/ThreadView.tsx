@@ -62,6 +62,7 @@ export function ThreadView({
   const [fixMessages, setFixMessages] = useState<string[]>([]);
   const [historyOpen, setHistoryOpen] = useState(false);
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [replyProcessing, setReplyProcessing] = useState(false);
   const [queuedReplyId, setQueuedReplyId] = useState<string | null>(null);
   const [replyBodyOriginal, setReplyBodyOriginal] = useState("");
   const [replyBodyEnhanced, setReplyBodyEnhanced] = useState<string | null>(null);
@@ -72,7 +73,7 @@ export function ThreadView({
   const replyCountdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const { resolveThread, reopenThread, toggleBlocking, stageComment, commitComment,
-          cancelQueuedComment, updateQueuedBlocking, updateQueuedBody, toggleQueuedBody } =
+          cancelQueuedComment, updateQueuedBlocking, toggleQueuedBody } =
     useThreadsStore();
 
   useEffect(() => {
@@ -89,6 +90,7 @@ export function ThreadView({
 
   useEffect(() => {
     // Reset queued card UI when switching to a different thread
+    setReplyProcessing(false);
     setQueuedReplyId(null);
     setReplyBodyOriginal("");
     setReplyBodyEnhanced(null);
@@ -174,14 +176,28 @@ export function ThreadView({
   async function handleSendReply() {
     if (!inputValue.trim()) return;
     const body = inputValue;
-    const id = crypto.randomUUID();
-    const now = new Date();
-    const expires = new Date(now.getTime() + 30000);
     setInputValue("");
     setReplyBodyOriginal(body);
     setReplyBodyEnhanced(null);
     setReplyUseEnhanced(true);
     setReplyBlocking(false);
+
+    // Run AI enhancement first — queued card and countdown only appear after
+    setReplyProcessing(true);
+    let enhanced: string | null = null;
+    if (aiEnhancementEnabled) {
+      enhanced = await enhanceCommentBody({
+        body,
+        awsProfile,
+        timeoutMs: aiEnhancementTimeoutMs,
+      });
+    }
+    setReplyBodyEnhanced(enhanced);
+    setReplyProcessing(false);
+
+    const id = crypto.randomUUID();
+    const now = new Date();
+    const expires = new Date(now.getTime() + 30000);
     await stageComment({
       id,
       thread_id: thread.id,
@@ -190,8 +206,8 @@ export function ThreadView({
       anchor_from: null,
       anchor_to: null,
       body_original: body,
-      body_enhanced: null,
-      use_body_enhanced: aiEnhancementEnabled,
+      body_enhanced: enhanced,
+      use_body_enhanced: true,
       blocking: false,
       created_at: now.toISOString(),
       expires_at: expires.toISOString(),
@@ -201,24 +217,6 @@ export function ThreadView({
       await commitComment(id, docFilePath).catch(() => {});
       setQueuedReplyId(null);
     }, 30000);
-    // AI enhancement runs concurrently
-    if (aiEnhancementEnabled) {
-      const capturedId = id;
-      enhanceCommentBody({
-        body,
-        awsProfile,
-        timeoutMs: aiEnhancementTimeoutMs,
-      }).then((enhanced) => {
-        if (!enhanced) return;
-        setQueuedReplyId((currentId) => {
-          if (currentId === capturedId) {
-            setReplyBodyEnhanced(enhanced);
-            updateQueuedBody(capturedId, enhanced);
-          }
-          return currentId;
-        });
-      });
-    }
   }
 
   async function handleCancelQueuedReply() {
@@ -412,6 +410,13 @@ export function ThreadView({
         )}
       </div>
 
+      {/* Reply processing indicator */}
+      {replyProcessing && (
+        <div className="mx-3 mb-2 px-3 py-2 rounded-(--radius-base) bg-(--color-bg-subtle) text-(--color-text-tertiary) text-[length:var(--font-size-ui-sm)]">
+          ✨ Enhancing…
+        </div>
+      )}
+
       {/* Queued reply card */}
       {queuedReplyId && (
         <div
@@ -487,12 +492,12 @@ export function ThreadView({
           }}
           placeholder="Reply…"
           rows={2}
-          disabled={!!queuedReplyId}
+          disabled={!!queuedReplyId || replyProcessing}
           className="w-full resize-none bg-transparent text-[length:var(--font-size-ui-sm)] outline-none"
         />
         <div className="flex justify-end">
           <button
-            disabled={!inputValue.trim() || !!queuedReplyId}
+            disabled={!inputValue.trim() || !!queuedReplyId || replyProcessing}
             onClick={handleSendReply}
             className="text-[length:var(--font-size-ui-xs)] px-2 py-1 bg-(--color-accent) text-(--color-text-on-accent) rounded-(--radius-sm) disabled:opacity-40"
           >
