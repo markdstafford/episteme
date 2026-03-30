@@ -1,5 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { vetComment, suggestCommentText, enhanceCommentBody } from "@/lib/commentAi";
+import {
+  vetComment,
+  suggestCommentText,
+  enhanceCommentBody,
+  DEFAULT_DEFLECT_INSTRUCTION,
+  DEFAULT_REDIRECT_INSTRUCTION,
+} from "@/lib/commentAi";
 
 vi.mock("@tauri-apps/api/core", () => ({
   invoke: vi.fn(),
@@ -8,36 +14,32 @@ vi.mock("@tauri-apps/api/core", () => ({
 import { invoke } from "@tauri-apps/api/core";
 const mockInvoke = vi.mocked(invoke);
 
+const baseParams = {
+  concern: "reduce the time commitment",
+  docContent: "**Time commitment**: 4-6 hours",
+  relatedDocs: [],
+  awsProfile: "default",
+  workspacePath: "/ws",
+};
+
 describe("vetComment", () => {
   beforeEach(() => vi.clearAllMocks());
 
-  const baseParams = {
-    concern: "what does this mean?",
-    docContent: "# Doc\nSome content.",
-    relatedDocs: [],
-    awsProfile: "default",
-    workspacePath: "/ws",
-  };
-
-  it("returns proceed when AI returns proceed JSON", async () => {
-    mockInvoke.mockResolvedValueOnce(JSON.stringify({ type: "proceed" }));
+  it("returns proceed when AI responds with proceed", async () => {
+    mockInvoke.mockResolvedValue('{"type":"proceed"}');
     const result = await vetComment(baseParams);
     expect(result.type).toBe("proceed");
   });
 
-  it("returns deflect when AI finds an answer", async () => {
-    mockInvoke.mockResolvedValueOnce(
-      JSON.stringify({ type: "deflect", answer: "It is defined in section 2." }),
-    );
+  it("returns deflect when AI responds with deflect and answer", async () => {
+    mockInvoke.mockResolvedValue('{"type":"deflect","answer":"The doc says 4-6 hours"}');
     const result = await vetComment(baseParams);
     expect(result.type).toBe("deflect");
-    if (result.type === "deflect") {
-      expect(result.answer).toBeTruthy();
-    }
+    if (result.type === "deflect") expect(result.answer).toBe("The doc says 4-6 hours");
   });
 
   it("returns redirect when AI finds a better location", async () => {
-    mockInvoke.mockResolvedValueOnce(
+    mockInvoke.mockResolvedValue(
       JSON.stringify({ type: "redirect", newFrom: 10, newTo: 20, newQuotedText: "better text" }),
     );
     const result = await vetComment(baseParams);
@@ -47,16 +49,56 @@ describe("vetComment", () => {
     }
   });
 
-  it("returns proceed silently on AI failure", async () => {
-    mockInvoke.mockRejectedValueOnce(new Error("Network error"));
+  it("falls back to proceed when AI returns unrecognized JSON", async () => {
+    mockInvoke.mockResolvedValue('{"type":"unknown"}');
     const result = await vetComment(baseParams);
     expect(result.type).toBe("proceed");
   });
 
-  it("returns proceed when AI returns malformed JSON", async () => {
-    mockInvoke.mockResolvedValueOnce("not json");
+  it("falls back to proceed on non-JSON response", async () => {
+    mockInvoke.mockResolvedValue("sorry, I cannot help");
     const result = await vetComment(baseParams);
     expect(result.type).toBe("proceed");
+  });
+
+  it("falls back to proceed on non-auth errors", async () => {
+    mockInvoke.mockRejectedValue(new Error("network timeout"));
+    const result = await vetComment(baseParams);
+    expect(result.type).toBe("proceed");
+  });
+
+  it("propagates auth errors", async () => {
+    mockInvoke.mockRejectedValue(new Error("ExpiredToken: token has expired"));
+    await expect(vetComment(baseParams)).rejects.toThrow("ExpiredToken");
+  });
+
+  it("parses deflect from markdown-fenced JSON response", async () => {
+    mockInvoke.mockResolvedValue('```json\n{"type":"deflect","answer":"see section 2"}\n```');
+    const result = await vetComment(baseParams);
+    expect(result.type).toBe("deflect");
+  });
+
+  it("includes DO NOT deflect guardrails in the built prompt", async () => {
+    mockInvoke.mockResolvedValue('{"type":"proceed"}');
+    await vetComment(baseParams);
+    const call = mockInvoke.mock.calls[0];
+    const args = call[1] as Record<string, string>;
+    expect(args.systemPrompt).toContain("Do NOT deflect if");
+    expect(args.systemPrompt).toContain("When in doubt, do not deflect");
+  });
+});
+
+describe("DEFAULT_DEFLECT_INSTRUCTION", () => {
+  it("is exported and non-empty", () => {
+    expect(typeof DEFAULT_DEFLECT_INSTRUCTION).toBe("string");
+    expect(DEFAULT_DEFLECT_INSTRUCTION.length).toBeGreaterThan(0);
+  });
+});
+
+describe("DEFAULT_REDIRECT_INSTRUCTION", () => {
+  it("is exported and non-empty", () => {
+    expect(typeof DEFAULT_REDIRECT_INSTRUCTION).toBe("string");
+    expect(DEFAULT_REDIRECT_INSTRUCTION.length).toBeGreaterThan(0);
   });
 });
 
