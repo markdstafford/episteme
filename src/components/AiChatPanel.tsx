@@ -195,8 +195,6 @@ export function AiChatPanel({
               awsProfile={awsProfile ?? ""}
               docContent={activeDocContent}
               docFilePath={selectedFilePath ?? undefined}
-              aiEnhancementEnabled={true}
-              aiEnhancementTimeoutMs={30000}
             />
           </div>
         );

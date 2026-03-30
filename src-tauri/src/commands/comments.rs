@@ -199,6 +199,30 @@ fn reconcile_anchor(
     let to = thread.anchor_to as usize;
     let chars: Vec<char> = doc_content.chars().collect();
 
+    // Guard against invalid offset combinations
+    if from > to || from >= chars.len() {
+        if let Some(byte_offset) = doc_content.find(thread.quoted_text.as_str()) {
+            let new_from = doc_content[..byte_offset].chars().count();
+            let new_to = new_from + thread.quoted_text.chars().count();
+            thread.anchor_from = new_from as i64;
+            thread.anchor_to = new_to as i64;
+            thread.anchor_stale = false;
+            conn.execute(
+                "UPDATE threads SET anchor_from=?1, anchor_to=?2, anchor_stale=FALSE WHERE id=?3",
+                params![new_from as i64, new_to as i64, thread.id],
+            )
+            .map_err(|e| e.to_string())?;
+        } else {
+            thread.anchor_stale = true;
+            conn.execute(
+                "UPDATE threads SET anchor_stale=TRUE WHERE id=?1",
+                params![thread.id],
+            )
+            .map_err(|e| e.to_string())?;
+        }
+        return Ok(());
+    }
+
     if to <= chars.len() {
         let slice: String = chars[from..to].iter().collect();
         if slice == thread.quoted_text {
@@ -293,17 +317,27 @@ pub fn commit_comment_on_conn(
 
     if let Some(thread_id) = &q.thread_id {
         let comment_id = Uuid::new_v4().to_string();
-        conn.execute(
-            "INSERT INTO comments (id, thread_id, body, author, created_at)
-             VALUES (?1,?2,?3,?4,?5)",
-            params![comment_id, thread_id, body, current_user, now],
-        )
-        .map_err(|e| e.to_string())?;
-        conn.execute(
-            "DELETE FROM queued_comments WHERE id=?1",
-            params![queued_id],
-        )
-        .map_err(|e| e.to_string())?;
+
+        conn.execute_batch("BEGIN;").map_err(|e| e.to_string())?;
+        let tx_result: Result<(), String> = (|| {
+            conn.execute(
+                "INSERT INTO comments (id, thread_id, body, author, created_at)
+                 VALUES (?1,?2,?3,?4,?5)",
+                params![comment_id, thread_id, body, current_user, now],
+            )
+            .map_err(|e| e.to_string())?;
+            conn.execute(
+                "DELETE FROM queued_comments WHERE id=?1",
+                params![queued_id],
+            )
+            .map_err(|e| e.to_string())?;
+            Ok(())
+        })();
+        if let Err(e) = tx_result {
+            conn.execute_batch("ROLLBACK;").ok();
+            return Err(e);
+        }
+        conn.execute_batch("COMMIT;").map_err(|e| e.to_string())?;
 
         return Ok(CommitResult::Comment(Comment {
             id: comment_id,
@@ -1063,5 +1097,41 @@ mod tests {
         let threads = load_threads_from_conn(&conn, "d", &new_content).unwrap();
         assert!(!threads[0].anchor_stale);
         assert_eq!(threads[0].anchor_from as usize, "Prepended. ".len());
+    }
+
+    #[test]
+    fn commit_reply_is_atomic() {
+        let (_dir, conn) = setup_db();
+        // Create a thread first
+        conn.execute(
+            "INSERT INTO threads (id, doc_id, quoted_text, anchor_from, anchor_to, anchor_stale, status, blocking, pinned, created_at)
+             VALUES ('t1','doc1','quote',0,5,FALSE,'open',FALSE,FALSE,'2026-01-01')",
+            [],
+        ).unwrap();
+        // Stage a reply
+        conn.execute(
+            "INSERT INTO queued_comments (id, thread_id, doc_id, quoted_text, anchor_from, anchor_to, body_original, body_enhanced, use_body_enhanced, blocking, created_at, expires_at)
+             VALUES ('q1','t1',NULL,NULL,NULL,NULL,'reply body',NULL,FALSE,FALSE,'2026-01-01','2026-01-01')",
+            [],
+        ).unwrap();
+        commit_comment_on_conn(&conn, "q1", "user1").unwrap();
+        let queued_count: i64 = conn.query_row("SELECT COUNT(*) FROM queued_comments", [], |r| r.get(0)).unwrap();
+        assert_eq!(queued_count, 0);
+        let comment_count: i64 = conn.query_row("SELECT COUNT(*) FROM comments WHERE thread_id='t1'", [], |r| r.get(0)).unwrap();
+        assert_eq!(comment_count, 1);
+    }
+
+    #[test]
+    fn reconcile_anchor_handles_invalid_from_offset() {
+        let (_dir, conn) = setup_db();
+        conn.execute(
+            "INSERT INTO threads (id, doc_id, quoted_text, anchor_from, anchor_to, anchor_stale, status, blocking, pinned, created_at)
+             VALUES ('t1','doc1','hello',9999,10000,FALSE,'open',FALSE,FALSE,'2026-01-01')",
+            [],
+        ).unwrap();
+        let threads = load_threads_from_conn(&conn, "doc1", "hello world").unwrap();
+        assert_eq!(threads.len(), 1);
+        // Should be reconciled or marked stale, not panic
+        assert!(threads[0].anchor_stale || threads[0].anchor_from < 9999);
     }
 }

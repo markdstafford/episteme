@@ -266,6 +266,35 @@ describe("ThreadView", () => {
     expect(screen.queryByTestId("queued-reply-card")).not.toBeInTheDocument();
   });
 
+  it("shows retry option when reply commit fails", async () => {
+    const { useThreadsStore } = await import("@/stores/threads");
+    const commitComment = vi.fn().mockRejectedValue(new Error("network error"));
+    vi.mocked(useThreadsStore).mockReturnValue({
+      resolveThread: vi.fn(), reopenThread: vi.fn(), toggleBlocking: vi.fn(),
+      stageComment: vi.fn().mockResolvedValue(undefined),
+      commitComment,
+      cancelQueuedComment: vi.fn().mockResolvedValue(undefined),
+      updateQueuedBlocking: vi.fn().mockResolvedValue(undefined),
+      toggleQueuedBody: vi.fn().mockResolvedValue(undefined),
+    } as any);
+
+    // Start fake timers before rendering so the 30s commit setTimeout is fake-controlled
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    render(<ThreadView {...{ ...defaultProps, aiEnhancementEnabled: false }} />);
+    const textarea = screen.getByPlaceholderText("Reply…");
+    fireEvent.change(textarea, { target: { value: "my reply" } });
+    fireEvent.click(screen.getByRole("button", { name: "↑" }));
+    await waitFor(() => screen.getByTestId("queued-reply-card"));
+
+    // Advance past the 30-second commit timeout
+    await act(async () => { vi.advanceTimersByTime(31000); });
+    vi.useRealTimers();
+
+    await waitFor(() =>
+      expect(screen.getByText(/failed to send/i)).toBeInTheDocument()
+    );
+  });
+
   it("disables the reply input and send button while a reply is queued", async () => {
     render(<ThreadView {...defaultProps} />);
     const textarea = screen.getByPlaceholderText("Reply…");

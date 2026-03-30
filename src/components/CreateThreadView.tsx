@@ -1,14 +1,11 @@
-import { useState, useRef, useEffect } from "react";
-import { MessageSquarePlus, X, OctagonX } from "lucide-react";
+import { useState } from "react";
+import { MessageSquarePlus, X } from "lucide-react";
 import { useThreadsStore } from "@/stores/threads";
-import { vetComment, suggestCommentText, enhanceCommentBody, isAuthError } from "@/lib/commentAi";
+import { vetComment, suggestCommentText, isAuthError } from "@/lib/commentAi";
 import type { Thread } from "@/types/comments";
-
-interface Anchor {
-  from: number;
-  to: number;
-  quotedText: string;
-}
+import type { CommentTriggerAnchor } from "@/components/MarkdownRenderer";
+import { useQueuedComment, COUNTDOWN_SECONDS } from "@/hooks/useQueuedComment";
+import { QueuedCommentCard } from "@/components/QueuedCommentCard";
 
 interface ChatMsg {
   role: "user" | "ai";
@@ -18,7 +15,7 @@ interface ChatMsg {
 type FlowStage = "input" | "processing" | "deflect" | "queued";
 
 export interface CreateThreadViewProps {
-  anchor: Anchor;
+  anchor: CommentTriggerAnchor;
   onClose: () => void;
   onThreadCreated: (thread: Thread) => void;
   onAuthError?: () => void;
@@ -26,13 +23,9 @@ export interface CreateThreadViewProps {
   workspacePath: string;
   docContent: string;
   docFilePath?: string;
-  aiEnhancementEnabled?: boolean;
-  aiEnhancementTimeoutMs?: number;
   deflectInstruction?: string;
   redirectInstruction?: string;
 }
-
-const COUNTDOWN_SECONDS = 30;
 
 export function CreateThreadView({
   anchor: initialAnchor,
@@ -43,8 +36,6 @@ export function CreateThreadView({
   workspacePath,
   docContent,
   docFilePath,
-  aiEnhancementEnabled = true,
-  aiEnhancementTimeoutMs = 30000,
   deflectInstruction,
   redirectInstruction,
 }: CreateThreadViewProps) {
@@ -53,16 +44,26 @@ export function CreateThreadView({
   const [isClosing, setIsClosing] = useState(false);
   const [messages, setMessages] = useState<ChatMsg[]>([]);
   const [inputValue, setInputValue] = useState("");
-  const [blocking, setBlocking] = useState(false);
-  const [queuedId, setQueuedId] = useState<string | null>(null);
-  const [bodyOriginal, setBodyOriginal] = useState("");
-  const [bodyEnhanced, setBodyEnhanced] = useState<string | null>(null);
-  const [useEnhanced, setUseEnhanced] = useState(true);
-  const [countdown, setCountdown] = useState(COUNTDOWN_SECONDS);
-  const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const { stageComment, commitComment, cancelQueuedComment, toggleQueuedBody, updateQueuedBlocking } =
     useThreadsStore();
+
+  async function commitCommentWithCallback(id: string, filePath?: string): Promise<unknown> {
+    const result = await commitComment(id, filePath);
+    if (result && ("status" in (result as object) || "doc_id" in (result as object))) {
+      onThreadCreated(result as Thread);
+    }
+    return result;
+  }
+
+  const queued = useQueuedComment({
+    stageComment,
+    commitComment: commitCommentWithCallback,
+    cancelQueuedComment,
+    updateQueuedBlocking,
+    toggleQueuedBody,
+    docFilePath,
+  });
 
   function closeWithAnimation() {
     setIsClosing(true);
@@ -71,13 +72,6 @@ export function CreateThreadView({
 
   const addMessage = (msg: ChatMsg) =>
     setMessages((prev) => [...prev, msg]);
-
-  // Cleanup countdown on unmount
-  useEffect(() => {
-    return () => {
-      if (countdownRef.current) clearInterval(countdownRef.current);
-    };
-  }, []);
 
   async function handleSend(concern: string) {
     if (!concern.trim()) return;
@@ -90,6 +84,11 @@ export function CreateThreadView({
       vet = await vetComment({
         concern,
         docContent,
+        quotedText: anchor.quotedText,
+        surroundingContext: docContent.slice(
+          Math.max(0, anchor.from - 100),
+          anchor.to + 100,
+        ),
         relatedDocs: [],
         awsProfile,
         workspacePath,
@@ -158,17 +157,12 @@ export function CreateThreadView({
     await startQueued(originalText, anchor, suggested);
   }
 
-  async function startQueued(bodyOriginalText: string, currentAnchor: Anchor, preEnhancedText?: string) {
+  async function startQueued(bodyOriginalText: string, currentAnchor: CommentTriggerAnchor, preEnhancedText?: string) {
     const id = crypto.randomUUID();
     const now = new Date();
     const expires = new Date(now.getTime() + COUNTDOWN_SECONDS * 1000);
 
-    setQueuedId(id);
-    setBodyOriginal(bodyOriginalText);
-    setBodyEnhanced(preEnhancedText ?? null);
-    setUseEnhanced(true);
     setStage("queued");
-    setCountdown(COUNTDOWN_SECONDS);
 
     // Ensure doc_id exists in frontmatter before queuing
     let docId: string | null = null;
@@ -193,62 +187,13 @@ export function CreateThreadView({
       body_original: bodyOriginalText,
       body_enhanced: preEnhancedText ?? null,
       use_body_enhanced: true,
-      blocking,
+      blocking: queued.blocking,
       created_at: now.toISOString(),
       expires_at: expires.toISOString(),
     });
 
-    // Start countdown
-    countdownRef.current = setInterval(() => {
-      setCountdown((prev) => {
-        if (prev <= 1) {
-          clearInterval(countdownRef.current!);
-          handleCommit(id);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    // AI enhancement runs concurrently (non-blocking) — skip if pre-enhanced text was provided
-    if (!preEnhancedText && aiEnhancementEnabled) {
-      enhanceCommentBody({
-        body: bodyOriginalText,
-        awsProfile,
-        timeoutMs: aiEnhancementTimeoutMs,
-      }).then((enhanced) => {
-        if (enhanced) {
-          setBodyEnhanced(enhanced);
-          useThreadsStore.getState().updateQueuedBody(id, enhanced);
-        }
-      });
-    }
+    queued.startQueued({ id, bodyOriginal: bodyOriginalText, bodyEnhanced: preEnhancedText ?? null });
   }
-
-  async function handleCommit(id: string) {
-    try {
-      const result = await commitComment(id, docFilePath);
-      if ("status" in result || "doc_id" in result) {
-        onThreadCreated(result as Thread);
-      }
-    } catch (e) {
-      console.error("Failed to commit comment:", e);
-    }
-  }
-
-  function handleCancelCountdown() {
-    if (countdownRef.current) clearInterval(countdownRef.current);
-    if (queuedId) cancelQueuedComment(queuedId);
-    onClose();
-  }
-
-  function handleToggleBody() {
-    if (!bodyEnhanced) return;
-    setUseEnhanced((v) => !v);
-    if (queuedId) toggleQueuedBody(queuedId);
-  }
-
-  const displayBody = useEnhanced && bodyEnhanced ? bodyEnhanced : bodyOriginal;
 
   return (
     <div className={`flex flex-col h-full transition-opacity duration-250 ${isClosing ? "opacity-0" : "opacity-100"}`}>
@@ -294,66 +239,21 @@ export function CreateThreadView({
 
         {/* Queued card */}
         {stage === "queued" && (
-          <div className="border border-(--color-border-subtle) rounded-(--radius-base) p-3 space-y-2">
-            <div className="text-[length:var(--font-size-ui-sm)]">
-              {displayBody}
-            </div>
-            <div className="flex items-center justify-between">
-              {/* AI/Raw toggle — only shown when body_enhanced is available */}
-              {bodyEnhanced && (
-                <div className="flex rounded-(--radius-sm) border border-(--color-border-subtle) overflow-hidden text-[length:var(--font-size-ui-xs)]">
-                  <button
-                    onClick={() => { if (useEnhanced) { return; } handleToggleBody(); }}
-                    className={`px-2 py-1 ${useEnhanced ? "bg-(--color-accent) text-(--color-text-on-accent)" : ""}`}
-                  >
-                    ✨
-                  </button>
-                  <button
-                    onClick={() => { if (!useEnhanced) { return; } handleToggleBody(); }}
-                    className={`px-2 py-1 ${!useEnhanced ? "bg-(--color-accent) text-(--color-text-on-accent)" : ""}`}
-                  >
-                    👤
-                  </button>
-                </div>
-              )}
-              {/* Countdown pill */}
-              <button
-                onClick={handleCancelCountdown}
-                className="flex items-center gap-1 px-2 py-1 rounded-(--radius-sm) border border-(--color-border-subtle) text-[length:var(--font-size-ui-xs)] text-(--color-text-tertiary)"
-              >
-                <X size={10} />
-                <div className="w-16 h-1 bg-(--color-bg-subtle) rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-(--color-accent) transition-all duration-1000"
-                    style={{
-                      width: `${(countdown / COUNTDOWN_SECONDS) * 100}%`,
-                    }}
-                  />
-                </div>
-                <span>{countdown}s</span>
-              </button>
-            </div>
-          </div>
+          <QueuedCommentCard
+            displayBody={queued.displayBody}
+            bodyEnhanced={queued.bodyEnhanced}
+            useEnhanced={queued.useEnhanced}
+            blocking={queued.blocking}
+            countdown={queued.countdown}
+            countdownSeconds={COUNTDOWN_SECONDS}
+            error={queued.commitError}
+            onToggleBody={queued.toggleBody}
+            onCancel={() => { queued.cancel(); onClose(); }}
+            onSetBlocking={queued.setBlocking}
+            onRetry={queued.retryCommit}
+          />
         )}
       </div>
-
-      {/* Blocking toggle (below queued card) */}
-      {stage === "queued" && (
-        <div className="px-3 py-1">
-          <button
-            onClick={() => {
-              const newBlocking = !blocking;
-              setBlocking(newBlocking);
-              if (queuedId) updateQueuedBlocking(queuedId, newBlocking);
-            }}
-            className={`flex items-center gap-1 text-[length:var(--font-size-ui-xs)] ${blocking ? "text-(--color-state-danger)" : "text-(--color-text-tertiary)"}`}
-          >
-            <OctagonX size={12} />
-            <span>{blocking ? "Blocking" : "Mark as blocking"}</span>
-          </button>
-
-        </div>
-      )}
 
       {/* Deflect virtual card */}
       {stage === "deflect" && (

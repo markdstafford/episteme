@@ -16,6 +16,7 @@ const mockInvoke = vi.mocked(invoke);
 
 const baseParams = {
   concern: "reduce the time commitment",
+  quotedText: "off",
   docContent: "**Time commitment**: 4-6 hours",
   relatedDocs: [],
   awsProfile: "default",
