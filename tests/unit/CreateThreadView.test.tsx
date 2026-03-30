@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor, act } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { CreateThreadView } from "@/components/CreateThreadView";
 import type { Thread } from "@/types/comments";
@@ -162,5 +162,39 @@ describe("CreateThreadView", () => {
     const call = stageComment.mock.calls[0][0];
     expect(call.body_original).toBe("reduce the time commitment");
     expect(call.body_enhanced).toBe("AI polished version");
+  });
+
+  it("shows retry option when commit fails", async () => {
+    mockVet.mockResolvedValue({ type: "proceed" });
+    mockSuggest.mockResolvedValue("AI polished version");
+
+    const { useThreadsStore } = await import("@/stores/threads");
+    vi.mocked(useThreadsStore).mockReturnValue({
+      stageComment: vi.fn().mockResolvedValue(undefined),
+      commitComment: vi.fn().mockRejectedValue(new Error("network error")),
+      cancelQueuedComment: vi.fn(),
+      updateQueuedBody: vi.fn(),
+      toggleQueuedBody: vi.fn(),
+      updateQueuedBlocking: vi.fn(),
+    } as any);
+
+    // Start fake timers before rendering so the 30s countdown setInterval is fake-controlled
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    render(<CreateThreadView {...defaultProps} onAuthError={vi.fn()} />);
+    const input = screen.getByPlaceholderText("What's your question or concern?");
+    fireEvent.change(input, { target: { value: "my concern" } });
+    fireEvent.keyDown(input, { key: "Enter" });
+
+    // Wait for the queued card to appear (AI processing done, countdown started)
+    await waitFor(() => screen.getByText("AI polished version"));
+
+    // Advance past the 30-second countdown to trigger commit
+    await act(async () => { vi.advanceTimersByTime(31000); });
+    vi.useRealTimers();
+
+    await waitFor(() =>
+      expect(screen.getByText(/failed to send/i)).toBeInTheDocument()
+    );
+    expect(screen.getByRole("button", { name: /retry/i })).toBeInTheDocument();
   });
 });

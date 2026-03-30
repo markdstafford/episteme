@@ -50,6 +50,7 @@ export function CreateThreadView({
   const [inputValue, setInputValue] = useState("");
   const [blocking, setBlocking] = useState(false);
   const [queuedId, setQueuedId] = useState<string | null>(null);
+  const [commitError, setCommitError] = useState<string | null>(null);
   const [bodyOriginal, setBodyOriginal] = useState("");
   const [bodyEnhanced, setBodyEnhanced] = useState<string | null>(null);
   const [useEnhanced, setUseEnhanced] = useState(true);
@@ -164,6 +165,7 @@ export function CreateThreadView({
     const expires = new Date(now.getTime() + COUNTDOWN_SECONDS * 1000);
 
     setQueuedId(id);
+    setCommitError(null);
     setBodyOriginal(bodyOriginalText);
     setBodyEnhanced(preEnhancedText ?? null);
     setUseEnhanced(true);
@@ -234,6 +236,7 @@ export function CreateThreadView({
         onThreadCreated(result as Thread);
       }
     } catch (e) {
+      setCommitError("Failed to send — click Retry");
       console.error("Failed to commit comment:", e);
     }
   }
@@ -300,6 +303,17 @@ export function CreateThreadView({
             <div className="text-[length:var(--font-size-ui-sm)]">
               {displayBody}
             </div>
+            {commitError && (
+              <div className="text-[length:var(--font-size-ui-xs)] text-(--color-state-danger) flex items-center justify-between gap-2">
+                <span>{commitError}</span>
+                <button
+                  onClick={() => { setCommitError(null); if (queuedId) handleCommit(queuedId); }}
+                  className="underline shrink-0"
+                >
+                  Retry
+                </button>
+              </div>
+            )}
             <div className="flex items-center justify-between">
               {/* AI/Raw toggle — only shown when body_enhanced is available */}
               {bodyEnhanced && (

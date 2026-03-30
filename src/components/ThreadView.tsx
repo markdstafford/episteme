@@ -69,8 +69,10 @@ export function ThreadView({
   const [replyUseEnhanced, setReplyUseEnhanced] = useState(true);
   const [replyBlocking, setReplyBlocking] = useState(false);
   const [replyCountdown, setReplyCountdown] = useState(30);
+  const [replyCommitError, setReplyCommitError] = useState<string | null>(null);
   const replyCommitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const replyCountdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const REPLY_COMMIT_ERROR_MSG = "Failed to send — click Retry";
 
   const { resolveThread, reopenThread, toggleBlocking, stageComment, commitComment,
           cancelQueuedComment, updateQueuedBlocking, toggleQueuedBody } =
@@ -92,6 +94,7 @@ export function ThreadView({
     // Reset queued card UI when switching to a different thread
     setReplyProcessing(false);
     setQueuedReplyId(null);
+    setReplyCommitError(null);
     setReplyBodyOriginal("");
     setReplyBodyEnhanced(null);
     setReplyUseEnhanced(true);
@@ -217,8 +220,13 @@ export function ThreadView({
     });
     setQueuedReplyId(id);
     replyCommitTimerRef.current = setTimeout(async () => {
-      await commitComment(id, docFilePath).catch(() => {});
-      setQueuedReplyId(null);
+      try {
+        await commitComment(id, docFilePath);
+        setQueuedReplyId(null);
+      } catch (e) {
+        setReplyCommitError(REPLY_COMMIT_ERROR_MSG);
+        console.error("Failed to commit reply:", e);
+      }
     }, 30000);
   }
 
@@ -429,6 +437,31 @@ export function ThreadView({
           <div className="text-[length:var(--font-size-ui-sm)]">
             {displayReplyBody}
           </div>
+          {replyCommitError && (
+            <div className="text-[length:var(--font-size-ui-xs)] text-(--color-state-danger) flex items-center justify-between gap-2">
+              <span>{replyCommitError}</span>
+              <button
+                onClick={() => {
+                  setReplyCommitError(null);
+                  if (queuedReplyId) {
+                    const id = queuedReplyId;
+                    replyCommitTimerRef.current = setTimeout(async () => {
+                      try {
+                        await commitComment(id, docFilePath);
+                        setQueuedReplyId(null);
+                      } catch (e) {
+                        setReplyCommitError(REPLY_COMMIT_ERROR_MSG);
+                        console.error("Failed to commit reply:", e);
+                      }
+                    }, 0);
+                  }
+                }}
+                className="underline shrink-0"
+              >
+                Retry
+              </button>
+            </div>
+          )}
           <div className="flex items-center justify-between">
             {/* AI/Raw toggle — only shown when enhanced is available */}
             {replyBodyEnhanced && (
