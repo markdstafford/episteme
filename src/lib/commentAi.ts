@@ -28,6 +28,8 @@ export type VetResult =
 
 export interface VetParams {
   concern: string;
+  quotedText: string;
+  surroundingContext?: string;
   docContent: string;
   relatedDocs: string[];
   awsProfile: string;
@@ -114,11 +116,13 @@ export async function vetComment(params: VetParams): Promise<VetResult> {
   );
 
   const userMsg = [
+    `Selected passage: "${params.quotedText}"`,
+    params.surroundingContext ? `Context:\n${params.surroundingContext}` : null,
     `Reviewer concern: "${params.concern}"`,
     `Document:\n${params.docContent}`,
     params.relatedDocs.length > 0
       ? `Related documents:\n${params.relatedDocs.join("\n---\n")}`
-      : "",
+      : null,
   ]
     .filter(Boolean)
     .join("\n\n");
@@ -181,13 +185,24 @@ Preserve the author's intent exactly. Keep it concise.`;
 
 export async function enhanceCommentBody(params: {
   body: string;
+  quotedText?: string;
+  docContent?: string;
+  threadComments?: Array<{ author: string; body: string }>;
   awsProfile: string;
   timeoutMs?: number;
 }): Promise<string | null> {
   const { timeoutMs = 30000 } = params;
   try {
+    const parts = [
+      params.quotedText ? `Thread anchor: "${params.quotedText}"` : null,
+      params.docContent ? `Document:\n${params.docContent}` : null,
+      params.threadComments?.length
+        ? `Thread history:\n${params.threadComments.map(c => `${c.author}: ${c.body}`).join("\n")}`
+        : null,
+      `Comment to improve: "${params.body}"`,
+    ].filter(Boolean);
     const result = await Promise.race([
-      callAi(ENHANCE_SYSTEM_PROMPT, params.body, params.awsProfile),
+      callAi(ENHANCE_SYSTEM_PROMPT, parts.join("\n\n"), params.awsProfile),
       new Promise<null>((resolve) => setTimeout(() => resolve(null), timeoutMs)),
     ]);
     return typeof result === "string" ? result.trim() : null;

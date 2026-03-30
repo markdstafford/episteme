@@ -188,6 +188,9 @@ export function ThreadView({
     if (aiEnhancementEnabled) {
       enhanced = await enhanceCommentBody({
         body,
+        quotedText: thread.quoted_text,
+        docContent,
+        threadComments: thread.comments,
         awsProfile,
         timeoutMs: aiEnhancementTimeoutMs,
       });

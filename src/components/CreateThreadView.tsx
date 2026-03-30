@@ -3,12 +3,7 @@ import { MessageSquarePlus, X, OctagonX } from "lucide-react";
 import { useThreadsStore } from "@/stores/threads";
 import { vetComment, suggestCommentText, enhanceCommentBody, isAuthError } from "@/lib/commentAi";
 import type { Thread } from "@/types/comments";
-
-interface Anchor {
-  from: number;
-  to: number;
-  quotedText: string;
-}
+import type { CommentTriggerAnchor } from "@/components/MarkdownRenderer";
 
 interface ChatMsg {
   role: "user" | "ai";
@@ -18,7 +13,7 @@ interface ChatMsg {
 type FlowStage = "input" | "processing" | "deflect" | "queued";
 
 export interface CreateThreadViewProps {
-  anchor: Anchor;
+  anchor: CommentTriggerAnchor;
   onClose: () => void;
   onThreadCreated: (thread: Thread) => void;
   onAuthError?: () => void;
@@ -90,6 +85,11 @@ export function CreateThreadView({
       vet = await vetComment({
         concern,
         docContent,
+        quotedText: anchor.quotedText,
+        surroundingContext: docContent.slice(
+          Math.max(0, anchor.from - 100),
+          anchor.to + 100,
+        ),
         relatedDocs: [],
         awsProfile,
         workspacePath,
@@ -158,7 +158,7 @@ export function CreateThreadView({
     await startQueued(originalText, anchor, suggested);
   }
 
-  async function startQueued(bodyOriginalText: string, currentAnchor: Anchor, preEnhancedText?: string) {
+  async function startQueued(bodyOriginalText: string, currentAnchor: CommentTriggerAnchor, preEnhancedText?: string) {
     const id = crypto.randomUUID();
     const now = new Date();
     const expires = new Date(now.getTime() + COUNTDOWN_SECONDS * 1000);
@@ -214,6 +214,8 @@ export function CreateThreadView({
     if (!preEnhancedText && aiEnhancementEnabled) {
       enhanceCommentBody({
         body: bodyOriginalText,
+        quotedText: currentAnchor.quotedText,
+        docContent,
         awsProfile,
         timeoutMs: aiEnhancementTimeoutMs,
       }).then((enhanced) => {
