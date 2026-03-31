@@ -331,6 +331,28 @@ pub fn commit_comment_on_conn(
                 params![comment_id, thread_id, body, current_user, now],
             )
             .map_err(|e| e.to_string())?;
+
+            // Apply blocking change if different from current thread state
+            let current_blocking: bool = conn.query_row(
+                "SELECT blocking FROM threads WHERE id=?1",
+                params![thread_id],
+                |r| r.get(0),
+            ).map_err(|e| e.to_string())?;
+
+            if q.blocking != current_blocking {
+                let event_type = if q.blocking { "blocking" } else { "non-blocking" };
+                conn.execute(
+                    "UPDATE threads SET blocking=?1 WHERE id=?2",
+                    params![q.blocking, thread_id],
+                ).map_err(|e| e.to_string())?;
+                let ev_id = Uuid::new_v4().to_string();
+                conn.execute(
+                    "INSERT INTO thread_events (id, thread_id, event, changed_by, changed_at)
+                     VALUES (?1,?2,?3,?4,?5)",
+                    params![ev_id, thread_id, event_type, current_user, now],
+                ).map_err(|e| e.to_string())?;
+            }
+
             conn.execute(
                 "DELETE FROM queued_comments WHERE id=?1",
                 params![queued_id],
@@ -1170,5 +1192,39 @@ mod tests {
         ).unwrap();
         assert!(update_thread_status_on_conn(&conn, "t1", "resolved", "user1").is_ok());
         assert!(update_thread_status_on_conn(&conn, "t1", "open", "user1").is_ok());
+    }
+
+    #[test]
+    fn commit_reply_applies_blocking_change() {
+        let (_dir, conn) = setup_db();
+        // Create a non-blocking thread with a comment
+        conn.execute(
+            "INSERT INTO threads (id, doc_id, quoted_text, anchor_from, anchor_to, anchor_stale, status, blocking, pinned, created_at)
+             VALUES ('t1','doc1','quote',0,5,FALSE,'open',FALSE,FALSE,'2026-01-01')",
+            [],
+        ).unwrap();
+        conn.execute(
+            "INSERT INTO comments (id, thread_id, body, author, created_at)
+             VALUES ('c1','t1','original','alice','2026-01-01')",
+            [],
+        ).unwrap();
+        // Stage a reply with blocking=true
+        conn.execute(
+            "INSERT INTO queued_comments (id, thread_id, doc_id, quoted_text, anchor_from, anchor_to, body_original, body_enhanced, use_body_enhanced, blocking, created_at, expires_at)
+             VALUES ('q1','t1',NULL,NULL,NULL,NULL,'my reply',NULL,FALSE,TRUE,'2026-01-01','2026-01-01')",
+            [],
+        ).unwrap();
+        commit_comment_on_conn(&conn, "q1", "bob").unwrap();
+        // Thread should now be blocking
+        let blocking: bool = conn.query_row(
+            "SELECT blocking FROM threads WHERE id='t1'", [], |r| r.get(0)
+        ).unwrap();
+        assert!(blocking, "thread should be blocking after reply with blocking=true");
+        // A blocking event should have been emitted
+        let event_count: i64 = conn.query_row(
+            "SELECT COUNT(*) FROM thread_events WHERE thread_id='t1' AND event='blocking'",
+            [], |r| r.get(0)
+        ).unwrap();
+        assert_eq!(event_count, 1);
     }
 }
