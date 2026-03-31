@@ -230,6 +230,11 @@ fn reconcile_anchor(
         }
     }
 
+    // NOTE: str::find() returns the first occurrence of quoted_text.
+    // For documents where the same phrase appears multiple times, this may
+    // move the anchor to the wrong passage. A proper fix requires storing
+    // occurrence context (e.g. which occurrence number) alongside the anchor —
+    // tracked in issue #121.
     if let Some(byte_offset) = doc_content.find(thread.quoted_text.as_str()) {
         // Convert byte offset to character offset for consistency
         let new_from = doc_content[..byte_offset].chars().count();
@@ -440,6 +445,13 @@ pub fn update_thread_status_on_conn(
     status: &str,
     current_user: &str,
 ) -> Result<ThreadEvent, String> {
+    // Validate status — only "open" and "resolved" are valid
+    if status != "open" && status != "resolved" {
+        return Err(format!(
+            "Invalid thread status '{}': expected 'open' or 'resolved'",
+            status
+        ));
+    }
     use chrono::Utc;
     use uuid::Uuid;
     let event_label = if status == "open" { "re-opened" } else { status };
@@ -1133,5 +1145,30 @@ mod tests {
         assert_eq!(threads.len(), 1);
         // Should be reconciled or marked stale, not panic
         assert!(threads[0].anchor_stale || threads[0].anchor_from < 9999);
+    }
+
+    #[test]
+    fn update_thread_status_rejects_invalid_status() {
+        let (_dir, conn) = setup_db();
+        conn.execute(
+            "INSERT INTO threads (id, doc_id, quoted_text, anchor_from, anchor_to, anchor_stale, status, blocking, pinned, created_at)
+             VALUES ('t1','doc1','quote',0,5,FALSE,'open',FALSE,FALSE,'2026-01-01')",
+            [],
+        ).unwrap();
+        let result = update_thread_status_on_conn(&conn, "t1", "invalid_status", "user1");
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("Invalid thread status"));
+    }
+
+    #[test]
+    fn update_thread_status_accepts_valid_values() {
+        let (_dir, conn) = setup_db();
+        conn.execute(
+            "INSERT INTO threads (id, doc_id, quoted_text, anchor_from, anchor_to, anchor_stale, status, blocking, pinned, created_at)
+             VALUES ('t1','doc1','quote',0,5,FALSE,'open',FALSE,FALSE,'2026-01-01')",
+            [],
+        ).unwrap();
+        assert!(update_thread_status_on_conn(&conn, "t1", "resolved", "user1").is_ok());
+        assert!(update_thread_status_on_conn(&conn, "t1", "open", "user1").is_ok());
     }
 }
