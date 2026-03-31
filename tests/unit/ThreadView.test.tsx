@@ -19,6 +19,9 @@ vi.mock("@/stores/threads", () => ({
 }));
 vi.mock("@/lib/commentAi", () => ({
   enhanceCommentBody: vi.fn().mockResolvedValue(null),
+  vetComment: vi.fn().mockResolvedValue({ type: "proceed" }),
+  suggestCommentText: vi.fn().mockResolvedValue("Suggested text"),
+  isAuthError: vi.fn().mockReturnValue(false),
 }));
 vi.mock("@/lib/commentAiFix", () => ({ suggestFix: vi.fn() }));
 vi.mock("@radix-ui/react-popover", async () => {
@@ -36,6 +39,10 @@ vi.mock("@radix-ui/react-popover", async () => {
     },
   };
 });
+
+import { vetComment, suggestCommentText } from "@/lib/commentAi";
+const mockVet = vi.mocked(vetComment);
+const mockSuggest = vi.mocked(suggestCommentText);
 
 import React from "react";
 
@@ -325,6 +332,12 @@ describe("mode='new'", () => {
     docContent: "test text and more",
   };
 
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockVet.mockResolvedValue({ type: "proceed" });
+    mockSuggest.mockResolvedValue("Suggested text");
+  });
+
   it("renders 'New comment' header", () => {
     render(<ThreadView {...newProps} />);
     expect(screen.getByText("New comment")).toBeInTheDocument();
@@ -338,5 +351,30 @@ describe("mode='new'", () => {
   it("shows concern input in input stage", () => {
     render(<ThreadView {...newProps} />);
     expect(screen.getByPlaceholderText("What's your question or concern?")).toBeInTheDocument();
+  });
+
+  it("shows deflect answer when AI deflects", async () => {
+    mockVet.mockResolvedValue({ type: "deflect", answer: "The doc covers this." });
+    mockSuggest.mockResolvedValue("AI polished");
+
+    render(<ThreadView {...newProps} />);
+    const input = screen.getByPlaceholderText("What's your question or concern?");
+    fireEvent.change(input, { target: { value: "my concern" } });
+    fireEvent.keyDown(input, { key: "Enter" });
+
+    await waitFor(() => screen.getByText("The doc covers this."));
+    expect(screen.getByText("No, file anyway")).toBeInTheDocument();
+  });
+
+  it("shows queued card after proceed", async () => {
+    mockVet.mockResolvedValue({ type: "proceed" });
+    mockSuggest.mockResolvedValue("AI polished version");
+
+    render(<ThreadView {...newProps} />);
+    const input = screen.getByPlaceholderText("What's your question or concern?");
+    fireEvent.change(input, { target: { value: "my concern" } });
+    fireEvent.keyDown(input, { key: "Enter" });
+
+    await waitFor(() => screen.getByText("AI polished version"));
   });
 });

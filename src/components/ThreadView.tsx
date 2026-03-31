@@ -3,7 +3,7 @@ import { ArrowLeft, ArrowUp, ArrowDown, X, OctagonX, MessageSquarePlus } from "l
 import * as Popover from "@radix-ui/react-popover";
 import { useThreadsStore } from "@/stores/threads";
 import { suggestFix } from "@/lib/commentAiFix";
-import { enhanceCommentBody } from "@/lib/commentAi";
+import { enhanceCommentBody, vetComment, suggestCommentText, isAuthError } from "@/lib/commentAi";
 import type { Thread } from "@/types/comments";
 import { relativeTime } from "@/lib/relativeTime";
 import { useQueuedComment, COUNTDOWN_SECONDS } from "@/hooks/useQueuedComment";
@@ -82,7 +82,7 @@ export function ThreadView(props: ThreadViewProps) {
 
   // mode="new" state
   const [stage, setStage] = useState<"input" | "processing" | "deflect" | "queued">("input");
-  const [_deflectAnswer, setDeflectAnswer] = useState<string | null>(null);
+  const [deflectAnswer, setDeflectAnswer] = useState<string | null>(null);
   const [anchorState, setAnchorState] = useState(
     props.mode === "new" ? props.anchor : { from: 0, to: 0, quotedText: "" }
   );
@@ -92,9 +92,17 @@ export function ThreadView(props: ThreadViewProps) {
           cancelQueuedComment, updateQueuedBlocking, toggleQueuedBody } =
     useThreadsStore();
 
+  async function commitWithCallback(id: string, filePath?: string): Promise<unknown> {
+    const result = await commitComment(id, filePath);
+    if (props.mode === "new" && result && ("status" in (result as object) || "doc_id" in (result as object))) {
+      props.onThreadCreated(result as Thread);
+    }
+    return result;
+  }
+
   const queued = useQueuedComment({
     stageComment,
-    commitComment,
+    commitComment: commitWithCallback,
     cancelQueuedComment,
     updateQueuedBlocking,
     toggleQueuedBody,
@@ -164,16 +172,115 @@ export function ThreadView(props: ThreadViewProps) {
     setFixInProgress(false);
   }
 
-  // mode="new" stub functions (implemented in Task 3)
-  async function handleSendConcern(_concern: string) {
-    setStage("processing");
-    setDeflectAnswer(null);
-    setAnchorState(anchorState);
-    void concernRef.current;
-    setStage("input");
+  async function startNewThread(
+    bodyOriginalText: string,
+    currentAnchor: { from: number; to: number; quotedText: string },
+    preEnhancedText?: string,
+  ) {
+    if (props.mode !== "new") return;
+
+    const id = crypto.randomUUID();
+    const now = new Date();
+    const expires = new Date(now.getTime() + COUNTDOWN_SECONDS * 1000);
+
+    setStage("queued");
+
+    let docId: string | null = null;
+    if (docFilePath) {
+      try {
+        const { invoke } = await import("@tauri-apps/api/core");
+        docId = await invoke<string>("ensure_doc_id_for_file", { filePath: docFilePath });
+      } catch (e) {
+        console.error("Failed to ensure doc_id:", e);
+      }
+    }
+
+    await stageComment({
+      id,
+      thread_id: null,
+      doc_id: docId,
+      quoted_text: currentAnchor.quotedText,
+      anchor_from: currentAnchor.from,
+      anchor_to: currentAnchor.to,
+      body_original: bodyOriginalText,
+      body_enhanced: preEnhancedText ?? null,
+      use_body_enhanced: true,
+      blocking: queued.blocking,
+      created_at: now.toISOString(),
+      expires_at: expires.toISOString(),
+    });
+
+    queued.startQueued({ id, bodyOriginal: bodyOriginalText, bodyEnhanced: preEnhancedText ?? null });
   }
-  // handleNoFileAnyway is implemented in Task 3
-  async function handleNoFileAnyway() {}
+
+  async function handleSendConcern(concern: string) {
+    if (!concern.trim() || props.mode !== "new") return;
+    concernRef.current = concern;
+    setInputValue("");
+    setStage("processing");
+
+    let vet: Awaited<ReturnType<typeof vetComment>>;
+    try {
+      vet = await vetComment({
+        concern,
+        docContent,
+        quotedText: anchorState.quotedText,
+        surroundingContext: docContent.slice(Math.max(0, anchorState.from - 100), anchorState.to + 100),
+        relatedDocs: [],
+        awsProfile,
+        workspacePath: props.workspacePath,
+        deflectInstruction: props.deflectInstruction,
+        redirectInstruction: props.redirectInstruction,
+      });
+    } catch (e) {
+      const msg = String(e);
+      if (isAuthError(msg)) {
+        props.onAuthError?.();
+        return;
+      }
+      vet = { type: "proceed" };
+    }
+
+    if (vet.type === "deflect") {
+      setDeflectAnswer(vet.answer);
+      setStage("deflect");
+      return;
+    }
+
+    let finalAnchor = anchorState;
+    if (vet.type === "redirect") {
+      const redirected = { from: vet.newFrom, to: vet.newTo, quotedText: vet.newQuotedText };
+      setAnchorState(redirected);
+      finalAnchor = redirected;
+    }
+
+    const suggested = await suggestCommentText({
+      concern,
+      quotedText: finalAnchor.quotedText,
+      surroundingContext: docContent.slice(Math.max(0, finalAnchor.from - 100), finalAnchor.to + 100),
+      docContent,
+      awsProfile,
+    });
+
+    await startNewThread(concern, finalAnchor, suggested);
+  }
+
+  async function handleNoFileAnyway() {
+    if (props.mode !== "new") return;
+    const originalText = concernRef.current;
+    if (!originalText.trim()) return;
+    setStage("processing");
+
+    const suggested = await suggestCommentText({
+      concern: originalText,
+      quotedText: anchorState.quotedText,
+      surroundingContext: docContent.slice(Math.max(0, anchorState.from - 100), anchorState.to + 100),
+      docContent,
+      awsProfile,
+    });
+
+    await startNewThread(originalText, anchorState, suggested);
+  }
 
   async function handleSendReply() {
     if (!inputValue.trim()) return;
@@ -418,9 +525,9 @@ export function ThreadView(props: ThreadViewProps) {
               ✨ Checking document…
             </div>
           )}
-          {stage === "deflect" && _deflectAnswer && (
+          {stage === "deflect" && deflectAnswer && (
             <div className="border border-(--color-border-subtle) rounded-(--radius-base) p-3 text-[length:var(--font-size-ui-sm)]">
-              <div className="text-(--color-text-secondary) mb-2">{_deflectAnswer}</div>
+              <div className="text-(--color-text-secondary) mb-2">{deflectAnswer}</div>
               <div className="text-(--color-text-tertiary) text-[length:var(--font-size-ui-xs)] mb-2">
                 ✨ Does that answer your concern?
               </div>
@@ -435,6 +542,24 @@ export function ThreadView(props: ThreadViewProps) {
             </div>
           )}
         </div>
+      )}
+
+      {props.mode === "new" && stage === "queued" && (
+        <QueuedCommentCard
+          displayBody={queued.displayBody}
+          bodyEnhanced={queued.bodyEnhanced}
+          useEnhanced={queued.useEnhanced}
+          blocking={queued.blocking}
+          countdown={queued.countdown}
+          countdownSeconds={COUNTDOWN_SECONDS}
+          error={queued.commitError}
+          onToggleBody={queued.toggleBody}
+          onCancel={() => { queued.cancel(); onClose(); }}
+          onSetBlocking={queued.setBlocking}
+          onRetry={queued.retryCommit}
+          testId="queued-card"
+          className="mx-3 mb-2"
+        />
       )}
 
       {(props.mode === "reply" && (replyProcessing || !!queued.queuedId)) && (
