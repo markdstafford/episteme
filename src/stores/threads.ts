@@ -189,12 +189,23 @@ export const useThreadsStore = create<ThreadsStore>((set, get) => ({
       const now = new Date();
       for (const q of all) {
         if (new Date(q.expires_at) <= now) {
-          get().commitComment(q.id).catch(() => {});
+          get().commitComment(q.id).then(() => {
+            // Refresh active doc threads so the committed comment appears immediately
+            const { activeDocId, activeDocContent } = get();
+            if (activeDocId) {
+              get().loadThreads(activeDocId, activeDocContent);
+            }
+          }).catch(() => {});
         } else {
           set((s) => ({ queuedComments: [...s.queuedComments, q] }));
           const remaining = new Date(q.expires_at).getTime() - now.getTime();
           setTimeout(() => {
-            get().commitComment(q.id).catch(() => {});
+            get().commitComment(q.id).then(() => {
+              const { activeDocId, activeDocContent } = get();
+              if (activeDocId) {
+                get().loadThreads(activeDocId, activeDocContent);
+              }
+            }).catch(() => {});
           }, remaining);
         }
       }
