@@ -313,3 +313,30 @@ describe("ThreadView", () => {
     expect(screen.getAllByText(/"the retry queue"/)[0]).toBeInTheDocument();
   });
 });
+
+describe("mode='new'", () => {
+  const newProps = {
+    mode: "new" as const,
+    anchor: { from: 0, to: 9, quotedText: "test text" },
+    onClose: vi.fn(),
+    onThreadCreated: vi.fn(),
+    awsProfile: "default",
+    workspacePath: "/ws",
+    docContent: "test text and more",
+  };
+
+  it("renders 'New comment' header", () => {
+    render(<ThreadView {...newProps} />);
+    expect(screen.getByText("New comment")).toBeInTheDocument();
+  });
+
+  it("shows quoted text block", () => {
+    render(<ThreadView {...newProps} />);
+    expect(screen.getByText(/"test text"/)).toBeInTheDocument();
+  });
+
+  it("shows concern input in input stage", () => {
+    render(<ThreadView {...newProps} />);
+    expect(screen.getByPlaceholderText("What's your question or concern?")).toBeInTheDocument();
+  });
+});

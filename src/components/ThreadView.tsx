@@ -1,5 +1,5 @@
 import { useRef, useEffect, useState } from "react";
-import { ArrowLeft, ArrowUp, ArrowDown, X, OctagonX } from "lucide-react";
+import { ArrowLeft, ArrowUp, ArrowDown, X, OctagonX, MessageSquarePlus } from "lucide-react";
 import * as Popover from "@radix-ui/react-popover";
 import { useThreadsStore } from "@/stores/threads";
 import { suggestFix } from "@/lib/commentAiFix";
@@ -80,6 +80,14 @@ export function ThreadView(props: ThreadViewProps) {
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [replyProcessing, setReplyProcessing] = useState(false);
 
+  // mode="new" state
+  const [stage, setStage] = useState<"input" | "processing" | "deflect" | "queued">("input");
+  const [_deflectAnswer, setDeflectAnswer] = useState<string | null>(null);
+  const [anchorState, setAnchorState] = useState(
+    props.mode === "new" ? props.anchor : { from: 0, to: 0, quotedText: "" }
+  );
+  const concernRef = useRef<string>("");
+
   const { resolveThread, reopenThread, toggleBlocking, stageComment, commitComment,
           cancelQueuedComment, updateQueuedBlocking, toggleQueuedBody } =
     useThreadsStore();
@@ -94,40 +102,49 @@ export function ThreadView(props: ThreadViewProps) {
   });
 
   useEffect(() => {
+    if (props.mode !== "reply") return;
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [thread.comments, fixMessages]);
+  }, [props.mode === "reply" ? props.thread.comments : null, fixMessages]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
+    if (props.mode !== "reply") return;
     // Reset queued card UI when switching to a different thread
     queued.reset();
-  }, [thread.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [props.mode === "reply" ? props.thread.id : null]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const virtualCard = deriveVirtualCard(thread, currentUser, docAuthor);
+  const virtualCard = props.mode === "reply"
+    ? deriveVirtualCard(thread, currentUser, docAuthor)
+    : null;
 
-  const statusRowClass =
-    thread.status === "resolved"
+  const statusRowClass = props.mode === "reply"
+    ? (thread.status === "resolved"
       ? "bg-(--color-state-success-subtle)"
       : thread.blocking
         ? "bg-(--color-state-danger-subtle)"
-        : "";
+        : "")
+    : "";
 
-  const iconClass =
-    thread.status === "resolved"
+  const iconClass = props.mode === "reply"
+    ? (thread.status === "resolved"
       ? "text-(--color-text-tertiary)"
       : thread.blocking
         ? "text-(--color-state-danger)"
-        : "text-(--color-text-tertiary)";
+        : "text-(--color-text-tertiary)")
+    : "text-(--color-text-tertiary)";
 
-  const statusLabel =
-    thread.status === "resolved"
+  const statusLabel = props.mode === "reply"
+    ? (thread.status === "resolved"
       ? "resolved"
       : thread.blocking
         ? "blocking"
-        : "open";
+        : "open")
+    : "open";
 
-  const lastEvent = thread.events[thread.events.length - 1];
+  const lastEvent = props.mode === "reply"
+    ? thread.events[thread.events.length - 1]
+    : null;
 
   function handleHistoryMouseEnter() {
     if (closeTimer.current) clearTimeout(closeTimer.current);
@@ -146,6 +163,17 @@ export function ThreadView(props: ThreadViewProps) {
     }
     setFixInProgress(false);
   }
+
+  // mode="new" stub functions (implemented in Task 3)
+  async function handleSendConcern(_concern: string) {
+    setStage("processing");
+    setDeflectAnswer(null);
+    setAnchorState(anchorState);
+    void concernRef.current;
+    setStage("input");
+  }
+  // handleNoFileAnyway is implemented in Task 3
+  async function handleNoFileAnyway() {}
 
   async function handleSendReply() {
     if (!inputValue.trim()) return;
@@ -191,42 +219,59 @@ export function ThreadView(props: ThreadViewProps) {
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="flex items-center gap-1 px-3 py-2 border-b border-(--color-border-subtle)">
-        <button
-          onClick={onBack}
-          className="text-(--color-text-tertiary) hover:text-(--color-text-secondary) mr-1"
-        >
-          <ArrowLeft size={14} />
-        </button>
-        <span className="flex-1 text-[length:var(--font-size-ui-sm)] truncate font-medium">
-          "{truncate(thread.quoted_text, 25)}"
-        </span>
-        <button
-          onClick={onNavigatePrev}
-          disabled={!onNavigatePrev}
-          className="text-(--color-text-tertiary) disabled:opacity-30"
-        >
-          <ArrowUp size={14} />
-        </button>
-        <button
-          onClick={onNavigateNext}
-          disabled={!onNavigateNext}
-          className="text-(--color-text-tertiary) disabled:opacity-30"
-        >
-          <ArrowDown size={14} />
-        </button>
-        <button onClick={onClose} className="text-(--color-text-tertiary) ml-1">
-          <X size={14} />
-        </button>
-      </div>
+      {props.mode === "new" ? (
+        <div className="flex items-center gap-2 px-3 py-2 border-b border-(--color-border-subtle)">
+          <MessageSquarePlus size={14} className="text-(--color-text-secondary)" />
+          <span className="text-[length:var(--font-size-ui-sm)] font-medium flex-1">New comment</span>
+          <button onClick={onClose} className="text-(--color-text-tertiary) hover:text-(--color-text-secondary)">
+            <X size={14} />
+          </button>
+        </div>
+      ) : (
+        <div className="flex items-center gap-1 px-3 py-2 border-b border-(--color-border-subtle)">
+          <button
+            onClick={onBack}
+            className="text-(--color-text-tertiary) hover:text-(--color-text-secondary) mr-1"
+          >
+            <ArrowLeft size={14} />
+          </button>
+          <span className="flex-1 text-[length:var(--font-size-ui-sm)] truncate font-medium">
+            "{truncate(thread.quoted_text, 25)}"
+          </span>
+          <button
+            onClick={onNavigatePrev}
+            disabled={!onNavigatePrev}
+            className="text-(--color-text-tertiary) disabled:opacity-30"
+          >
+            <ArrowUp size={14} />
+          </button>
+          <button
+            onClick={onNavigateNext}
+            disabled={!onNavigateNext}
+            className="text-(--color-text-tertiary) disabled:opacity-30"
+          >
+            <ArrowDown size={14} />
+          </button>
+          <button onClick={onClose} className="text-(--color-text-tertiary) ml-1">
+            <X size={14} />
+          </button>
+        </div>
+      )}
 
-      {/* Quoted text block */}
-      <div className="mx-3 mt-3 p-2 rounded-(--radius-base) border-2 border-(--color-border-subtle) bg-(--color-bg-subtle) text-[length:var(--font-size-ui-sm)] italic text-(--color-text-secondary)">
-        "{thread.quoted_text}"
-      </div>
+      {/* Quoted text block — mode="new" shows anchor text, mode="reply" shows thread quoted text */}
+      {props.mode === "new" && (
+        <div className="mx-3 mt-3 p-2 rounded-(--radius-base) border-2 border-(--color-border-subtle) bg-(--color-bg-subtle) text-[length:var(--font-size-ui-sm)] italic text-(--color-text-secondary)">
+          "{anchorState.quotedText}"
+        </div>
+      )}
+      {props.mode === "reply" && (
+        <div className="mx-3 mt-3 p-2 rounded-(--radius-base) border-2 border-(--color-border-subtle) bg-(--color-bg-subtle) text-[length:var(--font-size-ui-sm)] italic text-(--color-text-secondary)">
+          "{thread.quoted_text}"
+        </div>
+      )}
 
-      {/* Status row */}
-      <Popover.Root open={historyOpen}>
+      {/* Status row — reply mode only */}
+      {props.mode === "reply" && <Popover.Root open={historyOpen}>
         <Popover.Trigger asChild>
           <div
             data-testid="status-row"
@@ -268,10 +313,10 @@ export function ThreadView(props: ThreadViewProps) {
             </div>
           </Popover.Content>
         </Popover.Portal>
-      </Popover.Root>
+      </Popover.Root>}
 
-      {/* Comment list */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto px-3 py-2 space-y-3">
+      {/* Comment list — reply mode only */}
+      {props.mode === "reply" && <div ref={scrollRef} className="flex-1 overflow-y-auto px-3 py-2 space-y-3">
         {thread.comments.map((c) => (
           <div
             key={c.id}
@@ -363,9 +408,36 @@ export function ThreadView(props: ThreadViewProps) {
             )}
           </div>
         )}
-      </div>
+      </div>}
 
-      {(replyProcessing || !!queued.queuedId) && (
+      {/* Scrollable middle area — new mode only */}
+      {props.mode === "new" && (
+        <div className="flex-1 overflow-y-auto px-3 py-2 flex flex-col justify-end space-y-2">
+          {stage === "processing" && (
+            <div className="text-(--color-text-tertiary) text-[length:var(--font-size-ui-sm)]">
+              ✨ Checking document…
+            </div>
+          )}
+          {stage === "deflect" && _deflectAnswer && (
+            <div className="border border-(--color-border-subtle) rounded-(--radius-base) p-3 text-[length:var(--font-size-ui-sm)]">
+              <div className="text-(--color-text-secondary) mb-2">{_deflectAnswer}</div>
+              <div className="text-(--color-text-tertiary) text-[length:var(--font-size-ui-xs)] mb-2">
+                ✨ Does that answer your concern?
+              </div>
+              <div className="flex items-center gap-2">
+                <button onClick={handleNoFileAnyway} className="text-[length:var(--font-size-ui-xs)] px-2 py-1 border border-(--color-border-subtle) rounded-(--radius-sm) text-(--color-text-secondary) hover:text-(--color-text-primary)">
+                  No, file anyway
+                </button>
+                <button onClick={onClose} className="text-[length:var(--font-size-ui-xs)] px-2 py-1 bg-(--color-accent) text-(--color-text-on-accent) rounded-(--radius-sm)">
+                  Yes, thanks
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {(props.mode === "reply" && (replyProcessing || !!queued.queuedId)) && (
         <QueuedCommentCard
           displayBody={queued.displayBody}
           bodyEnhanced={queued.bodyEnhanced}
@@ -384,32 +456,62 @@ export function ThreadView(props: ThreadViewProps) {
         />
       )}
 
-      {/* Reply input */}
-      <div className="border-t border-(--color-border-subtle) p-2">
-        <textarea
-          value={inputValue}
-          onChange={(e) => setInputValue(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey) {
-              e.preventDefault();
-              handleSendReply();
-            }
-          }}
-          placeholder="Reply…"
-          rows={2}
-          disabled={!!queued.queuedId || replyProcessing}
-          className="w-full resize-none bg-transparent text-[length:var(--font-size-ui-sm)] outline-none"
-        />
-        <div className="flex justify-end">
-          <button
-            disabled={!inputValue.trim() || !!queued.queuedId || replyProcessing}
-            onClick={handleSendReply}
-            className="text-[length:var(--font-size-ui-xs)] px-2 py-1 bg-(--color-accent) text-(--color-text-on-accent) rounded-(--radius-sm) disabled:opacity-40"
-          >
-            ↑
-          </button>
+      {/* Concern input — new mode only, input stage */}
+      {props.mode === "new" && stage === "input" && (
+        <div className="border-t border-(--color-border-subtle) p-2">
+          <textarea
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                handleSendConcern(inputValue);
+              }
+            }}
+            placeholder="What's your question or concern?"
+            className="w-full resize-none bg-transparent text-[length:var(--font-size-ui-sm)] outline-none"
+            rows={2}
+          />
+          <div className="flex justify-end mt-1">
+            <button
+              onClick={() => handleSendConcern(inputValue)}
+              disabled={!inputValue.trim()}
+              className="text-[length:var(--font-size-ui-xs)] px-2 py-1 bg-(--color-accent) text-(--color-text-on-accent) rounded-(--radius-sm) disabled:opacity-40"
+            >
+              ↑
+            </button>
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* Reply input — reply mode only */}
+      {props.mode === "reply" && (
+        <div className="border-t border-(--color-border-subtle) p-2">
+          <textarea
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                handleSendReply();
+              }
+            }}
+            placeholder="Reply…"
+            rows={2}
+            disabled={!!queued.queuedId || replyProcessing}
+            className="w-full resize-none bg-transparent text-[length:var(--font-size-ui-sm)] outline-none"
+          />
+          <div className="flex justify-end">
+            <button
+              disabled={!inputValue.trim() || !!queued.queuedId || replyProcessing}
+              onClick={handleSendReply}
+              className="text-[length:var(--font-size-ui-xs)] px-2 py-1 bg-(--color-accent) text-(--color-text-on-accent) rounded-(--radius-sm) disabled:opacity-40"
+            >
+              ↑
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
