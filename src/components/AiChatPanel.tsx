@@ -175,6 +175,7 @@ export function AiChatPanel({
         return (
           <div className={panelClass}>
             <ThreadView
+              mode="reply"
               thread={thread}
               currentUser={githubLogin}
               docAuthor={githubLogin}

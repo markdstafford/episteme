@@ -8,21 +8,38 @@ import type { Thread } from "@/types/comments";
 import { relativeTime } from "@/lib/relativeTime";
 import { useQueuedComment, COUNTDOWN_SECONDS } from "@/hooks/useQueuedComment";
 import { QueuedCommentCard } from "@/components/QueuedCommentCard";
+import type { CommentTriggerAnchor } from "@/components/MarkdownRenderer";
 
-export interface ThreadViewProps {
+interface SharedProps {
+  onClose: () => void;
+  awsProfile: string;
+  docContent: string;
+  docFilePath?: string;
+}
+
+interface NewThreadProps extends SharedProps {
+  mode: "new";
+  anchor: CommentTriggerAnchor;
+  onThreadCreated: (thread: Thread) => void;
+  onAuthError?: () => void;
+  workspacePath: string;
+  deflectInstruction?: string;
+  redirectInstruction?: string;
+}
+
+interface ReplyProps extends SharedProps {
+  mode: "reply";
   thread: Thread;
   currentUser: string;
   docAuthor: string;
   onBack: () => void;
-  onClose: () => void;
   onNavigatePrev?: () => void;
   onNavigateNext?: () => void;
-  awsProfile: string;
-  docContent: string;
-  docFilePath?: string;
   aiEnhancementEnabled?: boolean;
   aiEnhancementTimeoutMs?: number;
 }
+
+export type ThreadViewProps = NewThreadProps | ReplyProps;
 
 type VirtualCard = "suggest" | "resolve" | "reopen" | null;
 
@@ -43,20 +60,17 @@ function truncate(s: string, n: number) {
   return s.length > n ? s.slice(0, n) + "…" : s;
 }
 
-export function ThreadView({
-  thread,
-  currentUser,
-  docAuthor,
-  onBack,
-  onClose,
-  onNavigatePrev,
-  onNavigateNext,
-  awsProfile,
-  docContent,
-  docFilePath,
-  aiEnhancementEnabled = true,
-  aiEnhancementTimeoutMs = 30000,
-}: ThreadViewProps) {
+export function ThreadView(props: ThreadViewProps) {
+  const { onClose, awsProfile, docContent, docFilePath } = props;
+  // Reply-mode props (only available when mode="reply")
+  const thread = props.mode === "reply" ? props.thread : null!;
+  const currentUser = props.mode === "reply" ? props.currentUser : "";
+  const docAuthor = props.mode === "reply" ? props.docAuthor : "";
+  const onBack = props.mode === "reply" ? props.onBack : onClose;
+  const onNavigatePrev = props.mode === "reply" ? props.onNavigatePrev : undefined;
+  const onNavigateNext = props.mode === "reply" ? props.onNavigateNext : undefined;
+  const aiEnhancementEnabled = props.mode === "reply" ? (props.aiEnhancementEnabled ?? true) : true;
+  const aiEnhancementTimeoutMs = props.mode === "reply" ? (props.aiEnhancementTimeoutMs ?? 30000) : 30000;
   const scrollRef = useRef<HTMLDivElement>(null);
   const [inputValue, setInputValue] = useState("");
   const [reopenConfirm, setReopenConfirm] = useState(false);

@@ -74,6 +74,7 @@ function makeThread(overrides: Partial<Thread> = {}): Thread {
 }
 
 const defaultProps = {
+  mode: "reply" as const,
   thread: makeThread(),
   currentUser: "eric",
   docAuthor: "eric",
@@ -305,5 +306,10 @@ describe("ThreadView", () => {
     );
     expect(textarea).toBeDisabled();
     expect(screen.getByRole("button", { name: "↑" })).toBeDisabled();
+  });
+
+  it("renders with explicit mode='reply'", () => {
+    render(<ThreadView {...defaultProps} />);
+    expect(screen.getAllByText(/"the retry queue"/)[0]).toBeInTheDocument();
   });
 });
