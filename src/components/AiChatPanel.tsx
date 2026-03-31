@@ -23,7 +23,7 @@ type CommentView =
   | { type: "threads-filtered"; filterIds: string[] };
 
 export interface AiChatPanelCommentTrigger {
-  type: "create-thread" | "thread" | "threads-filtered";
+  type: "create-thread" | "thread" | "threads" | "threads-filtered";
   anchor?: CommentTriggerAnchor;
   threadId?: string;
   filterIds?: string[];
@@ -32,14 +32,12 @@ export interface AiChatPanelCommentTrigger {
 interface AiChatPanelProps {
   commentTrigger?: AiChatPanelCommentTrigger | null;
   onCommentTriggerConsumed?: () => void;
-  onOpenThreadsView?: (open: () => void) => void;
   onThreadActivated?: (threadId: string) => void;
 }
 
 export function AiChatPanel({
   commentTrigger,
   onCommentTriggerConsumed,
-  onOpenThreadsView,
   onThreadActivated,
 }: AiChatPanelProps) {
   const [view, setView] = useState<"chat" | "history">("chat");
@@ -87,11 +85,6 @@ export function AiChatPanel({
     checkAuth();
   }, [checkAuth]);
 
-  // Expose openThreadsView callback to parent (for footer button)
-  useEffect(() => {
-    onOpenThreadsView?.(() => setCommentView({ type: "threads" }));
-  }, [onOpenThreadsView]);
-
   // Handle incoming comment triggers from parent (e.g. from decoration clicks)
   useEffect(() => {
     if (!commentTrigger) return;
@@ -103,6 +96,8 @@ export function AiChatPanel({
         threadId: commentTrigger.threadId,
         fromList: false,
       });
+    } else if (commentTrigger.type === "threads") {
+      setCommentView({ type: "threads" });
     } else if (commentTrigger.type === "threads-filtered" && commentTrigger.filterIds) {
       setCommentView({
         type: "threads-filtered",

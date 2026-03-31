@@ -281,10 +281,6 @@ function App() {
               <AiChatPanel
                 commentTrigger={commentTrigger}
                 onCommentTriggerConsumed={() => setCommentTrigger(null)}
-                onOpenThreadsView={(fn) => {
-                  // Store callback reference for footer button — call when button clicked
-                  (window as any).__openThreadsView = fn;
-                }}
                 onThreadActivated={(threadId) =>
                   setScrollTo((prev) => ({ threadId, seq: (prev?.seq ?? 0) + 1 }))
                 }
@@ -308,7 +304,7 @@ function App() {
             setThreadsViewActive(false);
           } else {
             setThreadsViewActive(true);
-            (window as any).__openThreadsView?.();
+            setCommentTrigger({ type: "threads" });
           }
         }}
       />
