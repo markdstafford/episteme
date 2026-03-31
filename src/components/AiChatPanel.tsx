@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAiChatStore } from "@/stores/aiChat";
 import { useFileTreeStore } from "@/stores/fileTree";
 import { useWorkspaceStore } from "@/stores/workspace";
@@ -18,12 +18,12 @@ import type { CommentTriggerAnchor } from "@/components/MarkdownRenderer";
 
 type CommentView =
   | { type: "create-thread"; anchor: CommentTriggerAnchor }
-  | { type: "thread"; threadId: string; fromList: boolean }
+  | { type: "thread"; threadId: string; fromList: boolean; filterIds?: string[] }
   | { type: "threads" }
   | { type: "threads-filtered"; filterIds: string[] };
 
 export interface AiChatPanelCommentTrigger {
-  type: "create-thread" | "thread" | "threads-filtered";
+  type: "create-thread" | "thread" | "threads" | "threads-filtered" | "close";
   anchor?: CommentTriggerAnchor;
   threadId?: string;
   filterIds?: string[];
@@ -32,18 +32,27 @@ export interface AiChatPanelCommentTrigger {
 interface AiChatPanelProps {
   commentTrigger?: AiChatPanelCommentTrigger | null;
   onCommentTriggerConsumed?: () => void;
-  onOpenThreadsView?: (open: () => void) => void;
   onThreadActivated?: (threadId: string) => void;
+  onCommentViewChange?: (type: CommentView["type"] | null) => void;
 }
 
 export function AiChatPanel({
   commentTrigger,
   onCommentTriggerConsumed,
-  onOpenThreadsView,
   onThreadActivated,
+  onCommentViewChange,
 }: AiChatPanelProps) {
   const [view, setView] = useState<"chat" | "history">("chat");
-  const [commentView, setCommentView] = useState<CommentView | null>(null);
+  const [commentView, setCommentViewRaw] = useState<CommentView | null>(null);
+  const [lastThreadId, setLastThreadId] = useState<string | null>(null);
+
+  const handleSetCommentView = useCallback((cv: CommentView | null) => {
+    setCommentViewRaw(cv);
+    onCommentViewChange?.(cv?.type ?? null);
+  }, [onCommentViewChange]);
+
+  // Alias for readability inside this component
+  const setCommentView = handleSetCommentView;
 
   const {
     authChecked,
@@ -87,11 +96,6 @@ export function AiChatPanel({
     checkAuth();
   }, [checkAuth]);
 
-  // Expose openThreadsView callback to parent (for footer button)
-  useEffect(() => {
-    onOpenThreadsView?.(() => setCommentView({ type: "threads" }));
-  }, [onOpenThreadsView]);
-
   // Handle incoming comment triggers from parent (e.g. from decoration clicks)
   useEffect(() => {
     if (!commentTrigger) return;
@@ -103,11 +107,15 @@ export function AiChatPanel({
         threadId: commentTrigger.threadId,
         fromList: false,
       });
+    } else if (commentTrigger.type === "threads") {
+      setCommentView({ type: "threads" });
     } else if (commentTrigger.type === "threads-filtered" && commentTrigger.filterIds) {
       setCommentView({
         type: "threads-filtered",
         filterIds: commentTrigger.filterIds,
       });
+    } else if (commentTrigger.type === "close") {
+      handleSetCommentView(null);
     }
     onCommentTriggerConsumed?.();
   }, [commentTrigger, onCommentTriggerConsumed]);
@@ -158,7 +166,11 @@ export function AiChatPanel({
     if (commentView.type === "thread") {
       const thread = threads.find((t) => t.id === commentView.threadId);
       if (thread) {
-        const sorted = [...threads].sort((a, b) => a.anchor_from - b.anchor_from);
+        const allSorted = [...threads].sort((a, b) => a.anchor_from - b.anchor_from);
+        // If this thread was opened from a filtered view, restrict prev/next to that set
+        const sorted = commentView.filterIds
+          ? allSorted.filter((t) => commentView.filterIds!.includes(t.id))
+          : allSorted;
         const idx = sorted.findIndex((t) => t.id === thread.id);
         return (
           <div className={panelClass}>
@@ -168,7 +180,11 @@ export function AiChatPanel({
               docAuthor={githubLogin}
               onBack={
                 commentView.fromList
-                  ? () => setCommentView({ type: "threads" })
+                  ? () => setCommentView(
+                      commentView.filterIds
+                        ? { type: "threads-filtered", filterIds: commentView.filterIds }
+                        : { type: "threads" }
+                    )
                   : closeToChat
               }
               onClose={closeToChat}
@@ -179,6 +195,7 @@ export function AiChatPanel({
                         type: "thread",
                         threadId: sorted[idx - 1].id,
                         fromList: commentView.fromList,
+                        filterIds: commentView.filterIds,
                       })
                   : undefined
               }
@@ -189,6 +206,7 @@ export function AiChatPanel({
                         type: "thread",
                         threadId: sorted[idx + 1].id,
                         fromList: commentView.fromList,
+                        filterIds: commentView.filterIds,
                       })
                   : undefined
               }
@@ -213,13 +231,20 @@ export function AiChatPanel({
             onClose={closeToChat}
             onThreadClick={(id) => {
               onThreadActivated?.(id);
-              setCommentView({ type: "thread", threadId: id, fromList: true });
+              setLastThreadId(id);
+              setCommentView({
+                type: "thread",
+                threadId: id,
+                fromList: true,
+                filterIds: commentView.type === "threads-filtered" ? commentView.filterIds : undefined,
+              });
             }}
             filterThreadIds={
               commentView.type === "threads-filtered"
                 ? commentView.filterIds
                 : undefined
             }
+            activeThreadId={lastThreadId ?? undefined}
           />
         </div>
       );

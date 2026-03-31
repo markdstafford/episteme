@@ -21,7 +21,13 @@ export function createDecorationPlugin(
         );
         return DecorationSet.create(state.doc, decos);
       },
-      apply(_tr, _old, _oldState, newState) {
+      apply(tr, old, _oldState, newState) {
+        // Performance: only rebuild from store when thread state changes (threadDecorationUpdate).
+        // For all other transactions, remap existing decorations via tr.mapping — O(decorations)
+        // instead of O(threads) on every keypress.
+        if (!tr.getMeta("threadDecorationUpdate")) {
+          return old.map(tr.mapping, newState.doc);
+        }
         const ranges = getRanges(newState);
         if (ranges.length === 0) return DecorationSet.empty;
         const decos = ranges.map((r) =>

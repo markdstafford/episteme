@@ -71,10 +71,16 @@ export function ThreadsView({
           </div>
         ) : (
           sorted.map((thread) => {
-            const lastActivity =
-              thread.comments.length > 0
-                ? thread.comments[thread.comments.length - 1].created_at
-                : thread.created_at;
+            const lastCommentTime = thread.comments.length > 0
+              ? thread.comments[thread.comments.length - 1].created_at
+              : null;
+            const lastEventTime = thread.events.length > 0
+              ? thread.events[thread.events.length - 1].changed_at
+              : null;
+            const lastActivity = [lastCommentTime, lastEventTime, thread.created_at]
+              .filter((t): t is string => t !== null)
+              .sort()
+              .at(-1)!;
             const participants = Array.from(
               new Set(thread.comments.map((c) => c.author)),
             );
@@ -120,6 +126,11 @@ export function ThreadsView({
                         {thread.quoted_text.length > 50 ? "…" : ""}
                         "
                       </span>
+                      {thread.anchor_stale && (
+                        <span className="ml-1 text-[length:var(--font-size-ui-xs)] text-(--color-text-tertiary) italic flex-shrink-0">
+                          (anchor lost)
+                        </span>
+                      )}
                     </div>
                     {/* Second line: participants + time + resolved */}
                     <div className="flex items-center gap-1 text-[length:var(--font-size-ui-xs)] text-(--color-text-tertiary) mt-0.5">

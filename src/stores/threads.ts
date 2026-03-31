@@ -34,16 +34,24 @@ export const useThreadsStore = create<ThreadsStore>((set, get) => ({
   queuedComments: [],
 
   async loadThreads(docId, docContent) {
-    set({ loading: true, activeDocId: docId, activeDocContent: docContent, threads: [] });
+    set({ loading: true, activeDocId: docId, activeDocContent: docContent });
+    // Note: do NOT clear threads:[] here — keep stale data visible until new data arrives
     try {
       const threads = await invoke<Thread[]>("load_threads", {
         docId,
         docContent,
       });
-      set({ threads, loading: false });
+      // Only apply if this is still the most recent request (activeDocId hasn't changed)
+      set((s) => {
+        if (s.activeDocId !== docId) return {}; // stale response — discard
+        return { threads, loading: false };
+      });
     } catch (e) {
       console.error("loadThreads failed:", e);
-      set({ loading: false });
+      set((s) => {
+        if (s.activeDocId !== docId) return {};
+        return { loading: false };
+      });
     }
   },
 
@@ -181,12 +189,23 @@ export const useThreadsStore = create<ThreadsStore>((set, get) => ({
       const now = new Date();
       for (const q of all) {
         if (new Date(q.expires_at) <= now) {
-          get().commitComment(q.id).catch(() => {});
+          get().commitComment(q.id).then(() => {
+            // Refresh active doc threads so the committed comment appears immediately
+            const { activeDocId, activeDocContent } = get();
+            if (activeDocId) {
+              get().loadThreads(activeDocId, activeDocContent);
+            }
+          }).catch(() => {});
         } else {
           set((s) => ({ queuedComments: [...s.queuedComments, q] }));
           const remaining = new Date(q.expires_at).getTime() - now.getTime();
           setTimeout(() => {
-            get().commitComment(q.id).catch(() => {});
+            get().commitComment(q.id).then(() => {
+              const { activeDocId, activeDocContent } = get();
+              if (activeDocId) {
+                get().loadThreads(activeDocId, activeDocContent);
+              }
+            }).catch(() => {});
           }, remaining);
         }
       }

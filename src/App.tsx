@@ -174,6 +174,11 @@ function App() {
     }
   }, [settingsOpen]);
 
+  // Reset threadsViewActive when the AI panel is closed
+  useEffect(() => {
+    if (!aiPanelOpen) setThreadsViewActive(false);
+  }, [aiPanelOpen]);
+
   function closeShortcutsPanel() {
     setShortcutsPanelOpen(false);
     removeOverlay("shortcutsPanel");
@@ -281,12 +286,11 @@ function App() {
               <AiChatPanel
                 commentTrigger={commentTrigger}
                 onCommentTriggerConsumed={() => setCommentTrigger(null)}
-                onOpenThreadsView={(fn) => {
-                  // Store callback reference for footer button — call when button clicked
-                  (window as any).__openThreadsView = fn;
-                }}
                 onThreadActivated={(threadId) =>
                   setScrollTo((prev) => ({ threadId, seq: (prev?.seq ?? 0) + 1 }))
+                }
+                onCommentViewChange={(type) =>
+                  setThreadsViewActive(type === "threads" || type === "threads-filtered")
                 }
               />
             )}
@@ -302,13 +306,11 @@ function App() {
         documentOpen={!!selectedFilePath}
         threadsViewActive={threadsViewActive}
         onToggleThreadsView={() => {
-          setAiPanelOpen(true);
           if (threadsViewActive) {
-            setCommentTrigger(null);
-            setThreadsViewActive(false);
+            setCommentTrigger({ type: "close" });
           } else {
-            setThreadsViewActive(true);
-            (window as any).__openThreadsView?.();
+            setAiPanelOpen(true);
+            setCommentTrigger({ type: "threads" });
           }
         }}
       />
