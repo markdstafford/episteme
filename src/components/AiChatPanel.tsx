@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useAiChatStore } from "@/stores/aiChat";
 import { useFileTreeStore } from "@/stores/fileTree";
 import { useWorkspaceStore } from "@/stores/workspace";
@@ -8,7 +8,6 @@ import { parsePreferences } from "@/lib/preferences";
 import { ConfigurationView } from "@/components/ConfigurationView";
 import { ChatView } from "@/components/ChatView";
 import { SessionHistoryView } from "@/components/SessionHistoryView";
-import { CreateThreadView } from "@/components/CreateThreadView";
 import { ThreadView } from "@/components/ThreadView";
 import { ThreadsView } from "@/components/ThreadsView";
 import type { SessionScope } from "@/lib/session";
@@ -44,9 +43,11 @@ export function AiChatPanel({
 }: AiChatPanelProps) {
   const [view, setView] = useState<"chat" | "history">("chat");
   const [commentView, setCommentViewRaw] = useState<CommentView | null>(null);
+  const commentViewRef = useRef<CommentView | null>(null);
   const [lastThreadId, setLastThreadId] = useState<string | null>(null);
 
   const handleSetCommentView = useCallback((cv: CommentView | null) => {
+    commentViewRef.current = cv;
     setCommentViewRaw(cv);
     onCommentViewChange?.(cv?.type ?? null);
   }, [onCommentViewChange]);
@@ -145,13 +146,19 @@ export function AiChatPanel({
     if (commentView.type === "create-thread") {
       return (
         <div className={panelClass}>
-          <CreateThreadView
+          <ThreadView
+            key={`new-${commentView.anchor.from}-${commentView.anchor.to}`}
+            mode="new"
             anchor={commentView.anchor}
             onClose={closeToChat}
-            onAuthError={handleAuthError}
             onThreadCreated={(thread) => {
-              setCommentView({ type: "thread", threadId: thread.id, fromList: false });
+              // Only navigate to the new thread if the user is still on this
+              // create-thread view — if they navigated away, don't interrupt them
+              if (commentViewRef.current?.type === "create-thread") {
+                handleSetCommentView({ type: "thread", threadId: thread.id, fromList: false });
+              }
             }}
+            onAuthError={handleAuthError}
             awsProfile={awsProfile ?? ""}
             workspacePath={workspacePath}
             docContent={activeDocContent}
@@ -175,6 +182,8 @@ export function AiChatPanel({
         return (
           <div className={panelClass}>
             <ThreadView
+              key={`reply-${thread.id}`}
+              mode="reply"
               thread={thread}
               currentUser={githubLogin}
               docAuthor={githubLogin}

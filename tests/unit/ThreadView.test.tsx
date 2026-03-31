@@ -19,6 +19,9 @@ vi.mock("@/stores/threads", () => ({
 }));
 vi.mock("@/lib/commentAi", () => ({
   enhanceCommentBody: vi.fn().mockResolvedValue(null),
+  vetComment: vi.fn().mockResolvedValue({ type: "proceed" }),
+  suggestCommentText: vi.fn().mockResolvedValue("Suggested text"),
+  isAuthError: vi.fn().mockReturnValue(false),
 }));
 vi.mock("@/lib/commentAiFix", () => ({ suggestFix: vi.fn() }));
 vi.mock("@radix-ui/react-popover", async () => {
@@ -36,6 +39,10 @@ vi.mock("@radix-ui/react-popover", async () => {
     },
   };
 });
+
+import { vetComment, suggestCommentText } from "@/lib/commentAi";
+const mockVet = vi.mocked(vetComment);
+const mockSuggest = vi.mocked(suggestCommentText);
 
 import React from "react";
 
@@ -74,6 +81,7 @@ function makeThread(overrides: Partial<Thread> = {}): Thread {
 }
 
 const defaultProps = {
+  mode: "reply" as const,
   thread: makeThread(),
   currentUser: "eric",
   docAuthor: "eric",
@@ -305,5 +313,178 @@ describe("ThreadView", () => {
     );
     expect(textarea).toBeDisabled();
     expect(screen.getByRole("button", { name: "↑" })).toBeDisabled();
+  });
+
+  it("renders with explicit mode='reply'", () => {
+    render(<ThreadView {...defaultProps} />);
+    expect(screen.getAllByText(/"the retry queue"/)[0]).toBeInTheDocument();
+  });
+});
+
+describe("mode='new'", () => {
+  const newProps = {
+    mode: "new" as const,
+    anchor: { from: 0, to: 9, quotedText: "test text" },
+    onClose: vi.fn(),
+    onThreadCreated: vi.fn(),
+    awsProfile: "default",
+    workspacePath: "/ws",
+    docContent: "test text and more",
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockVet.mockResolvedValue({ type: "proceed" });
+    mockSuggest.mockResolvedValue("Suggested text");
+  });
+
+  it("renders 'New comment' header", () => {
+    render(<ThreadView {...newProps} />);
+    expect(screen.getByText("New comment")).toBeInTheDocument();
+  });
+
+  it("shows quoted text block", () => {
+    render(<ThreadView {...newProps} />);
+    expect(screen.getByText(/"test text"/)).toBeInTheDocument();
+  });
+
+  it("shows concern input in input stage", () => {
+    render(<ThreadView {...newProps} />);
+    expect(screen.getByPlaceholderText("What's your question or concern?")).toBeInTheDocument();
+  });
+
+  it("shows deflect answer when AI deflects", async () => {
+    mockVet.mockResolvedValue({ type: "deflect", answer: "The doc covers this." });
+    mockSuggest.mockResolvedValue("AI polished");
+
+    render(<ThreadView {...newProps} />);
+    const input = screen.getByPlaceholderText("What's your question or concern?");
+    fireEvent.change(input, { target: { value: "my concern" } });
+    fireEvent.keyDown(input, { key: "Enter" });
+
+    await waitFor(() => screen.getByText("The doc covers this."));
+    expect(screen.getByText("No, file anyway")).toBeInTheDocument();
+  });
+
+  it("shows queued card after proceed", async () => {
+    mockVet.mockResolvedValue({ type: "proceed" });
+    mockSuggest.mockResolvedValue("AI polished version");
+
+    render(<ThreadView {...newProps} />);
+    const input = screen.getByPlaceholderText("What's your question or concern?");
+    fireEvent.change(input, { target: { value: "my concern" } });
+    fireEvent.keyDown(input, { key: "Enter" });
+
+    await waitFor(() => screen.getByText("AI polished version"));
+  });
+
+  it("blocking toggle appears after queuing", async () => {
+    render(<ThreadView {...newProps} />);
+    const input = screen.getByPlaceholderText("What's your question or concern?");
+    fireEvent.change(input, { target: { value: "question" } });
+    fireEvent.keyDown(input, { key: "Enter" });
+    await waitFor(() => screen.getByText("Mark as blocking"));
+  });
+
+  it("stores user's original text as body_original in the normal proceed flow", async () => {
+    mockVet.mockResolvedValue({ type: "proceed" });
+    mockSuggest.mockResolvedValue("AI polished version");
+
+    const { useThreadsStore } = await import("@/stores/threads");
+    const stageComment = vi.fn().mockResolvedValue(undefined);
+    vi.mocked(useThreadsStore).mockReturnValue({
+      stageComment,
+      commitComment: vi.fn().mockResolvedValue({} as any),
+      cancelQueuedComment: vi.fn(),
+      updateQueuedBody: vi.fn(),
+      toggleQueuedBody: vi.fn(),
+    } as any);
+
+    render(<ThreadView {...newProps} onAuthError={vi.fn()} />);
+    const input = screen.getByPlaceholderText("What's your question or concern?");
+    fireEvent.change(input, { target: { value: "needs more detail here" } });
+    fireEvent.keyDown(input, { key: "Enter" });
+
+    await waitFor(() => expect(stageComment).toHaveBeenCalled());
+    const call = stageComment.mock.calls[0][0];
+    expect(call.body_original).toBe("needs more detail here");
+    expect(call.body_enhanced).toBe("AI polished version");
+  });
+
+  it("stores user's original text as body_original after 'No, file anyway'", async () => {
+    mockVet.mockResolvedValue({ type: "deflect", answer: "The doc already says X." });
+    mockSuggest.mockResolvedValue("AI polished version");
+
+    const { useThreadsStore } = await import("@/stores/threads");
+    const stageComment = vi.fn().mockResolvedValue(undefined);
+    vi.mocked(useThreadsStore).mockReturnValue({
+      stageComment,
+      commitComment: vi.fn().mockResolvedValue({} as any),
+      cancelQueuedComment: vi.fn(),
+      updateQueuedBody: vi.fn(),
+      toggleQueuedBody: vi.fn(),
+    } as any);
+
+    render(<ThreadView {...newProps} onAuthError={vi.fn()} />);
+    const input = screen.getByPlaceholderText("What's your question or concern?");
+    fireEvent.change(input, { target: { value: "reduce the time commitment" } });
+    fireEvent.keyDown(input, { key: "Enter" });
+
+    await waitFor(() => expect(screen.getByText("No, file anyway")).toBeInTheDocument());
+    fireEvent.click(screen.getByText("No, file anyway"));
+
+    await waitFor(() => expect(stageComment).toHaveBeenCalled());
+    const call = stageComment.mock.calls[0][0];
+    expect(call.body_original).toBe("reduce the time commitment");
+    expect(call.body_enhanced).toBe("AI polished version");
+  });
+
+  it("queued card is not inside the middle spacer area", async () => {
+    mockVet.mockResolvedValue({ type: "proceed" });
+    mockSuggest.mockResolvedValue("AI polished version");
+
+    render(<ThreadView {...newProps} onAuthError={vi.fn()} />);
+    const input = screen.getByPlaceholderText("What's your question or concern?");
+    fireEvent.change(input, { target: { value: "my concern" } });
+    fireEvent.keyDown(input, { key: "Enter" });
+
+    await waitFor(() => screen.getByText("AI polished version"));
+
+    const card = document.querySelector("[data-testid='queued-card']");
+    expect(card).not.toBeNull();
+    const middleScrollable = card!.previousElementSibling;
+    expect(middleScrollable).not.toBeNull();
+    expect(middleScrollable!.contains(card)).toBe(false);
+  });
+
+  it("shows retry option when commit fails", async () => {
+    mockVet.mockResolvedValue({ type: "proceed" });
+    mockSuggest.mockResolvedValue("AI polished version");
+
+    const { useThreadsStore } = await import("@/stores/threads");
+    vi.mocked(useThreadsStore).mockReturnValue({
+      stageComment: vi.fn().mockResolvedValue(undefined),
+      commitComment: vi.fn().mockRejectedValue(new Error("network error")),
+      cancelQueuedComment: vi.fn(),
+      updateQueuedBody: vi.fn(),
+      toggleQueuedBody: vi.fn(),
+      updateQueuedBlocking: vi.fn(),
+    } as any);
+
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    render(<ThreadView {...newProps} onAuthError={vi.fn()} />);
+    const input = screen.getByPlaceholderText("What's your question or concern?");
+    fireEvent.change(input, { target: { value: "my concern" } });
+    fireEvent.keyDown(input, { key: "Enter" });
+
+    await waitFor(() => screen.getByText("AI polished version"));
+
+    await act(async () => { vi.advanceTimersByTime(31000); });
+    vi.useRealTimers();
+
+    await waitFor(() =>
+      expect(screen.getByText(/failed to send/i)).toBeInTheDocument()
+    );
+    expect(screen.getByRole("button", { name: /retry/i })).toBeInTheDocument();
   });
 });
