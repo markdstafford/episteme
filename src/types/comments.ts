@@ -1,3 +1,10 @@
+/**
+ * Character offsets (anchor_from, anchor_to) are Unicode codepoint indices
+ * into the raw markdown document content. JavaScript callers must use
+ * codepoint-aware counting ([...str]) rather than UTF-16 unit counting
+ * (str.length / str.indexOf). Rust callers use .chars().count() which
+ * also produces codepoint indices — the two sides are consistent.
+ */
 export interface Anchor {
   from: number;
   to: number;

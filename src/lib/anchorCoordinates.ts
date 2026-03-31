@@ -4,21 +4,34 @@ import type { Node as PmNode } from "@tiptap/pm/model";
 
 /**
  * Count non-overlapping occurrences of `pattern` in `text`.
+ *
+ * Operates on Unicode codepoints ([...str]) so that surrogate pairs (e.g.
+ * emoji) count as one unit, matching Rust's `.chars().count()` semantics.
  */
 export function countNonOverlapping(text: string, pattern: string): number {
   if (!pattern) return 0;
+  const textCps = [...text];
+  const patCps = [...pattern];
   let count = 0;
-  let pos = 0;
-  while ((pos = text.indexOf(pattern, pos)) !== -1) {
-    count++;
-    pos += pattern.length;
+  let i = 0;
+  while (i <= textCps.length - patCps.length) {
+    if (patCps.every((c, j) => textCps[i + j] === c)) {
+      count++;
+      i += patCps.length;
+    } else {
+      i++;
+    }
   }
   return count;
 }
 
 /**
- * Return the start index of the nth (0-based) non-overlapping occurrence of
- * `pattern` in `text`. Returns -1 if fewer than n+1 occurrences exist.
+ * Return the start index (in codepoints) of the nth (0-based) non-overlapping
+ * occurrence of `pattern` in `text`. Returns -1 if fewer than n+1 occurrences
+ * exist.
+ *
+ * Operates on Unicode codepoints ([...str]) so that surrogate pairs (e.g.
+ * emoji) count as one unit, matching Rust's `.chars().count()` semantics.
  */
 export function findNthOccurrence(
   text: string,
@@ -26,12 +39,18 @@ export function findNthOccurrence(
   n: number,
 ): number {
   if (!pattern) return -1;
+  const textCps = [...text];
+  const patCps = [...pattern];
   let found = 0;
-  let pos = 0;
-  while ((pos = text.indexOf(pattern, pos)) !== -1) {
-    if (found === n) return pos;
-    found++;
-    pos += pattern.length;
+  let i = 0;
+  while (i <= textCps.length - patCps.length) {
+    if (patCps.every((c, j) => textCps[i + j] === c)) {
+      if (found === n) return i;
+      found++;
+      i += patCps.length;
+    } else {
+      i++;
+    }
   }
   return -1;
 }

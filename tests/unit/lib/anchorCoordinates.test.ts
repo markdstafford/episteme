@@ -175,6 +175,23 @@ describe("stripHiddenMarkdownText", () => {
   });
 });
 
+describe("codepoint correctness (I19)", () => {
+  it("countNonOverlapping counts in codepoints not UTF-16 units", () => {
+    // "😀" is 2 UTF-16 units but 1 codepoint; "hello" after it starts at codepoint index 1
+    expect(countNonOverlapping("😀hello", "hello")).toBe(1);
+  });
+
+  it("findNthOccurrence returns codepoint index not UTF-16 index", () => {
+    // "😀" takes 1 codepoint; "hello" starts at codepoint 1 (not UTF-16 index 2)
+    expect(findNthOccurrence("😀hello", "hello", 0)).toBe(1);
+  });
+
+  it("round-trip works with emoji before anchor text", () => {
+    // Verify the 0th occurrence counting still works for non-emoji text
+    expect(findNthOccurrence("before hello after", "hello", 0)).toBe(7);
+  });
+});
+
 describe("pmPosToMarkdownOffset — hidden URL handling", () => {
   it("ignores quotedText inside link URLs", () => {
     const markdown = "[x](https://host/Hello) and say Hello.";
