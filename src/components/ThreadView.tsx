@@ -582,13 +582,13 @@ export function ThreadView(props: ThreadViewProps) {
       )}
 
       {/* Concern input — new mode only, input stage */}
-      {props.mode === "new" && stage === "input" && (
+      {props.mode === "new" && (
         <div className="border-t border-(--color-border-subtle) p-2">
           <textarea
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
+              if (e.key === "Enter" && !e.shiftKey && (stage === "input" || stage === "deflect")) {
                 e.preventDefault();
                 handleSendConcern(inputValue);
               }
@@ -596,11 +596,12 @@ export function ThreadView(props: ThreadViewProps) {
             placeholder="What's your question or concern?"
             className="w-full resize-none bg-transparent text-[length:var(--font-size-ui-sm)] outline-none"
             rows={2}
+            disabled={stage === "processing" || stage === "queued"}
           />
           <div className="flex justify-end mt-1">
             <button
               onClick={() => handleSendConcern(inputValue)}
-              disabled={!inputValue.trim()}
+              disabled={!inputValue.trim() || stage === "processing" || stage === "queued"}
               className="text-[length:var(--font-size-ui-xs)] px-2 py-1 bg-(--color-accent) text-(--color-text-on-accent) rounded-(--radius-sm) disabled:opacity-40"
             >
               ↑

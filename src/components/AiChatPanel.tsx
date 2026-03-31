@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useAiChatStore } from "@/stores/aiChat";
 import { useFileTreeStore } from "@/stores/fileTree";
 import { useWorkspaceStore } from "@/stores/workspace";
@@ -43,9 +43,11 @@ export function AiChatPanel({
 }: AiChatPanelProps) {
   const [view, setView] = useState<"chat" | "history">("chat");
   const [commentView, setCommentViewRaw] = useState<CommentView | null>(null);
+  const commentViewRef = useRef<CommentView | null>(null);
   const [lastThreadId, setLastThreadId] = useState<string | null>(null);
 
   const handleSetCommentView = useCallback((cv: CommentView | null) => {
+    commentViewRef.current = cv;
     setCommentViewRaw(cv);
     onCommentViewChange?.(cv?.type ?? null);
   }, [onCommentViewChange]);
@@ -145,11 +147,16 @@ export function AiChatPanel({
       return (
         <div className={panelClass}>
           <ThreadView
+            key={`new-${commentView.anchor.from}-${commentView.anchor.to}`}
             mode="new"
             anchor={commentView.anchor}
             onClose={closeToChat}
             onThreadCreated={(thread) => {
-              handleSetCommentView({ type: "thread", threadId: thread.id, fromList: false });
+              // Only navigate to the new thread if the user is still on this
+              // create-thread view — if they navigated away, don't interrupt them
+              if (commentViewRef.current?.type === "create-thread") {
+                handleSetCommentView({ type: "thread", threadId: thread.id, fromList: false });
+              }
             }}
             onAuthError={handleAuthError}
             awsProfile={awsProfile ?? ""}
@@ -175,6 +182,7 @@ export function AiChatPanel({
         return (
           <div className={panelClass}>
             <ThreadView
+              key={`reply-${thread.id}`}
               mode="reply"
               thread={thread}
               currentUser={githubLogin}

@@ -377,4 +377,114 @@ describe("mode='new'", () => {
 
     await waitFor(() => screen.getByText("AI polished version"));
   });
+
+  it("blocking toggle appears after queuing", async () => {
+    render(<ThreadView {...newProps} />);
+    const input = screen.getByPlaceholderText("What's your question or concern?");
+    fireEvent.change(input, { target: { value: "question" } });
+    fireEvent.keyDown(input, { key: "Enter" });
+    await waitFor(() => screen.getByText("Mark as blocking"));
+  });
+
+  it("stores user's original text as body_original in the normal proceed flow", async () => {
+    mockVet.mockResolvedValue({ type: "proceed" });
+    mockSuggest.mockResolvedValue("AI polished version");
+
+    const { useThreadsStore } = await import("@/stores/threads");
+    const stageComment = vi.fn().mockResolvedValue(undefined);
+    vi.mocked(useThreadsStore).mockReturnValue({
+      stageComment,
+      commitComment: vi.fn().mockResolvedValue({} as any),
+      cancelQueuedComment: vi.fn(),
+      updateQueuedBody: vi.fn(),
+      toggleQueuedBody: vi.fn(),
+    } as any);
+
+    render(<ThreadView {...newProps} onAuthError={vi.fn()} />);
+    const input = screen.getByPlaceholderText("What's your question or concern?");
+    fireEvent.change(input, { target: { value: "needs more detail here" } });
+    fireEvent.keyDown(input, { key: "Enter" });
+
+    await waitFor(() => expect(stageComment).toHaveBeenCalled());
+    const call = stageComment.mock.calls[0][0];
+    expect(call.body_original).toBe("needs more detail here");
+    expect(call.body_enhanced).toBe("AI polished version");
+  });
+
+  it("stores user's original text as body_original after 'No, file anyway'", async () => {
+    mockVet.mockResolvedValue({ type: "deflect", answer: "The doc already says X." });
+    mockSuggest.mockResolvedValue("AI polished version");
+
+    const { useThreadsStore } = await import("@/stores/threads");
+    const stageComment = vi.fn().mockResolvedValue(undefined);
+    vi.mocked(useThreadsStore).mockReturnValue({
+      stageComment,
+      commitComment: vi.fn().mockResolvedValue({} as any),
+      cancelQueuedComment: vi.fn(),
+      updateQueuedBody: vi.fn(),
+      toggleQueuedBody: vi.fn(),
+    } as any);
+
+    render(<ThreadView {...newProps} onAuthError={vi.fn()} />);
+    const input = screen.getByPlaceholderText("What's your question or concern?");
+    fireEvent.change(input, { target: { value: "reduce the time commitment" } });
+    fireEvent.keyDown(input, { key: "Enter" });
+
+    await waitFor(() => expect(screen.getByText("No, file anyway")).toBeInTheDocument());
+    fireEvent.click(screen.getByText("No, file anyway"));
+
+    await waitFor(() => expect(stageComment).toHaveBeenCalled());
+    const call = stageComment.mock.calls[0][0];
+    expect(call.body_original).toBe("reduce the time commitment");
+    expect(call.body_enhanced).toBe("AI polished version");
+  });
+
+  it("queued card is not inside the middle spacer area", async () => {
+    mockVet.mockResolvedValue({ type: "proceed" });
+    mockSuggest.mockResolvedValue("AI polished version");
+
+    render(<ThreadView {...newProps} onAuthError={vi.fn()} />);
+    const input = screen.getByPlaceholderText("What's your question or concern?");
+    fireEvent.change(input, { target: { value: "my concern" } });
+    fireEvent.keyDown(input, { key: "Enter" });
+
+    await waitFor(() => screen.getByText("AI polished version"));
+
+    const card = document.querySelector("[data-testid='queued-card']");
+    expect(card).not.toBeNull();
+    const middleScrollable = card!.previousElementSibling;
+    expect(middleScrollable).not.toBeNull();
+    expect(middleScrollable!.contains(card)).toBe(false);
+  });
+
+  it("shows retry option when commit fails", async () => {
+    mockVet.mockResolvedValue({ type: "proceed" });
+    mockSuggest.mockResolvedValue("AI polished version");
+
+    const { useThreadsStore } = await import("@/stores/threads");
+    vi.mocked(useThreadsStore).mockReturnValue({
+      stageComment: vi.fn().mockResolvedValue(undefined),
+      commitComment: vi.fn().mockRejectedValue(new Error("network error")),
+      cancelQueuedComment: vi.fn(),
+      updateQueuedBody: vi.fn(),
+      toggleQueuedBody: vi.fn(),
+      updateQueuedBlocking: vi.fn(),
+    } as any);
+
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    render(<ThreadView {...newProps} onAuthError={vi.fn()} />);
+    const input = screen.getByPlaceholderText("What's your question or concern?");
+    fireEvent.change(input, { target: { value: "my concern" } });
+    fireEvent.keyDown(input, { key: "Enter" });
+
+    await waitFor(() => screen.getByText("AI polished version"));
+
+    await act(async () => { vi.advanceTimersByTime(31000); });
+    vi.useRealTimers();
+
+    await waitFor(() =>
+      expect(screen.getByText(/failed to send/i)).toBeInTheDocument()
+    );
+    expect(screen.getByRole("button", { name: /retry/i })).toBeInTheDocument();
+  });
 });
