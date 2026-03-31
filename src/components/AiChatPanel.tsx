@@ -8,7 +8,6 @@ import { parsePreferences } from "@/lib/preferences";
 import { ConfigurationView } from "@/components/ConfigurationView";
 import { ChatView } from "@/components/ChatView";
 import { SessionHistoryView } from "@/components/SessionHistoryView";
-import { CreateThreadView } from "@/components/CreateThreadView";
 import { ThreadView } from "@/components/ThreadView";
 import { ThreadsView } from "@/components/ThreadsView";
 import type { SessionScope } from "@/lib/session";
@@ -145,13 +144,14 @@ export function AiChatPanel({
     if (commentView.type === "create-thread") {
       return (
         <div className={panelClass}>
-          <CreateThreadView
+          <ThreadView
+            mode="new"
             anchor={commentView.anchor}
             onClose={closeToChat}
-            onAuthError={handleAuthError}
             onThreadCreated={(thread) => {
-              setCommentView({ type: "thread", threadId: thread.id, fromList: false });
+              handleSetCommentView({ type: "thread", threadId: thread.id, fromList: false });
             }}
+            onAuthError={handleAuthError}
             awsProfile={awsProfile ?? ""}
             workspacePath={workspacePath}
             docContent={activeDocContent}
