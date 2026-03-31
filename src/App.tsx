@@ -174,6 +174,11 @@ function App() {
     }
   }, [settingsOpen]);
 
+  // Reset threadsViewActive when the AI panel is closed
+  useEffect(() => {
+    if (!aiPanelOpen) setThreadsViewActive(false);
+  }, [aiPanelOpen]);
+
   function closeShortcutsPanel() {
     setShortcutsPanelOpen(false);
     removeOverlay("shortcutsPanel");
@@ -301,10 +306,10 @@ function App() {
         documentOpen={!!selectedFilePath}
         threadsViewActive={threadsViewActive}
         onToggleThreadsView={() => {
-          setAiPanelOpen(true);
           if (threadsViewActive) {
-            setCommentTrigger(null);
+            setCommentTrigger({ type: "close" });
           } else {
+            setAiPanelOpen(true);
             setCommentTrigger({ type: "threads" });
           }
         }}

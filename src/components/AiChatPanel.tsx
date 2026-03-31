@@ -23,7 +23,7 @@ type CommentView =
   | { type: "threads-filtered"; filterIds: string[] };
 
 export interface AiChatPanelCommentTrigger {
-  type: "create-thread" | "thread" | "threads" | "threads-filtered";
+  type: "create-thread" | "thread" | "threads" | "threads-filtered" | "close";
   anchor?: CommentTriggerAnchor;
   threadId?: string;
   filterIds?: string[];
@@ -114,6 +114,8 @@ export function AiChatPanel({
         type: "threads-filtered",
         filterIds: commentTrigger.filterIds,
       });
+    } else if (commentTrigger.type === "close") {
+      handleSetCommentView(null);
     }
     onCommentTriggerConsumed?.();
   }, [commentTrigger, onCommentTriggerConsumed]);
@@ -164,7 +166,11 @@ export function AiChatPanel({
     if (commentView.type === "thread") {
       const thread = threads.find((t) => t.id === commentView.threadId);
       if (thread) {
-        const sorted = [...threads].sort((a, b) => a.anchor_from - b.anchor_from);
+        const allSorted = [...threads].sort((a, b) => a.anchor_from - b.anchor_from);
+        // If this thread was opened from a filtered view, restrict prev/next to that set
+        const sorted = commentView.filterIds
+          ? allSorted.filter((t) => commentView.filterIds!.includes(t.id))
+          : allSorted;
         const idx = sorted.findIndex((t) => t.id === thread.id);
         return (
           <div className={panelClass}>
