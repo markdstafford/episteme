@@ -164,6 +164,27 @@ describe("CreateThreadView", () => {
     expect(call.body_enhanced).toBe("AI polished version");
   });
 
+  it("queued card is not inside the middle spacer area", async () => {
+    mockVet.mockResolvedValue({ type: "proceed" });
+    mockSuggest.mockResolvedValue("AI polished version");
+
+    render(<CreateThreadView {...defaultProps} onAuthError={vi.fn()} />);
+    const input = screen.getByPlaceholderText("What's your question or concern?");
+    fireEvent.change(input, { target: { value: "my concern" } });
+    fireEvent.keyDown(input, { key: "Enter" });
+
+    // Wait for queued card to appear
+    await waitFor(() => screen.getByText("AI polished version"));
+
+    // The queued card should be a direct sibling of the scrollable middle area, not nested inside it
+    const card = document.querySelector("[data-testid='queued-card']");
+    expect(card).not.toBeNull();
+    // The card's parent should be the root flex container, not the scrollable middle div
+    const middleScrollable = card!.previousElementSibling;
+    expect(middleScrollable).not.toBeNull();
+    expect(middleScrollable!.contains(card)).toBe(false);
+  });
+
   it("shows retry option when commit fails", async () => {
     mockVet.mockResolvedValue({ type: "proceed" });
     mockSuggest.mockResolvedValue("AI polished version");

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { MessageSquarePlus, X } from "lucide-react";
 import { useThreadsStore } from "@/stores/threads";
 import { vetComment, suggestCommentText, isAuthError } from "@/lib/commentAi";
@@ -6,11 +6,6 @@ import type { Thread } from "@/types/comments";
 import type { CommentTriggerAnchor } from "@/components/MarkdownRenderer";
 import { useQueuedComment, COUNTDOWN_SECONDS } from "@/hooks/useQueuedComment";
 import { QueuedCommentCard } from "@/components/QueuedCommentCard";
-
-interface ChatMsg {
-  role: "user" | "ai";
-  content: string;
-}
 
 type FlowStage = "input" | "processing" | "deflect" | "queued";
 
@@ -42,8 +37,9 @@ export function CreateThreadView({
   const [anchor, setAnchor] = useState(initialAnchor);
   const [stage, setStage] = useState<FlowStage>("input");
   const [isClosing, setIsClosing] = useState(false);
-  const [messages, setMessages] = useState<ChatMsg[]>([]);
+  const [deflectAnswer, setDeflectAnswer] = useState<string | null>(null);
   const [inputValue, setInputValue] = useState("");
+  const concernRef = useRef<string>("");
 
   const { stageComment, commitComment, cancelQueuedComment, toggleQueuedBody, updateQueuedBlocking } =
     useThreadsStore();
@@ -70,12 +66,9 @@ export function CreateThreadView({
     setTimeout(() => onClose(), 250);
   }
 
-  const addMessage = (msg: ChatMsg) =>
-    setMessages((prev) => [...prev, msg]);
-
   async function handleSend(concern: string) {
     if (!concern.trim()) return;
-    addMessage({ role: "user", content: concern });
+    concernRef.current = concern;
     setInputValue("");
     setStage("processing");
 
@@ -105,7 +98,7 @@ export function CreateThreadView({
     }
 
     if (vet.type === "deflect") {
-      addMessage({ role: "ai", content: vet.answer });
+      setDeflectAnswer(vet.answer);
       setStage("deflect");
       return;
     }
@@ -119,10 +112,6 @@ export function CreateThreadView({
       };
       setAnchor(redirected);
       finalAnchor = redirected;
-      addMessage({
-        role: "ai",
-        content: `Got it. I've moved your comment to a more relevant passage. [Go back]`,
-      });
     }
 
     const suggested = await suggestCommentText({
@@ -140,10 +129,9 @@ export function CreateThreadView({
   }
 
   async function handleNoFileAnyway() {
-    const lastUserMsg = [...messages].reverse().find((m) => m.role === "user");
-    if (!lastUserMsg) return;
+    const originalText = concernRef.current;
+    if (!originalText.trim()) return;
     setStage("processing");
-    const originalText = lastUserMsg.content;
     const suggested = await suggestCommentText({
       concern: originalText,
       quotedText: anchor.quotedText,
@@ -216,70 +204,61 @@ export function CreateThreadView({
         "{anchor.quotedText}"
       </div>
 
-      {/* Message stream */}
+      {/* Middle area — scrollable so long content doesn't overflow the panel */}
       <div className="flex-1 overflow-y-auto px-3 py-2 space-y-2">
-        {messages.map((msg, i) => (
-          <div
-            key={i}
-            className={`text-[length:var(--font-size-ui-sm)] px-3 py-2 rounded-(--radius-base) max-w-[85%] ${
-              msg.role === "user"
-                ? "ml-auto bg-(--color-accent) text-(--color-text-on-accent)"
-                : "bg-(--color-bg-subtle) text-(--color-text-primary)"
-            }`}
-          >
-            {msg.content}
-          </div>
-        ))}
-
         {stage === "processing" && (
-          <div className="bg-(--color-bg-subtle) rounded-(--radius-base) px-3 py-2 text-(--color-text-tertiary) text-[length:var(--font-size-ui-sm)]">
+          <div className="text-(--color-text-tertiary) text-[length:var(--font-size-ui-sm)]">
             ✨ Checking document…
           </div>
         )}
 
-        {/* Queued card */}
-        {stage === "queued" && (
-          <QueuedCommentCard
-            displayBody={queued.displayBody}
-            bodyEnhanced={queued.bodyEnhanced}
-            useEnhanced={queued.useEnhanced}
-            blocking={queued.blocking}
-            countdown={queued.countdown}
-            countdownSeconds={COUNTDOWN_SECONDS}
-            error={queued.commitError}
-            onToggleBody={queued.toggleBody}
-            onCancel={() => { queued.cancel(); onClose(); }}
-            onSetBlocking={queued.setBlocking}
-            onRetry={queued.retryCommit}
-          />
+        {stage === "deflect" && (
+          <div className="border border-(--color-border-subtle) rounded-(--radius-base) p-3 text-[length:var(--font-size-ui-sm)]">
+            {deflectAnswer && (
+              <div className="text-(--color-text-secondary) mb-2">{deflectAnswer}</div>
+            )}
+            <div className="text-(--color-text-tertiary) text-[length:var(--font-size-ui-xs)] mb-2">
+              ✨ Does that answer your concern?
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleNoFileAnyway}
+                className="text-[length:var(--font-size-ui-xs)] px-2 py-1 border border-(--color-border-subtle) rounded-(--radius-sm) text-(--color-text-secondary) hover:text-(--color-text-primary)"
+              >
+                No, file anyway
+              </button>
+              <button
+                onClick={closeWithAnimation}
+                className="text-[length:var(--font-size-ui-xs)] px-2 py-1 bg-(--color-accent) text-(--color-text-on-accent) rounded-(--radius-sm)"
+              >
+                Yes, thanks
+              </button>
+            </div>
+          </div>
         )}
       </div>
 
-      {/* Deflect virtual card */}
-      {stage === "deflect" && (
-        <div className="mx-3 mb-2 border border-(--color-border-subtle) rounded-(--radius-base) p-3 text-[length:var(--font-size-ui-sm)]">
-          <div className="text-(--color-text-secondary) mb-2">
-            ✨ Does that answer your concern?
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={handleNoFileAnyway}
-              className="text-[length:var(--font-size-ui-xs)] px-2 py-1 border border-(--color-border-subtle) rounded-(--radius-sm) text-(--color-text-secondary) hover:text-(--color-text-primary)"
-            >
-              No, file anyway
-            </button>
-            <button
-              onClick={closeWithAnimation}
-              className="text-[length:var(--font-size-ui-xs)] px-2 py-1 bg-(--color-accent) text-(--color-text-on-accent) rounded-(--radius-sm)"
-            >
-              Yes, thanks
-            </button>
-          </div>
-        </div>
+      {/* Queued card — below scroll area so it stays fixed at the bottom */}
+      {stage === "queued" && (
+        <QueuedCommentCard
+          displayBody={queued.displayBody}
+          bodyEnhanced={queued.bodyEnhanced}
+          useEnhanced={queued.useEnhanced}
+          blocking={queued.blocking}
+          countdown={queued.countdown}
+          countdownSeconds={COUNTDOWN_SECONDS}
+          error={queued.commitError}
+          onToggleBody={queued.toggleBody}
+          onCancel={() => { queued.cancel(); onClose(); }}
+          onSetBlocking={queued.setBlocking}
+          onRetry={queued.retryCommit}
+          testId="queued-card"
+          className="mx-3 mb-2"
+        />
       )}
 
       {/* Input area */}
-      {(stage === "input" || stage === "deflect") && (
+      {stage === "input" && (
         <div className="border-t border-(--color-border-subtle) p-2">
           <textarea
             value={inputValue}
