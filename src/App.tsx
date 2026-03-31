@@ -284,6 +284,9 @@ function App() {
                 onThreadActivated={(threadId) =>
                   setScrollTo((prev) => ({ threadId, seq: (prev?.seq ?? 0) + 1 }))
                 }
+                onCommentViewChange={(type) =>
+                  setThreadsViewActive(type === "threads" || type === "threads-filtered")
+                }
               />
             )}
           </div>
@@ -301,9 +304,7 @@ function App() {
           setAiPanelOpen(true);
           if (threadsViewActive) {
             setCommentTrigger(null);
-            setThreadsViewActive(false);
           } else {
-            setThreadsViewActive(true);
             setCommentTrigger({ type: "threads" });
           }
         }}
