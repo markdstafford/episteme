@@ -62,7 +62,7 @@ async function callAi(
 }
 
 /** Extract JSON from an AI response that may contain markdown fences or prose. */
-function extractJson(response: string): unknown | null {
+export function extractJson(response: string): unknown | null {
   // Try direct JSON first
   try {
     return JSON.parse(response.trim());

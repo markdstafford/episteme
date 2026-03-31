@@ -1,5 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import type { Thread } from "@/types/comments";
+import { extractJson } from "@/lib/commentAi";
 
 const FIX_SYSTEM_PROMPT = `You are helping a document author address a reviewer's comment.
 Given the comment thread and document, propose a specific, minimal document edit.
@@ -27,10 +28,10 @@ export async function suggestFix(params: {
       awsProfile: params.awsProfile,
     });
 
-    const jsonMatch = response.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) return null;
-    const parsed = JSON.parse(jsonMatch[0]);
-    if (parsed.fix && parsed.originalText && parsed.reply) return parsed;
+    const parsed = extractJson(response);
+    if (!parsed || typeof parsed !== "object") return null;
+    const p = parsed as Record<string, unknown>;
+    if (p.fix && p.originalText && p.reply) return p as unknown as { fix: string; originalText: string; reply: string };
     return null;
   } catch {
     return null;
