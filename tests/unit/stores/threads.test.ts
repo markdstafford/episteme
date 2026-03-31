@@ -54,12 +54,33 @@ describe("useThreadsStore", () => {
     expect(useThreadsStore.getState().threads[0].id).toBe("t1");
   });
 
-  it("loadThreads clears threads when doc changes", async () => {
+  it("loadThreads updates activeDocId when doc changes", async () => {
     useThreadsStore.setState({ threads: [mockThread], activeDocId: "doc1" });
     mockInvoke.mockResolvedValueOnce([]);
     await useThreadsStore.getState().loadThreads("doc2", "");
     expect(useThreadsStore.getState().threads).toHaveLength(0);
     expect(useThreadsStore.getState().activeDocId).toBe("doc2");
+  });
+
+  it("loadThreads discards stale response when activeDocId has changed", async () => {
+    // Start load for doc1, then immediately switch to doc2
+    // The doc2 load should win
+    mockInvoke.mockImplementation(async (_cmd, args: any) => {
+      if (args?.docId === "doc1") {
+        await new Promise((r) => setTimeout(r, 50)); // slow
+        return [{ id: "t1" }];
+      }
+      return [{ id: "t2" }]; // fast
+    });
+
+    const store = useThreadsStore.getState();
+    store.loadThreads("doc1", "content1"); // don't await — let it run slowly
+    await store.loadThreads("doc2", "content2"); // completes first
+
+    // doc2 result should win; doc1's stale response should be discarded
+    expect(useThreadsStore.getState().activeDocId).toBe("doc2");
+    expect(useThreadsStore.getState().threads).toHaveLength(1);
+    expect((useThreadsStore.getState().threads[0] as any).id).toBe("t2");
   });
 
   it("clearThreads empties the store", () => {
