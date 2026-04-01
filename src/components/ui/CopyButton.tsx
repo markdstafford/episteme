@@ -22,7 +22,7 @@ export function CopyButton({ text, className }: CopyButtonProps) {
     <button
       onClick={handleClick}
       aria-label={copied ? 'Copied' : 'Copy to clipboard'}
-      className={`${copied ? 'text-(--color-state-success)' : 'text-(--color-text-tertiary) hover:text-(--color-text-secondary)'} ${className ?? ''}`}
+      className={[copied ? 'text-(--color-state-success)' : 'text-(--color-text-tertiary) hover:text-(--color-text-secondary)', className].filter(Boolean).join(' ')}
     >
       {copied ? <Check size={12} /> : <Copy size={12} />}
     </button>
