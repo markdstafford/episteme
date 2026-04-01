@@ -52,4 +52,26 @@ describe('MermaidRenderer', () => {
     const calls = vi.mocked(mermaid.render).mock.calls
     expect(calls[0][0]).not.toBe(calls[1][0])
   })
+
+  it('renders a CopyButton in the SVG path', async () => {
+    vi.mocked(mermaid.render).mockResolvedValue({ svg: '<svg><text>diagram</text></svg>' } as any)
+    const { container } = render(<MermaidRenderer definition="graph TD\nA-->B" />)
+    await waitFor(() => {
+      expect(container.querySelector('button[aria-label="Copy to clipboard"]')).toBeInTheDocument()
+    })
+  })
+
+  it('renders a CopyButton in the error path', async () => {
+    vi.mocked(mermaid.render).mockRejectedValue(new Error('parse error'))
+    const { container } = render(<MermaidRenderer definition="bad diagram" />)
+    await waitFor(() => {
+      expect(container.querySelector('button[aria-label="Copy to clipboard"]')).toBeInTheDocument()
+    })
+  })
+
+  it('does not render a CopyButton in the loading path', () => {
+    vi.mocked(mermaid.render).mockReturnValue(new Promise(() => {})) // never resolves
+    const { container } = render(<MermaidRenderer definition="graph TD\nA-->B" />)
+    expect(container.querySelector('button[aria-label="Copy to clipboard"]')).not.toBeInTheDocument()
+  })
 })

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { getHighlighter } from '@/lib/shikiSingleton'
+import { CopyButton } from '@/components/ui/CopyButton'
 
 interface ShikiRendererProps {
   code: string
@@ -36,12 +37,26 @@ export function ShikiRenderer({ code, language }: ShikiRendererProps) {
   }, [code, language])
 
   if (html !== null) {
-    return <div dangerouslySetInnerHTML={{ __html: html }} />
+    return (
+      <div className="relative group">
+        <CopyButton
+          text={code}
+          className="absolute top-1.5 right-1.5 z-10 opacity-0 group-hover:opacity-100 transition-opacity"
+        />
+        <div dangerouslySetInnerHTML={{ __html: html }} />
+      </div>
+    )
   }
 
   return (
-    <pre>
-      <code>{code}</code>
-    </pre>
+    <div className="relative group">
+      <CopyButton
+        text={code}
+        className="absolute top-1.5 right-1.5 z-10 opacity-0 group-hover:opacity-100 transition-opacity"
+      />
+      <pre>
+        <code>{code}</code>
+      </pre>
+    </div>
   )
 }

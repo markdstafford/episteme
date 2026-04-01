@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { AlertTriangle } from 'lucide-react'
+import { CopyButton } from '@/components/ui/CopyButton'
 
 interface MermaidRendererProps {
   definition: string
@@ -70,22 +71,30 @@ export function MermaidRenderer({ definition }: MermaidRendererProps) {
 
   if (svg !== null) {
     return (
-      <div
-        style={{ maxWidth: '100%', overflow: 'hidden' }}
-        dangerouslySetInnerHTML={{ __html: svg }}
-      />
+      <div className="relative group" style={{ maxWidth: '100%', overflow: 'hidden' }}>
+        <CopyButton
+          text={definition}
+          className="absolute top-1.5 right-1.5 z-10 opacity-0 group-hover:opacity-100 transition-opacity"
+        />
+        <div dangerouslySetInnerHTML={{ __html: svg }} />
+      </div>
     )
   }
 
   if (error) {
     return (
       <div
+        className="relative group"
         style={{
           border: '1px solid var(--color-border-default)',
           borderRadius: 'var(--radius-md)',
           padding: 'var(--space-4)',
         }}
       >
+        <CopyButton
+          text={definition}
+          className="absolute top-1.5 right-1.5 z-10 opacity-0 group-hover:opacity-100 transition-opacity"
+        />
         <div
           style={{
             display: 'flex',

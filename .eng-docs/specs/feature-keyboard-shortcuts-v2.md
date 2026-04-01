@@ -6,6 +6,7 @@ issue: 79
 specced_by: markdstafford
 implemented_by: markdstafford
 superseded_by: null
+doc_id: b23e3cae-1fcb-4f2a-9f15-8401745d42fd
 ---
 
 # Keyboard shortcuts
