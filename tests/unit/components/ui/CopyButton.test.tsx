@@ -60,4 +60,26 @@ describe('CopyButton', () => {
     const { container } = render(<CopyButton text="hello" />)
     expect(() => fireEvent.click(container.querySelector('button')!)).not.toThrow()
   })
+
+  it('resets the timer if clicked again before 1500ms elapses', async () => {
+    const { container } = render(<CopyButton text="hello" />)
+    const btn = container.querySelector('button')!
+
+    await act(async () => {
+      fireEvent.click(btn)
+    })
+    act(() => { vi.advanceTimersByTime(1000) })
+
+    // Click again — should restart the 1500ms window
+    await act(async () => {
+      fireEvent.click(btn)
+    })
+    act(() => { vi.advanceTimersByTime(1000) }) // only 1000ms since second click
+
+    // Should still be in confirmed state
+    expect(btn.getAttribute('aria-label')).toBe('Copied')
+
+    act(() => { vi.advanceTimersByTime(500) }) // now 1500ms since second click
+    expect(btn.getAttribute('aria-label')).toBe('Copy to clipboard')
+  })
 })
