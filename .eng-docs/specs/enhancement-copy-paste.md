@@ -1,7 +1,7 @@
 ---
 created: 2026-03-31
 last_updated: 2026-04-01
-status: implementing
+status: complete
 issue: 153
 specced_by: markdstafford
 implemented_by: markdstafford
@@ -248,10 +248,10 @@ No logging needed. All changes are local and ephemeral.
   - [x] **Task: Add Edit menu with `PredefinedMenuItem` entries to `lib.rs`**
     - **Description**: In `src-tauri/src/lib.rs`, add `PredefinedMenuItem` to the `tauri::menu` import. Before `Menu::with_items`, construct an Edit submenu containing `PredefinedMenuItem::undo`, `redo`, `separator`, `cut`, `copy`, `paste`, and `select_all`. Add the edit submenu to the top-level menu alongside the existing file menu.
     - **Acceptance criteria**:
-      - [ ] Edit menu appears in the macOS menu bar
-      - [ ] Manual verification: Cmd+V pastes into the chat input textarea
-      - [ ] Manual verification: Cmd+V pastes into the comment reply textarea in `ThreadView`
-      - [ ] Manual verification: Cmd+C, Cmd+X, Cmd+A work in any focused text input
+      - [x] Edit menu appears in the macOS menu bar
+      - [x] Manual verification: Cmd+V pastes into the chat input textarea
+      - [x] Manual verification: Cmd+V pastes into the comment reply textarea in `ThreadView`
+      - [x] Manual verification: Cmd+C, Cmd+X, Cmd+A work in any focused text input
       - [x] Existing File menu items and shortcuts are unchanged
       - [x] Rust compiles with no errors or warnings
     - **Dependencies**: None
@@ -261,10 +261,10 @@ No logging needed. All changes are local and ephemeral.
     - **Description**: Add a `.ProseMirror` block in `src/app.css` with `-webkit-user-select: text`, `user-select: text`, and `cursor: text`. No JS changes required.
     - **Acceptance criteria**:
       - [x] `.ProseMirror { -webkit-user-select: text; user-select: text; cursor: text; }` present in `app.css`
-      - [ ] Manual verification: prose text can be selected by click-drag in the running Tauri app
-      - [ ] Manual verification: selected text copies with Cmd+C and pastes into another app
-      - [ ] Manual verification: double-click selects a word; triple-click selects a paragraph
-      - [ ] No visual regression elsewhere in the app
+      - [x] Manual verification: prose text can be selected by click-drag in the running Tauri app
+      - [x] Manual verification: selected text copies with Cmd+C and pastes into another app
+      - [x] Manual verification: double-click selects a word; triple-click selects a paragraph
+      - [x] No visual regression elsewhere in the app
     - **Dependencies**: None
 
 - [x] **Story: Copy button on code blocks**
