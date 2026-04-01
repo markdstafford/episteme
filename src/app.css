@@ -329,3 +329,12 @@ html, body {
     background-color: color-mix(in oklch, var(--color-state-success) 20%, transparent);
   }
 }
+
+/* Enable text selection in the read-only TipTap document renderer.
+   In macOS WKWebView, contenteditable="false" elements default to
+   user-select: none — this restores standard browser selection behavior. */
+.ProseMirror {
+  -webkit-user-select: text;
+  user-select: text;
+  cursor: text;
+}
