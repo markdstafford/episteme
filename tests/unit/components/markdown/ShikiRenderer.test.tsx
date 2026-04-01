@@ -60,4 +60,22 @@ describe('ShikiRenderer', () => {
       expect(container.querySelector('[role="alert"]')).not.toBeInTheDocument()
     })
   })
+
+  it('renders a CopyButton in the pre/code fallback path', () => {
+    vi.mocked(getHighlighter).mockReturnValue(new Promise(() => {})) // never resolves
+    const { container } = render(
+      <ShikiRenderer code="const x = 1" language="typescript" />
+    )
+    expect(container.querySelector('button[aria-label="Copy to clipboard"]')).toBeInTheDocument()
+  })
+
+  it('renders a CopyButton in the highlighted HTML path', async () => {
+    mockHighlighter.codeToHtml.mockReturnValue('<pre class="shiki"><code>highlighted</code></pre>')
+    const { container } = render(
+      <ShikiRenderer code="hello world" language="typescript" />
+    )
+    await waitFor(() => {
+      expect(container.querySelector('button[aria-label="Copy to clipboard"]')).toBeInTheDocument()
+    })
+  })
 })
