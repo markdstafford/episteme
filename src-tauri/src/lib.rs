@@ -8,7 +8,7 @@ mod session;
 mod tool_catalog;
 
 use manifest_loader::LoadedManifests;
-use tauri::menu::{Menu, MenuItem, Submenu};
+use tauri::menu::{Menu, MenuItem, PredefinedMenuItem, Submenu};
 use tauri::Emitter;
 use tauri::Manager;
 
@@ -68,7 +68,16 @@ pub fn run() {
       let open_folder_item = MenuItem::with_id(app, "open_folder", "Open Folder...", true, Some("CmdOrCtrl+O"))?;
       let settings_item = MenuItem::with_id(app, "settings", "Settings...", true, Some("CmdOrCtrl+,"))?;
       let file_menu = Submenu::with_items(app, "File", true, &[&open_folder_item, &settings_item])?;
-      let menu = Menu::with_items(app, &[&file_menu])?;
+      let edit_menu = Submenu::with_items(app, "Edit", true, &[
+          &PredefinedMenuItem::undo(app, None)?,
+          &PredefinedMenuItem::redo(app, None)?,
+          &PredefinedMenuItem::separator(app)?,
+          &PredefinedMenuItem::cut(app, None)?,
+          &PredefinedMenuItem::copy(app, None)?,
+          &PredefinedMenuItem::paste(app, None)?,
+          &PredefinedMenuItem::select_all(app, None)?,
+      ])?;
+      let menu = Menu::with_items(app, &[&file_menu, &edit_menu])?;
       app.set_menu(menu)?;
 
       app.on_menu_event(|app, event| {
