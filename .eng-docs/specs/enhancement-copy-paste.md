@@ -252,15 +252,15 @@ No logging needed. All changes are local and ephemeral.
       - [ ] Manual verification: Cmd+V pastes into the chat input textarea
       - [ ] Manual verification: Cmd+V pastes into the comment reply textarea in `ThreadView`
       - [ ] Manual verification: Cmd+C, Cmd+X, Cmd+A work in any focused text input
-      - [ ] Existing File menu items and shortcuts are unchanged
-      - [ ] Rust compiles with no errors or warnings
+      - [x] Existing File menu items and shortcuts are unchanged
+      - [x] Rust compiles with no errors or warnings
     - **Dependencies**: None
 
 - [x] **Story: Prose text selection fix**
   - [x] **Task: Add `user-select: text` to `.ProseMirror` in `app.css`**
     - **Description**: Add a `.ProseMirror` block in `src/app.css` with `-webkit-user-select: text`, `user-select: text`, and `cursor: text`. No JS changes required.
     - **Acceptance criteria**:
-      - [ ] `.ProseMirror { -webkit-user-select: text; user-select: text; cursor: text; }` present in `app.css`
+      - [x] `.ProseMirror { -webkit-user-select: text; user-select: text; cursor: text; }` present in `app.css`
       - [ ] Manual verification: prose text can be selected by click-drag in the running Tauri app
       - [ ] Manual verification: selected text copies with Cmd+C and pastes into another app
       - [ ] Manual verification: double-click selects a word; triple-click selects a paragraph
@@ -271,49 +271,49 @@ No logging needed. All changes are local and ephemeral.
   - [x] **Task: Implement `CopyButton`**
     - **Description**: Create `src/components/ui/CopyButton.tsx`. Accept `text: string` and optional `className?: string`. Internal `copied` boolean state. Click handler: `navigator.clipboard.writeText(text)`, on success set `copied = true`, schedule `setTimeout(() => setCopied(false), 1500)`. On failure: silently no-op. Render a single `<button>` with `Copy` icon (12px) when `!copied`, `Check` icon (12px) when `copied`. Colors: `text-(--color-text-tertiary) hover:text-(--color-text-secondary)` default; `text-(--color-state-success)` when confirmed. `aria-label="Copy to clipboard"` / `"Copied"`. Spread `className` on the button.
     - **Acceptance criteria**:
-      - [ ] Renders `Copy` icon by default
-      - [ ] Click calls `navigator.clipboard.writeText(text)` with the exact `text` prop value
-      - [ ] Icon changes to `Check` immediately on click
-      - [ ] Icon resets to `Copy` after exactly 1500ms
-      - [ ] `aria-label` is "Copy to clipboard" by default, "Copied" when confirmed
-      - [ ] Clipboard failure silently handled
-      - [ ] `className` applied to button element
-      - [ ] TypeScript compiles with no errors
+      - [x] Renders `Copy` icon by default
+      - [x] Click calls `navigator.clipboard.writeText(text)` with the exact `text` prop value
+      - [x] Icon changes to `Check` immediately on click
+      - [x] Icon resets to `Copy` after exactly 1500ms
+      - [x] `aria-label` is "Copy to clipboard" by default, "Copied" when confirmed
+      - [x] Clipboard failure silently handled
+      - [x] `className` applied to button element
+      - [x] TypeScript compiles with no errors
     - **Dependencies**: None
 
   - [x] **Task: Unit tests for `CopyButton`**
     - **Description**: Create `tests/unit/components/ui/CopyButton.test.tsx`. Mock `navigator.clipboard.writeText`. Use `vi.useFakeTimers()` for the reset.
     - **Acceptance criteria**:
-      - [ ] Renders `Copy` icon by default
-      - [ ] Click calls `writeText` with correct text
-      - [ ] Icon → `Check` after click; → `Copy` after 1500ms
-      - [ ] `aria-label` toggles correctly
-      - [ ] All tests pass
+      - [x] Renders `Copy` icon by default
+      - [x] Click calls `writeText` with correct text
+      - [x] Icon → `Check` after click; → `Copy` after 1500ms
+      - [x] `aria-label` toggles correctly
+      - [x] All tests pass
     - **Dependencies**: Task: Implement `CopyButton`
 
   - [x] **Task: Add copy button to `ShikiRenderer`**
     - **Description**: Modify `src/components/markdown/ShikiRenderer.tsx`. Wrap the existing content in `<div className="relative group">`. Mount `<CopyButton text={code} className="absolute top-1.5 right-1.5 z-10 opacity-0 group-hover:opacity-100 transition-opacity" />` before the content in both the highlighted-HTML path and the `<pre><code>` fallback path.
     - **Acceptance criteria**:
-      - [ ] `CopyButton` with `text={code}` rendered in the highlighted-HTML path
-      - [ ] `CopyButton` with `text={code}` rendered in the `<pre><code>` fallback path
-      - [ ] Button hidden by default; visible on hover; no layout shift
-      - [ ] TypeScript compiles with no errors
+      - [x] `CopyButton` with `text={code}` rendered in the highlighted-HTML path
+      - [x] `CopyButton` with `text={code}` rendered in the `<pre><code>` fallback path
+      - [x] Button hidden by default; visible on hover; no layout shift
+      - [x] TypeScript compiles with no errors
     - **Dependencies**: Task: Implement `CopyButton`
 
   - [x] **Task: Add copy button on Mermaid diagrams**
     - **Description**: Modify `src/components/markdown/MermaidRenderer.tsx`. Wrap the SVG render path and the error render path each in `<div className="relative group">`. Mount `<CopyButton text={definition} className="absolute top-1.5 right-1.5 z-10 opacity-0 group-hover:opacity-100 transition-opacity" />` before the content in both paths. The loading path (`return null`) is left unchanged — no content to copy.
     - **Acceptance criteria**:
-      - [ ] `CopyButton` with `text={definition}` rendered in the SVG path
-      - [ ] `CopyButton` with `text={definition}` rendered in the error path
-      - [ ] No `CopyButton` in the loading path
-      - [ ] Button hidden by default; visible on hover; no layout shift
-      - [ ] TypeScript compiles with no errors
+      - [x] `CopyButton` with `text={definition}` rendered in the SVG path
+      - [x] `CopyButton` with `text={definition}` rendered in the error path
+      - [x] No `CopyButton` in the loading path
+      - [x] Button hidden by default; visible on hover; no layout shift
+      - [x] TypeScript compiles with no errors
     - **Dependencies**: Task: Implement `CopyButton`
 
   - [x] **Task: Unit tests for `ShikiRenderer` copy button**
     - **Description**: Add copy button tests to `ShikiRenderer` test coverage.
     - **Acceptance criteria**:
-      - [ ] `CopyButton` rendered with correct `text` prop in highlighted path
-      - [ ] `CopyButton` rendered with correct `text` prop in fallback path
-      - [ ] All existing `ShikiRenderer` tests pass
+      - [x] `CopyButton` rendered with correct `text` prop in highlighted path
+      - [x] `CopyButton` rendered with correct `text` prop in fallback path
+      - [x] All existing `ShikiRenderer` tests pass
     - **Dependencies**: Task: Add copy button to `ShikiRenderer`
