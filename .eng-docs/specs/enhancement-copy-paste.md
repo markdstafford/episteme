@@ -267,7 +267,7 @@ No logging needed. All changes are local and ephemeral.
       - [ ] No visual regression elsewhere in the app
     - **Dependencies**: None
 
-- [ ] **Story: Copy button on code blocks**
+- [x] **Story: Copy button on code blocks**
   - [x] **Task: Implement `CopyButton`**
     - **Description**: Create `src/components/ui/CopyButton.tsx`. Accept `text: string` and optional `className?: string`. Internal `copied` boolean state. Click handler: `navigator.clipboard.writeText(text)`, on success set `copied = true`, schedule `setTimeout(() => setCopied(false), 1500)`. On failure: silently no-op. Render a single `<button>` with `Copy` icon (12px) when `!copied`, `Check` icon (12px) when `copied`. Colors: `text-(--color-text-tertiary) hover:text-(--color-text-secondary)` default; `text-(--color-state-success)` when confirmed. `aria-label="Copy to clipboard"` / `"Copied"`. Spread `className` on the button.
     - **Acceptance criteria**:
@@ -291,7 +291,7 @@ No logging needed. All changes are local and ephemeral.
       - [ ] All tests pass
     - **Dependencies**: Task: Implement `CopyButton`
 
-  - [ ] **Task: Add copy button to `ShikiRenderer`**
+  - [x] **Task: Add copy button to `ShikiRenderer`**
     - **Description**: Modify `src/components/markdown/ShikiRenderer.tsx`. Wrap the existing content in `<div className="relative group">`. Mount `<CopyButton text={code} className="absolute top-1.5 right-1.5 z-10 opacity-0 group-hover:opacity-100 transition-opacity" />` before the content in both the highlighted-HTML path and the `<pre><code>` fallback path.
     - **Acceptance criteria**:
       - [ ] `CopyButton` with `text={code}` rendered in the highlighted-HTML path
@@ -300,7 +300,7 @@ No logging needed. All changes are local and ephemeral.
       - [ ] TypeScript compiles with no errors
     - **Dependencies**: Task: Implement `CopyButton`
 
-  - [ ] **Task: Add copy button on Mermaid diagrams**
+  - [x] **Task: Add copy button on Mermaid diagrams**
     - **Description**: Modify `src/components/markdown/MermaidRenderer.tsx`. Wrap the SVG render path and the error render path each in `<div className="relative group">`. Mount `<CopyButton text={definition} className="absolute top-1.5 right-1.5 z-10 opacity-0 group-hover:opacity-100 transition-opacity" />` before the content in both paths. The loading path (`return null`) is left unchanged — no content to copy.
     - **Acceptance criteria**:
       - [ ] `CopyButton` with `text={definition}` rendered in the SVG path
@@ -310,7 +310,7 @@ No logging needed. All changes are local and ephemeral.
       - [ ] TypeScript compiles with no errors
     - **Dependencies**: Task: Implement `CopyButton`
 
-  - [ ] **Task: Unit tests for `ShikiRenderer` copy button**
+  - [x] **Task: Unit tests for `ShikiRenderer` copy button**
     - **Description**: Add copy button tests to `ShikiRenderer` test coverage.
     - **Acceptance criteria**:
       - [ ] `CopyButton` rendered with correct `text` prop in highlighted path
