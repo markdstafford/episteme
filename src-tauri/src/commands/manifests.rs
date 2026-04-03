@@ -87,8 +87,7 @@ pub async fn load_manifests(
         let app_for_watcher = app.clone();
         let workspace_for_watcher = workspace_path.clone();
         let last_manifest_emit = std::sync::Arc::new(std::sync::Mutex::new(std::time::Instant::now() - std::time::Duration::from_secs(1)));
-        let last_files_emit = std::sync::Arc::new(std::sync::Mutex::new(std::time::Instant::now() - std::time::Duration::from_secs(1)));
-        let debounce = std::time::Duration::from_millis(500);
+        let manifest_debounce = std::time::Duration::from_millis(500);
 
         match recommended_watcher(move |res: notify::Result<notify::Event>| {
             if let Ok(event) = res {
@@ -100,20 +99,29 @@ pub async fn load_manifests(
                         let episteme_dir = std::path::Path::new(&workspace_for_watcher).join(".episteme");
                         let has_episteme_change = event.paths.iter().any(|p| p.starts_with(&episteme_dir));
 
-                        // Check if any changed path is a markdown file
+                        // Collect markdown file paths and detect directory changes.
+                        // Directory changes (rename/delete of a folder containing .md
+                        // files) are reported by notify as the directory path itself,
+                        // so we also need to trigger a tree refresh for those.
+                        let mut has_dir_change = false;
                         let md_paths: Vec<String> = event.paths.iter()
                             .filter(|p| {
-                                p.extension()
+                                let is_md = p.extension()
                                     .and_then(|e| e.to_str())
                                     .map(|e| e.eq_ignore_ascii_case("md") || e.eq_ignore_ascii_case("markdown"))
-                                    .unwrap_or(false)
+                                    .unwrap_or(false);
+                                if !is_md && p.extension().is_none() {
+                                    // No extension — likely a directory
+                                    has_dir_change = true;
+                                }
+                                is_md
                             })
                             .map(|p| p.to_string_lossy().to_string())
                             .collect();
 
                         if has_episteme_change {
                             let mut last = last_manifest_emit.lock().unwrap();
-                            if now.duration_since(*last) >= debounce {
+                            if now.duration_since(*last) >= manifest_debounce {
                                 *last = now;
                                 drop(last); // release lock before potentially slow work
                                 log::info!("watcher: .episteme/ changed ({:?}), reloading manifests", event.paths);
@@ -141,14 +149,12 @@ pub async fn load_manifests(
                             }
                         }
 
-                        if !md_paths.is_empty() {
-                            let mut last = last_files_emit.lock().unwrap();
-                            if now.duration_since(*last) >= debounce {
-                                *last = now;
-                                drop(last);
-                                log::info!("watcher: markdown files changed: {:?}", md_paths);
-                                app_for_watcher.emit("workspace-files-changed", &md_paths).ok();
-                            }
+                        // No debounce for workspace-files-changed — refreshTree
+                        // and read_file are cheap, and debouncing drops paths which
+                        // causes the DocumentViewer to miss open-file changes.
+                        if !md_paths.is_empty() || has_dir_change {
+                            log::info!("watcher: workspace files changed: {:?}", md_paths);
+                            app_for_watcher.emit("workspace-files-changed", &md_paths).ok();
                         }
                     }
                     _ => {}

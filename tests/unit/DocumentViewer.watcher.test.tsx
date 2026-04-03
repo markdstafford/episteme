@@ -116,6 +116,9 @@ describe("DocumentViewer workspace-files-changed hot-reload", () => {
     });
 
     unmount();
-    expect(mockUnlisten).toHaveBeenCalled();
+    // Cleanup awaits the listen promise before calling unlisten
+    await waitFor(() => {
+      expect(mockUnlisten).toHaveBeenCalled();
+    });
   });
 });

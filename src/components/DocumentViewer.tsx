@@ -83,13 +83,13 @@ export function DocumentViewer({
   useEffect(() => {
     if (!selectedFilePath || !workspacePath) return;
 
-    let unlisten: (() => void) | null = null;
-
-    listen<string[]>("workspace-files-changed", (event) => {
-      if (event.payload.includes(selectedFilePath)) {
+    let cancelled = false;
+    const unlistenPromise = listen<string[]>("workspace-files-changed", (event) => {
+      if (!cancelled && event.payload.includes(selectedFilePath)) {
         // Re-read without loading spinner (avoid flicker)
         invoke<string>("read_file", { filePath: selectedFilePath, workspacePath })
           .then((raw) => {
+            if (cancelled) return;
             const parsed = parseDocument(raw);
             setContent(parsed.content);
             setFrontmatter(parsed.frontmatter);
@@ -97,12 +97,11 @@ export function DocumentViewer({
           })
           .catch(() => {}); // Silent fail — stale content is better than error flash
       }
-    }).then((fn) => {
-      unlisten = fn;
     });
 
     return () => {
-      unlisten?.();
+      cancelled = true;
+      unlistenPromise.then((fn) => fn());
     };
   }, [selectedFilePath, workspacePath, onReadingTimeChange]);
 
