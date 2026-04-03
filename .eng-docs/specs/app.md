@@ -1,6 +1,7 @@
 ---
 created: 2026-03-04
 last_updated: 2026-03-10
+doc_id: e9f5dded-7288-40aa-bbf7-913018484ede
 ---
 
 # Episteme

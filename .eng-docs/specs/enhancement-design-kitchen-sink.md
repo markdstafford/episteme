@@ -6,6 +6,7 @@ issue: 32
 specced_by: markdstafford
 implemented_by: markdstafford
 superseded_by: null
+doc_id: 5473f88c-1792-429a-9053-567ce69fa0b9
 ---
 
 # Enhancement: Design kitchen sink
