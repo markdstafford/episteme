@@ -79,37 +79,82 @@ pub async fn load_manifests(
 
     *manifest_state.0.lock().unwrap() = Some(result.clone());
 
-    // Set up file watcher on .episteme/
-    let episteme_path = std::path::Path::new(&workspace_path).join(".episteme");
-    if episteme_path.is_dir() {
+    // Set up unified workspace watcher (watches entire workspace root).
+    // This replaces the previous .episteme/-only watcher and fixes the race
+    // condition where .episteme/ created after startup was never watched (#116).
+    {
+        let workspace_root = std::path::Path::new(&workspace_path).to_path_buf();
         let app_for_watcher = app.clone();
         let workspace_for_watcher = workspace_path.clone();
+        let last_manifest_emit = std::sync::Arc::new(std::sync::Mutex::new(std::time::Instant::now() - std::time::Duration::from_secs(1)));
+        let manifest_debounce = std::time::Duration::from_millis(500);
 
         match recommended_watcher(move |res: notify::Result<notify::Event>| {
             if let Ok(event) = res {
                 match event.kind {
                     EventKind::Create(_) | EventKind::Modify(_) | EventKind::Remove(_) => {
-                        log::info!("manifests: .episteme/ changed ({:?}), reloading", event.paths);
-                        if let Ok(fresh) = crate::manifest_loader::load_manifests(&workspace_for_watcher) {
-                            let mut modes = crate::commands::manifests::built_in_modes();
-                            for wm in fresh.modes {
-                                if let Some(pos) = modes.iter().position(|b| b.id == wm.id) {
-                                    modes[pos] = wm;
-                                } else {
-                                    modes.push(wm);
+                        let now = std::time::Instant::now();
+
+                        // Check if any changed path is under .episteme/
+                        let episteme_dir = std::path::Path::new(&workspace_for_watcher).join(".episteme");
+                        let has_episteme_change = event.paths.iter().any(|p| p.starts_with(&episteme_dir));
+
+                        // Collect markdown file paths and detect directory changes.
+                        // Directory changes (rename/delete of a folder containing .md
+                        // files) are reported by notify as the directory path itself,
+                        // so we also need to trigger a tree refresh for those.
+                        let mut has_dir_change = false;
+                        let md_paths: Vec<String> = event.paths.iter()
+                            .filter(|p| {
+                                let is_md = p.extension()
+                                    .and_then(|e| e.to_str())
+                                    .map(|e| e.eq_ignore_ascii_case("md") || e.eq_ignore_ascii_case("markdown"))
+                                    .unwrap_or(false);
+                                if !is_md && p.extension().is_none() {
+                                    // No extension — likely a directory
+                                    has_dir_change = true;
+                                }
+                                is_md
+                            })
+                            .map(|p| p.to_string_lossy().to_string())
+                            .collect();
+
+                        if has_episteme_change {
+                            let mut last = last_manifest_emit.lock().unwrap();
+                            if now.duration_since(*last) >= manifest_debounce {
+                                *last = now;
+                                drop(last); // release lock before potentially slow work
+                                log::info!("watcher: .episteme/ changed ({:?}), reloading manifests", event.paths);
+                                if let Ok(fresh) = crate::manifest_loader::load_manifests(&workspace_for_watcher) {
+                                    let mut modes = crate::commands::manifests::built_in_modes();
+                                    for wm in fresh.modes {
+                                        if let Some(pos) = modes.iter().position(|b| b.id == wm.id) {
+                                            modes[pos] = wm;
+                                        } else {
+                                            modes.push(wm);
+                                        }
+                                    }
+                                    modes.sort_by(|a, b| a.id.cmp(&b.id));
+                                    let reloaded = crate::manifest_loader::LoadedManifests {
+                                        modes,
+                                        doc_types: fresh.doc_types,
+                                        processes: fresh.processes,
+                                    };
+                                    if let Some(state) = app_for_watcher.try_state::<ManifestState>() {
+                                        *state.0.lock().unwrap() = Some(reloaded.clone());
+                                    }
+                                    app_for_watcher.emit("manifests-reloaded", &reloaded).ok();
+                                    log::info!("watcher: manifests reloaded and emitted");
                                 }
                             }
-                            modes.sort_by(|a, b| a.id.cmp(&b.id));
-                            let reloaded = crate::manifest_loader::LoadedManifests {
-                                modes,
-                                doc_types: fresh.doc_types,
-                                processes: fresh.processes,
-                            };
-                            if let Some(state) = app_for_watcher.try_state::<ManifestState>() {
-                                *state.0.lock().unwrap() = Some(reloaded.clone());
-                            }
-                            app_for_watcher.emit("manifests-reloaded", &reloaded).ok();
-                            log::info!("manifests: reloaded and emitted manifests-reloaded");
+                        }
+
+                        // No debounce for workspace-files-changed — refreshTree
+                        // and read_file are cheap, and debouncing drops paths which
+                        // causes the DocumentViewer to miss open-file changes.
+                        if !md_paths.is_empty() || has_dir_change {
+                            log::info!("watcher: workspace files changed: {:?}", md_paths);
+                            app_for_watcher.emit("workspace-files-changed", &md_paths).ok();
                         }
                     }
                     _ => {}
@@ -117,11 +162,11 @@ pub async fn load_manifests(
             }
         }) {
             Ok(mut watcher) => {
-                if let Err(e) = watcher.watch(&episteme_path, RecursiveMode::Recursive) {
-                    log::warn!("Failed to watch .episteme/: {}", e);
+                if let Err(e) = watcher.watch(&workspace_root, RecursiveMode::Recursive) {
+                    log::warn!("Failed to watch workspace root: {}", e);
                 } else {
                     *watcher_state.0.lock().unwrap() = Some(watcher);
-                    log::info!("manifests: file watcher registered on .episteme/");
+                    log::info!("watcher: registered on workspace root {:?}", workspace_root);
                 }
             }
             Err(e) => log::warn!("Failed to create file watcher: {}", e),

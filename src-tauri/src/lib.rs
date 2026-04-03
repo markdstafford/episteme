@@ -13,6 +13,8 @@ use tauri::Emitter;
 use tauri::Manager;
 
 pub struct ManifestState(pub std::sync::Mutex<Option<LoadedManifests>>);
+/// Holds the workspace-root file watcher. Watches the entire workspace directory
+/// (recursive) and emits targeted Tauri events for manifest changes and file changes.
 pub struct WatcherState(pub std::sync::Mutex<Option<notify::RecommendedWatcher>>);
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]

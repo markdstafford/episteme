@@ -123,4 +123,56 @@ describe("useFileTreeStore", () => {
       );
     });
   });
+
+  describe("refreshTree", () => {
+    it("re-fetches nodes while preserving selectedFilePath and expandedPaths", async () => {
+      // Setup: tree already loaded with a selection and expansion
+      useFileTreeStore.setState({
+        nodes: mockTree,
+        selectedFilePath: "/docs/specs/app.md",
+        expandedPaths: new Set(["/docs/specs"]),
+      });
+
+      const updatedTree: FileNode[] = [
+        ...mockTree,
+        { name: "new-doc.md", path: "/docs/new-doc.md", is_dir: false },
+      ];
+      mockInvoke.mockResolvedValueOnce(updatedTree);
+
+      await useFileTreeStore.getState().refreshTree("/docs");
+
+      expect(useFileTreeStore.getState().nodes).toEqual(updatedTree);
+      expect(useFileTreeStore.getState().selectedFilePath).toBe("/docs/specs/app.md");
+      expect(useFileTreeStore.getState().expandedPaths).toEqual(new Set(["/docs/specs"]));
+      expect(mockInvoke).toHaveBeenCalledWith("list_files", { folderPath: "/docs" });
+    });
+
+    it("clears selectedFilePath when selected file no longer exists in tree", async () => {
+      useFileTreeStore.setState({
+        nodes: mockTree,
+        selectedFilePath: "/docs/specs/deleted.md",
+        expandedPaths: new Set(["/docs/specs"]),
+      });
+
+      mockInvoke.mockResolvedValueOnce(mockTree);
+
+      await useFileTreeStore.getState().refreshTree("/docs");
+
+      expect(useFileTreeStore.getState().selectedFilePath).toBeNull();
+      expect(useFileTreeStore.getState().expandedPaths).toEqual(new Set(["/docs/specs"]));
+    });
+
+    it("does not set isLoading (avoids flicker)", async () => {
+      useFileTreeStore.setState({ nodes: mockTree });
+      mockInvoke.mockResolvedValueOnce(mockTree);
+
+      const loadingStates: boolean[] = [];
+      const unsub = useFileTreeStore.subscribe((s) => loadingStates.push(s.isLoading));
+
+      await useFileTreeStore.getState().refreshTree("/docs");
+      unsub();
+
+      expect(loadingStates.every((v) => v === false)).toBe(true);
+    });
+  });
 });

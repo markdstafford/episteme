@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
 import { open } from "@tauri-apps/plugin-shell";
 import { useFileTreeStore } from "@/stores/fileTree";
 import { useWorkspaceStore } from "@/stores/workspace";
@@ -77,6 +78,32 @@ export function DocumentViewer({
       cancelled = true;
     };
   }, [selectedFilePath, onReadingTimeChange]);
+
+  // Hot-reload: re-read the file when it's modified externally
+  useEffect(() => {
+    if (!selectedFilePath || !workspacePath) return;
+
+    let cancelled = false;
+    const unlistenPromise = listen<string[]>("workspace-files-changed", (event) => {
+      if (!cancelled && event.payload.includes(selectedFilePath)) {
+        // Re-read without loading spinner (avoid flicker)
+        invoke<string>("read_file", { filePath: selectedFilePath, workspacePath })
+          .then((raw) => {
+            if (cancelled) return;
+            const parsed = parseDocument(raw);
+            setContent(parsed.content);
+            setFrontmatter(parsed.frontmatter);
+            onReadingTimeChange?.(computeReadingTime(parsed.content));
+          })
+          .catch(() => {}); // Silent fail — stale content is better than error flash
+      }
+    });
+
+    return () => {
+      cancelled = true;
+      unlistenPromise.then((fn) => fn());
+    };
+  }, [selectedFilePath, workspacePath, onReadingTimeChange]);
 
   const handleLinkClick = useCallback(
     (href: string) => {
