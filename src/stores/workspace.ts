@@ -10,27 +10,39 @@ interface WorkspaceStore {
   isLoading: boolean;
   error: string | null;
   unlistenManifests: UnlistenFn | null;
+  unlistenFilesChanged: UnlistenFn | null;
   openFolder: () => Promise<void>;
   loadSavedFolder: () => Promise<void>;
 }
 
-async function setupWorkspaceManifests(
+async function setupWorkspaceWatchers(
   path: string,
   set: (partial: Partial<WorkspaceStore>) => void,
   get: () => WorkspaceStore,
 ) {
-  // Clean up previous listener
+  // Clean up previous listeners
   const prev = get().unlistenManifests;
   if (prev) prev();
+  const prevFiles = get().unlistenFilesChanged;
+  if (prevFiles) prevFiles();
 
   // Load manifests (this also sets default activeMode internally)
   await useManifestStore.getState().loadManifests(path);
 
   // Subscribe to hot-reload events from backend
-  const unlisten = await listen<LoadedManifests>("manifests-reloaded", (event) => {
+  const unlistenManifests = await listen<LoadedManifests>("manifests-reloaded", (event) => {
     useManifestStore.getState().setManifests(event.payload);
   });
-  set({ unlistenManifests: unlisten });
+
+  // Subscribe to workspace file changes
+  const unlistenFilesChanged = await listen<string[]>("workspace-files-changed", () => {
+    const folderPath = get().folderPath;
+    if (folderPath) {
+      useFileTreeStore.getState().refreshTree(folderPath);
+    }
+  });
+
+  set({ unlistenManifests, unlistenFilesChanged });
 }
 
 export const useWorkspaceStore = create<WorkspaceStore>((set, get) => ({
@@ -38,6 +50,7 @@ export const useWorkspaceStore = create<WorkspaceStore>((set, get) => ({
   isLoading: false,
   error: null,
   unlistenManifests: null,
+  unlistenFilesChanged: null,
 
   openFolder: async () => {
     set({ isLoading: true, error: null });
@@ -51,7 +64,7 @@ export const useWorkspaceStore = create<WorkspaceStore>((set, get) => ({
           preferences: { ...existingPrefs, last_opened_folder: path },
         });
         useFileTreeStore.getState().loadTree(path);
-        await setupWorkspaceManifests(path, set, get);
+        await setupWorkspaceWatchers(path, set, get);
         await invoke("init_workspace_db", { workspacePath: path }).catch((e) =>
           console.error("Failed to init workspace DB:", e),
         );
@@ -77,7 +90,7 @@ export const useWorkspaceStore = create<WorkspaceStore>((set, get) => ({
       set({ folderPath: prefs.last_opened_folder, isLoading: false });
       if (prefs.last_opened_folder) {
         useFileTreeStore.getState().loadTree(prefs.last_opened_folder);
-        await setupWorkspaceManifests(prefs.last_opened_folder, set, get);
+        await setupWorkspaceWatchers(prefs.last_opened_folder, set, get);
         await invoke("init_workspace_db", {
           workspacePath: prefs.last_opened_folder,
         }).catch((e) => console.error("Failed to init workspace DB:", e));

@@ -2,14 +2,11 @@ import { create } from "zustand";
 import { invoke } from "@tauri-apps/api/core";
 import type { FileNode } from "@/lib/fileTree";
 
-function flattenPaths(nodes: FileNode[]): Set<string> {
-  const paths = new Set<string>();
+function flattenPaths(nodes: FileNode[], paths = new Set<string>()): Set<string> {
   for (const node of nodes) {
     paths.add(node.path);
     if (node.children) {
-      for (const p of flattenPaths(node.children)) {
-        paths.add(p);
-      }
+      flattenPaths(node.children, paths);
     }
   }
   return paths;
