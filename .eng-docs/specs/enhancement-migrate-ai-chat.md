@@ -6,6 +6,7 @@ issue: 39
 specced_by: markdstafford
 implemented_by: null
 superseded_by: null
+doc_id: 8146159f-93c0-4d38-9fe3-9725ec4e75ad
 ---
 
 # Enhancement: Migrate AI chat panel to design system

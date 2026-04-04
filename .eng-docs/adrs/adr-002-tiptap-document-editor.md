@@ -4,6 +4,7 @@ last_updated: 2026-03-04
 status: accepted
 decided_by: markdstafford
 superseded_by: null
+doc_id: bdfbcd05-5b2f-4c2d-9a90-18207c136241
 ---
 
 # ADR 002: TipTap document editor

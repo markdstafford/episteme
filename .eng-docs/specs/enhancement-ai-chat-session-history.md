@@ -6,6 +6,7 @@ issue: 89
 specced_by: markdstafford
 implemented_by: markdstafford
 superseded_by: null
+doc_id: d859b07d-b1ab-4a5a-8872-e916cf062fd4
 ---
 
 # Enhancement: AI chat session history

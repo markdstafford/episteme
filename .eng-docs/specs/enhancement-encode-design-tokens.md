@@ -6,6 +6,7 @@ issue: 31
 specced_by: markdstafford
 implemented_by: markdstafford
 superseded_by: null
+doc_id: 560638d0-3c8e-434c-809e-197df4fb178e
 ---
 
 # Enhancement: Encode design tokens
