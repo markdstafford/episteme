@@ -26,6 +26,10 @@ Thumbs.db
 # Worktrees
 .worktrees/
 
+# SQLite WAL/SHM (volatile, recreated on open)
+.episteme/*.db-shm
+.episteme/*.db-wal
+
 # Implementation plans and friction logs (ephemeral, not committed)
 .eng-docs/.superpowers-plans/
 .eng-docs/.friction-logs/
