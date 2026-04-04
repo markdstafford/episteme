@@ -1,5 +1,11 @@
 import { invoke } from "@tauri-apps/api/core";
 
+function logCommentAi(entry: Record<string, unknown>): void {
+  invoke("log_comment_ai", {
+    entry: { ts: new Date().toISOString(), ...entry },
+  }).catch(() => {});
+}
+
 // ── Auth error detection ──────────────────────────────────────────────────────
 
 const AUTH_ERROR_PATTERNS = [
@@ -132,9 +138,30 @@ export async function vetComment(params: VetParams): Promise<VetResult> {
   try {
     response = await callAi(vetPrompt, userMsg, params.awsProfile);
   } catch (e) {
+    logCommentAi({
+      call: "vet_comment",
+      concern: params.concern,
+      quoted_text: params.quotedText,
+      surrounding_context: params.surroundingContext ?? "",
+      doc_content: params.docContent,
+      related_docs: params.relatedDocs,
+      response: null,
+      error: String(e),
+    });
     if (isAuthError(String(e))) throw e;
     return { type: "proceed" };
   }
+
+  logCommentAi({
+    call: "vet_comment",
+    concern: params.concern,
+    quoted_text: params.quotedText,
+    surrounding_context: params.surroundingContext ?? "",
+    doc_content: params.docContent,
+    related_docs: params.relatedDocs,
+    response,
+    error: null,
+  });
 
   const parsed = extractJson(response);
   if (!parsed || typeof parsed !== "object") return { type: "proceed" };
@@ -171,8 +198,26 @@ export async function suggestCommentText(params: {
       userMsg,
       params.awsProfile,
     );
+    logCommentAi({
+      call: "suggest_comment_text",
+      concern: params.concern,
+      quoted_text: params.quotedText,
+      surrounding_context: params.surroundingContext,
+      doc_content: params.docContent,
+      response: result,
+      error: null,
+    });
     return result.trim() || params.concern;
-  } catch {
+  } catch (e) {
+    logCommentAi({
+      call: "suggest_comment_text",
+      concern: params.concern,
+      quoted_text: params.quotedText,
+      surrounding_context: params.surroundingContext,
+      doc_content: params.docContent,
+      response: null,
+      error: String(e),
+    });
     return params.concern;
   }
 }
@@ -205,8 +250,26 @@ export async function enhanceCommentBody(params: {
       callAi(ENHANCE_SYSTEM_PROMPT, parts.join("\n\n"), params.awsProfile),
       new Promise<null>((resolve) => setTimeout(() => resolve(null), timeoutMs)),
     ]);
+    logCommentAi({
+      call: "enhance_comment_body",
+      body: params.body,
+      quoted_text: params.quotedText ?? "",
+      doc_content: params.docContent ?? "",
+      thread_comments: params.threadComments ?? [],
+      response: typeof result === "string" ? result : null,
+      error: null,
+    });
     return typeof result === "string" ? result.trim() : null;
-  } catch {
+  } catch (e) {
+    logCommentAi({
+      call: "enhance_comment_body",
+      body: params.body,
+      quoted_text: params.quotedText ?? "",
+      doc_content: params.docContent ?? "",
+      thread_comments: params.threadComments ?? [],
+      response: null,
+      error: String(e),
+    });
     return null;
   }
 }
