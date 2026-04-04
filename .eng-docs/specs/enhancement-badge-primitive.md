@@ -6,6 +6,7 @@ issue: 48
 specced_by: markdstafford
 implemented_by: markdstafford
 superseded_by: null
+doc_id: 49be76ca-0465-451e-a4a8-b59363efaa73
 ---
 
 # Enhancement: Badge primitive

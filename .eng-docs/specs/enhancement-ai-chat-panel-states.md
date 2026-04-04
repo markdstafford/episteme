@@ -6,6 +6,7 @@ issue: 94
 specced_by: markdstafford
 implemented_by: markdstafford
 superseded_by: null
+doc_id: 77be6bb1-b985-477a-ad1e-3ee7116bb6a6
 ---
 
 # Enhancement: AI chat panel states

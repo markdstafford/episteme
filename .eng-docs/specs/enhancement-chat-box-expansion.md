@@ -6,6 +6,7 @@ issue: 8
 specced_by: markdstafford
 implemented_by: null
 superseded_by: null
+doc_id: 74218e8e-a021-4f1a-bdf5-c3202e1eaa54
 ---
 
 # Enhancement: AI Chat Panel Restructure with Expandable Card Input

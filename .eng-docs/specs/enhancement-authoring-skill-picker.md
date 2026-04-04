@@ -6,6 +6,7 @@ issue: 14
 specced_by: markdstafford
 implemented_by: markdstafford
 superseded_by: null
+doc_id: 015a7fb1-4597-4440-be9c-90ca36cf4cfb
 ---
 
 # Enhancement: Authoring Skill Picker

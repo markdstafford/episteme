@@ -1,3 +1,6 @@
+---
+doc_id: 26a6f215-4e90-40b4-9dd3-708cdc36ef44
+---
 # Contributing to Episteme
 
 ## Commit messages

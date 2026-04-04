@@ -1,3 +1,6 @@
+---
+doc_id: 2141443f-f35a-425d-a153-ba54b2eeeb0d
+---
 # Episteme
 
 *pronounced "ep-uh-STEE-mee"*

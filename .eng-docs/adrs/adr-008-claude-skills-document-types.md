@@ -4,6 +4,7 @@ last_updated: 2026-03-04
 status: accepted
 decided_by: markdstafford
 superseded_by: adr-012-modes-doc-types-processes
+doc_id: 6f178ab8-0de4-4087-a5a7-17bd7bc5429b
 ---
 
 # ADR 008: Claude skills pattern for document types
