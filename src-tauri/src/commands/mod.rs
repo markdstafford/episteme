@@ -1,4 +1,5 @@
 pub mod ai;
+pub mod comment_ai_log;
 pub mod comments;
 pub mod files;
 pub mod folder;

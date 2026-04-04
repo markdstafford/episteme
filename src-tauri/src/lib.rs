@@ -57,6 +57,7 @@ pub fn run() {
       commands::comments::cancel_queued_comment,
       commands::comments::load_queued_comments,
       commands::comments::update_thread_anchors,
+      commands::comment_ai_log::log_comment_ai,
     ])
     .setup(|app| {
       if cfg!(debug_assertions) {
@@ -93,6 +94,7 @@ pub fn run() {
 
       app.manage(commands::updater::PendingUpdate(std::sync::Mutex::new(None)));
       app.manage(commands::sessions::SessionsLock(std::sync::Mutex::new(())));
+      app.manage(commands::comment_ai_log::CommentAiLogLock(std::sync::Mutex::new(())));
       app.manage(ManifestState(std::sync::Mutex::new(None)));
       app.manage(WatcherState(std::sync::Mutex::new(None)));
       app.manage(db::DbState(std::sync::Mutex::new(None)));
