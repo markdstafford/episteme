@@ -27,6 +27,7 @@ function App() {
   const [aiPanelOpen, setAiPanelOpen] = useState(false);
   const [sidebarVisible, setSidebarVisible] = useState(true);
   const [readingTime, setReadingTime] = useState<number | null>(null);
+  const [frontmatter, setFrontmatter] = useState<Record<string, unknown> | null>(null);
   const [commentTrigger, setCommentTrigger] = useState<AiChatPanelCommentTrigger | null>(null);
   const [threadsViewActive, setThreadsViewActive] = useState(false);
   const [scrollTo, setScrollTo] = useState<{ threadId: string; seq: number } | null>(null);
@@ -179,6 +180,12 @@ function App() {
     if (!aiPanelOpen) setThreadsViewActive(false);
   }, [aiPanelOpen]);
 
+  // Reset frontmatter when the selected file changes so stale data
+  // doesn't display while the new document is loading.
+  useEffect(() => {
+    setFrontmatter(null);
+  }, [selectedFilePath]);
+
   function closeShortcutsPanel() {
     setShortcutsPanelOpen(false);
     removeOverlay("shortcutsPanel");
@@ -219,6 +226,8 @@ function App() {
           aiPanelOpen={aiPanelOpen}
           onToggleAiPanel={() => setAiPanelOpen((v) => !v)}
           readingTime={null}
+          filePath={null}
+          frontmatter={null}
         />
         {shortcutsPanelOverlay}
       </div>
@@ -239,6 +248,8 @@ function App() {
           aiPanelOpen={aiPanelOpen}
           onToggleAiPanel={() => setAiPanelOpen((v) => !v)}
           readingTime={null}
+          filePath={null}
+          frontmatter={null}
         />
         {shortcutsPanelOverlay}
       </div>
@@ -266,6 +277,7 @@ function App() {
             <div className="flex-1 flex flex-col overflow-hidden">
               <DocumentViewer
                 onReadingTimeChange={setReadingTime}
+                onFrontmatterChange={setFrontmatter}
                 onCommentTrigger={(anchor) => {
                   setAiPanelOpen(true);
                   setCommentTrigger({ type: "create-thread", anchor });
@@ -305,6 +317,8 @@ function App() {
         readingTime={readingTime}
         documentOpen={!!selectedFilePath}
         threadsViewActive={threadsViewActive}
+        filePath={selectedFilePath}
+        frontmatter={frontmatter}
         onToggleThreadsView={() => {
           if (threadsViewActive) {
             setCommentTrigger({ type: "close" });

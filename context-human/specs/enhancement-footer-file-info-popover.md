@@ -123,7 +123,7 @@ Reading time display changes:
 - When `readingTime` is null: no change — center zone stays empty.
 ## Task list
 
-- [ ] **Story: Data plumbing**
+- [x] **Story: Data plumbing**
 	- [x] **Task: Add ****`onFrontmatterChange`**** callback to ****`DocumentViewer`**
 		- **Description**: Add `onFrontmatterChange?: (frontmatter: Record<string, unknown> | null) => void` to `DocumentViewerProps`. Call it in the effect that fires when the document's frontmatter state changes — same trigger as `onReadingTimeChange`. Pass the current frontmatter object, or `null` when no document is open.
 		- **Acceptance criteria**:
@@ -132,14 +132,14 @@ Reading time display changes:
 			- [x] Callback fires with `null` when no document is open
 			- [x] Callback does not fire on every render — only when the frontmatter value changes
 		- **Dependencies**: None
-	- [ ] **Task: Wire ****`frontmatter`**** and ****`filePath`**** through ****`App`**
+	- [x] **Task: Wire ****`frontmatter`**** and ****`filePath`**** through ****`App`**
 		- **Description**: In `App.tsx`, add `frontmatter: Record<string, unknown> | null` state (default `null`). Pass `onFrontmatterChange={(fm) => setFrontmatter(fm)}` to `DocumentViewer`. Reset `frontmatter` to `null` when the selected file path changes (before the new document's frontmatter arrives). Pass `filePath` (currently selected file path from existing App state) and `frontmatter` as new props to `FooterBar`.
 		- **Acceptance criteria**:
-			- [ ] `frontmatter` state initializes to `null`
-			- [ ] `frontmatter` updates when a document with frontmatter is opened
-			- [ ] `frontmatter` resets to `null` when the selected file changes, before the new document loads
-			- [ ] `filePath` passed to `FooterBar` matches the currently selected file path
-			- [ ] No TypeScript errors at `FooterBar` and `DocumentViewer` call sites
+			- [x] `frontmatter` state initializes to `null`
+			- [x] `frontmatter` updates when a document with frontmatter is opened
+			- [x] `frontmatter` resets to `null` when the selected file changes, before the new document loads
+			- [x] `filePath` passed to `FooterBar` matches the currently selected file path
+			- [x] No TypeScript errors at `FooterBar` and `DocumentViewer` call sites
 		- **Dependencies**: "Task: Add `onFrontmatterChange` callback to `DocumentViewer`"
 - [ ] **Story: FileInfoPopoverContent component**
 	- [ ] **Task: Build ****`FileInfoPopoverContent`**** component**
