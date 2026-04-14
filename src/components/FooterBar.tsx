@@ -1,5 +1,7 @@
 import { PanelLeft, Sparkles, MessagesSquare } from "lucide-react";
 import { Button } from "@/components/ui/Button";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/Popover";
+import { FileInfoPopoverContent } from "@/components/FileInfoPopoverContent";
 
 interface FooterBarProps {
   sidebarVisible: boolean;
@@ -7,6 +9,8 @@ interface FooterBarProps {
   aiPanelOpen: boolean;
   onToggleAiPanel: () => void;
   readingTime: number | null;
+  filePath: string | null;
+  frontmatter: Record<string, unknown> | null;
   documentOpen?: boolean;
   threadsViewActive?: boolean;
   onToggleThreadsView?: () => void;
@@ -18,6 +22,8 @@ export function FooterBar({
   aiPanelOpen,
   onToggleAiPanel,
   readingTime,
+  filePath,
+  frontmatter,
   documentOpen,
   threadsViewActive,
   onToggleThreadsView,
@@ -70,15 +76,41 @@ export function FooterBar({
         }}
       >
         {readingTime !== null && (
-          <span
-            style={{
-              fontFamily: "var(--font-ui)",
-              fontSize: "var(--font-size-ui-xs)",
-              color: "var(--color-text-tertiary)",
-            }}
-          >
-            {readingTime} min read
-          </span>
+          <Popover>
+            <PopoverTrigger asChild>
+              <button
+                style={{
+                  background: "none",
+                  border: "none",
+                  padding: 0,
+                  cursor: "pointer",
+                  fontFamily: "var(--font-ui)",
+                  fontSize: "var(--font-size-ui-xs)",
+                  color: "var(--color-text-tertiary)",
+                }}
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLButtonElement).style.color =
+                    "var(--color-text-secondary)";
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLButtonElement).style.color =
+                    "var(--color-text-tertiary)";
+                }}
+              >
+                {readingTime} min read
+              </button>
+            </PopoverTrigger>
+            <PopoverContent
+              side="top"
+              sideOffset={24}
+              style={{ padding: 0, width: 280 }}
+            >
+              <FileInfoPopoverContent
+                filePath={filePath ?? ""}
+                frontmatter={frontmatter}
+              />
+            </PopoverContent>
+          </Popover>
         )}
       </div>
 
