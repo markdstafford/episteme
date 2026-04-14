@@ -141,18 +141,18 @@ Reading time display changes:
 			- [x] `filePath` passed to `FooterBar` matches the currently selected file path
 			- [x] No TypeScript errors at `FooterBar` and `DocumentViewer` call sites
 		- **Dependencies**: "Task: Add `onFrontmatterChange` callback to `DocumentViewer`"
-- [ ] **Story: FileInfoPopoverContent component**
-	- [ ] **Task: Build ****`FileInfoPopoverContent`**** component**
+- [x] **Story: FileInfoPopoverContent component**
+	- [x] **Task: Build ****`FileInfoPopoverContent`**** component**
 		- **Description**: Create `src/components/FileInfoPopoverContent.tsx`. Props: `filePath: string`, `frontmatter: Record<string, unknown> | null`. Render a Path section (label + monospace path value, `word-break: break-all`, `user-select: text`). If frontmatter is non-null and has keys other than `doc_id`, render a Frontmatter section separated from Path by a 1px `--color-border-subtle` divider: a "Frontmatter" section label followed by stacked key/value pairs. Array values render as comma-separated strings. `doc_id` key is always excluded. Outer padding: `--space-3` (12px).
 		- **Acceptance criteria**:
-			- [ ] Renders Path section with "Path" label and full path value in monospace
-			- [ ] File path text is selectable (`user-select: text`)
-			- [ ] Frontmatter section is absent when `frontmatter` is `null`
-			- [ ] Frontmatter section is absent when frontmatter contains only `doc_id`
-			- [ ] Frontmatter section renders all fields (except `doc_id`) when present
-			- [ ] Array field values render as comma-separated strings
-			- [ ] Divider appears between Path and Frontmatter sections when both are present
-			- [ ] Component does not crash when `frontmatter` is `null` or `{}`
+			- [x] Renders Path section with "Path" label and full path value in monospace
+			- [x] File path text is selectable (`user-select: text`)
+			- [x] Frontmatter section is absent when `frontmatter` is `null`
+			- [x] Frontmatter section is absent when frontmatter contains only `doc_id`
+			- [x] Frontmatter section renders all fields (except `doc_id`) when present
+			- [x] Array field values render as comma-separated strings
+			- [x] Divider appears between Path and Frontmatter sections when both are present
+			- [x] Component does not crash when `frontmatter` is `null` or `{}`
 		- **Dependencies**: None
 - [ ] **Story: FooterBar popover integration**
 	- [ ] **Task: Add Popover trigger to reading time in ****`FooterBar`**
