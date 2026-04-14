@@ -9,6 +9,8 @@ const defaultProps = {
   aiPanelOpen: false,
   onToggleAiPanel: vi.fn(),
   readingTime: null,
+  filePath: null,
+  frontmatter: null,
 };
 
 beforeEach(() => { vi.clearAllMocks(); });
@@ -80,5 +82,58 @@ describe("FooterBar", () => {
   it("renders reading time when provided", () => {
     render(<FooterBar {...defaultProps} readingTime={5} />);
     expect(screen.getByText("5 min read")).toBeInTheDocument();
+  });
+
+  it("renders reading time as a button trigger when readingTime is non-null", () => {
+    render(<FooterBar {...defaultProps} readingTime={5} filePath="/docs/test.md" frontmatter={null} />);
+    const trigger = screen.getByRole("button", { name: /5 min read/i });
+    expect(trigger).toBeInTheDocument();
+  });
+
+  it("does not render a trigger button when readingTime is null", () => {
+    render(<FooterBar {...defaultProps} readingTime={null} />);
+    expect(screen.queryByRole("button", { name: /min read/i })).not.toBeInTheDocument();
+  });
+
+  it("opens popover when reading time trigger is clicked", async () => {
+    render(
+      <FooterBar
+        {...defaultProps}
+        readingTime={3}
+        filePath="/workspace/docs/api-spec.md"
+        frontmatter={{ status: "draft" }}
+      />
+    );
+    const trigger = screen.getByRole("button", { name: /3 min read/i });
+    await userEvent.click(trigger);
+    expect(screen.getByText("Path")).toBeInTheDocument();
+  });
+
+  it("forwards filePath into the popover content", async () => {
+    render(
+      <FooterBar
+        {...defaultProps}
+        readingTime={3}
+        filePath="/workspace/docs/api-spec.md"
+        frontmatter={null}
+      />
+    );
+    await userEvent.click(screen.getByRole("button", { name: /3 min read/i }));
+    expect(screen.getByText("/workspace/docs/api-spec.md")).toBeInTheDocument();
+  });
+
+  it("forwards frontmatter into the popover content", async () => {
+    render(
+      <FooterBar
+        {...defaultProps}
+        readingTime={3}
+        filePath="/workspace/docs/notes.md"
+        frontmatter={{ status: "published", author: "alice" }}
+      />
+    );
+    await userEvent.click(screen.getByRole("button", { name: /3 min read/i }));
+    expect(screen.getByText("Frontmatter")).toBeInTheDocument();
+    expect(screen.getByText("status")).toBeInTheDocument();
+    expect(screen.getByText("published")).toBeInTheDocument();
   });
 });

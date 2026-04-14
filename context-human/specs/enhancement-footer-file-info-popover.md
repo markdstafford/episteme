@@ -173,10 +173,10 @@ Reading time display changes:
 			- [x] All cases described above are covered
 			- [x] Tests pass
 		- **Dependencies**: "Task: Build `FileInfoPopoverContent` component"
-	- [ ] **Task: Update ****`FooterBar`**** tests**
+	- [x] **Task: Update ****`FooterBar`**** tests**
 		- **Description**: Update `tests/unit/components/FooterBar.test.tsx`. Add: reading time renders as a trigger button (not plain text) when `readingTime` is non-null; center zone is empty when `readingTime` is null (verify existing test still passes); popover opens when trigger is clicked and contains a `FileInfoPopoverContent`; `filePath` and `frontmatter` are forwarded into the popover content.
 		- **Acceptance criteria**:
-			- [ ] New test cases added as described
-			- [ ] All existing `FooterBar` tests continue to pass
-			- [ ] Tests pass
+			- [x] New test cases added as described
+			- [x] All existing `FooterBar` tests continue to pass
+			- [x] Tests pass
 		- **Dependencies**: "Task: Add Popover trigger to reading time in `FooterBar`"
