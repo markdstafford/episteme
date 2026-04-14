@@ -12,6 +12,7 @@ import { computeReadingTime } from "@/lib/readingTime";
 
 interface DocumentViewerProps {
   onReadingTimeChange?: (minutes: number | null) => void;
+  onFrontmatterChange?: (frontmatter: Record<string, unknown> | null) => void;
   onCommentTrigger?: (anchor: CommentTriggerAnchor) => void;
   onThreadClick?: (threadId: string) => void;
   onThreadsFilterClick?: (threadIds: string[]) => void;
@@ -21,6 +22,7 @@ interface DocumentViewerProps {
 
 export function DocumentViewer({
   onReadingTimeChange,
+  onFrontmatterChange,
   onCommentTrigger,
   onThreadClick,
   onThreadsFilterClick,
@@ -42,6 +44,7 @@ export function DocumentViewer({
       setFrontmatter(null);
       setDocId(null);
       onReadingTimeChange?.(null);
+      onFrontmatterChange?.(null);
       return;
     }
 
@@ -61,6 +64,7 @@ export function DocumentViewer({
         setFrontmatter(parsed.frontmatter);
         setDocId(id);
         onReadingTimeChange?.(computeReadingTime(parsed.content));
+        onFrontmatterChange?.(parsed.frontmatter);
       } catch (e) {
         if (cancelled) return;
         setError(e instanceof Error ? e.message : String(e));
@@ -68,6 +72,7 @@ export function DocumentViewer({
         setFrontmatter(null);
         setDocId(null);
         onReadingTimeChange?.(null);
+        onFrontmatterChange?.(null);
       } finally {
         if (!cancelled) setIsLoading(false);
       }
@@ -77,7 +82,7 @@ export function DocumentViewer({
     return () => {
       cancelled = true;
     };
-  }, [selectedFilePath, onReadingTimeChange]);
+  }, [selectedFilePath, onReadingTimeChange, onFrontmatterChange]);
 
   // Hot-reload: re-read the file when it's modified externally
   useEffect(() => {
@@ -94,6 +99,7 @@ export function DocumentViewer({
             setContent(parsed.content);
             setFrontmatter(parsed.frontmatter);
             onReadingTimeChange?.(computeReadingTime(parsed.content));
+            onFrontmatterChange?.(parsed.frontmatter);
           })
           .catch(() => {}); // Silent fail — stale content is better than error flash
       }
@@ -103,7 +109,7 @@ export function DocumentViewer({
       cancelled = true;
       unlistenPromise.then((fn) => fn());
     };
-  }, [selectedFilePath, workspacePath, onReadingTimeChange]);
+  }, [selectedFilePath, workspacePath, onReadingTimeChange, onFrontmatterChange]);
 
   const handleLinkClick = useCallback(
     (href: string) => {

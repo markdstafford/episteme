@@ -124,13 +124,13 @@ Reading time display changes:
 ## Task list
 
 - [ ] **Story: Data plumbing**
-	- [ ] **Task: Add ****`onFrontmatterChange`**** callback to ****`DocumentViewer`**
+	- [x] **Task: Add ****`onFrontmatterChange`**** callback to ****`DocumentViewer`**
 		- **Description**: Add `onFrontmatterChange?: (frontmatter: Record<string, unknown> | null) => void` to `DocumentViewerProps`. Call it in the effect that fires when the document's frontmatter state changes — same trigger as `onReadingTimeChange`. Pass the current frontmatter object, or `null` when no document is open.
 		- **Acceptance criteria**:
-			- [ ] Prop is optional; existing `DocumentViewer` call sites without it compile without error
-			- [ ] Callback fires with the frontmatter object when a document with frontmatter is opened
-			- [ ] Callback fires with `null` when no document is open
-			- [ ] Callback does not fire on every render — only when the frontmatter value changes
+			- [x] Prop is optional; existing `DocumentViewer` call sites without it compile without error
+			- [x] Callback fires with the frontmatter object when a document with frontmatter is opened
+			- [x] Callback fires with `null` when no document is open
+			- [x] Callback does not fire on every render — only when the frontmatter value changes
 		- **Dependencies**: None
 	- [ ] **Task: Wire ****`frontmatter`**** and ****`filePath`**** through ****`App`**
 		- **Description**: In `App.tsx`, add `frontmatter: Record<string, unknown> | null` state (default `null`). Pass `onFrontmatterChange={(fm) => setFrontmatter(fm)}` to `DocumentViewer`. Reset `frontmatter` to `null` when the selected file path changes (before the new document's frontmatter arrives). Pass `filePath` (currently selected file path from existing App state) and `frontmatter` as new props to `FooterBar`.
