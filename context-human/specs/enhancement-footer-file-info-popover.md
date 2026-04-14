@@ -154,17 +154,17 @@ Reading time display changes:
 			- [x] Divider appears between Path and Frontmatter sections when both are present
 			- [x] Component does not crash when `frontmatter` is `null` or `{}`
 		- **Dependencies**: None
-- [ ] **Story: FooterBar popover integration**
-	- [ ] **Task: Add Popover trigger to reading time in ****`FooterBar`**
+- [x] **Story: FooterBar popover integration**
+	- [x] **Task: Add Popover trigger to reading time in ****`FooterBar`**
 		- **Description**: In `FooterBar.tsx`, add `filePath: string | null` and `frontmatter: Record<string, unknown> | null` to `FooterBarProps`. When `readingTime` is non-null, replace the plain reading time text with a `<Popover>` containing a `<PopoverTrigger asChild>` wrapping a `<button>`. The button renders the "X min read" text with the existing text style (`--font-size-ui-xs`, `--color-text-tertiary`) plus hover color `--color-text-secondary` and `cursor-pointer`. Render `<PopoverContent side="top" sideOffset={24}>` containing `<FileInfoPopoverContent filePath={filePath ?? ''} frontmatter={frontmatter} />`. When `readingTime` is null, keep the center zone empty (no trigger).
 		- **Acceptance criteria**:
-			- [ ] "X min read" renders as a button trigger when `readingTime` is non-null
-			- [ ] Clicking the trigger opens the popover above the footer
-			- [ ] Popover closes on Escape and click-outside
-			- [ ] `filePath` and `frontmatter` are correctly forwarded to `FileInfoPopoverContent`
-			- [ ] Hover state changes text color to `--color-text-secondary`
-			- [ ] When `readingTime` is null, center zone is empty — no trigger rendered
-			- [ ] No TypeScript errors
+			- [x] "X min read" renders as a button trigger when `readingTime` is non-null
+			- [x] Clicking the trigger opens the popover above the footer
+			- [x] Popover closes on Escape and click-outside
+			- [x] `filePath` and `frontmatter` are correctly forwarded to `FileInfoPopoverContent`
+			- [x] Hover state changes text color to `--color-text-secondary`
+			- [x] When `readingTime` is null, center zone is empty — no trigger rendered
+			- [x] No TypeScript errors
 		- **Dependencies**: "Task: Wire `frontmatter` and `filePath` through `App`", "Task: Build `FileInfoPopoverContent` component"
 - [ ] **Story: Tests**
 	- [ ] **Task: Unit tests for ****`FileInfoPopoverContent`**
