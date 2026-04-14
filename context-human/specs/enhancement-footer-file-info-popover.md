@@ -166,12 +166,12 @@ Reading time display changes:
 			- [x] When `readingTime` is null, center zone is empty — no trigger rendered
 			- [x] No TypeScript errors
 		- **Dependencies**: "Task: Wire `frontmatter` and `filePath` through `App`", "Task: Build `FileInfoPopoverContent` component"
-- [ ] **Story: Tests**
-	- [ ] **Task: Unit tests for ****`FileInfoPopoverContent`**
+- [x] **Story: Tests**
+	- [x] **Task: Unit tests for ****`FileInfoPopoverContent`**
 		- **Description**: Create `tests/unit/components/FileInfoPopoverContent.test.tsx`. Cover: file path rendered in path section; path text is selectable; frontmatter section absent when `frontmatter` is null; frontmatter section absent when only `doc_id` is present; frontmatter section renders all non-`doc_id` fields; array values render as comma-separated strings; divider present when both sections render.
 		- **Acceptance criteria**:
-			- [ ] All cases described above are covered
-			- [ ] Tests pass
+			- [x] All cases described above are covered
+			- [x] Tests pass
 		- **Dependencies**: "Task: Build `FileInfoPopoverContent` component"
 	- [ ] **Task: Update ****`FooterBar`**** tests**
 		- **Description**: Update `tests/unit/components/FooterBar.test.tsx`. Add: reading time renders as a trigger button (not plain text) when `readingTime` is non-null; center zone is empty when `readingTime` is null (verify existing test still passes); popover opens when trigger is clicked and contains a `FileInfoPopoverContent`; `filePath` and `frontmatter` are forwarded into the popover content.
